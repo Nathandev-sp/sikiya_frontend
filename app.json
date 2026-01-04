@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Sikiya",
+    "slug": "Sikiya",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "orientation": "portrait",
+    "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/Sikiya_logo/Sikiya_Logo_New.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#F0F0F0"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-video",
+      "react-native-google-mobile-ads"
+    ]
+  }
+}

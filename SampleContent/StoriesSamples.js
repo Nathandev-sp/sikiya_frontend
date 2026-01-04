@@ -1,0 +1,8 @@
+StoriesList = [
+    {'id': 1, 'Partners': [{'id':1, 'name': 'Yvette' , 'pic': 'https://images.nationalgeographic.org/image/upload/v1638892227/EducationHub/photos/social-media-influencer.jpg', 'link': 'L1' },{'id':2 ,'name': 'Luc', 'pic': 'https://www.mydoh.ca/wp-content/uploads/2022/11/Finfluencer-1-e1687534920623.jpg?w=1095', 'link': 'L2' }]},
+    {'id': 2, 'Daily Activities': [{'id':1, 'name': 'Activity1' , 'pic': 'https://www.shutterstock.com/image-illustration/rubber-stamp-activity-word-isolated-260nw-227246755.jpg', 'link': 'L1' },{'id':2 ,'name': 'Activity2', 'pic': 'https://www.shutterstock.com/image-illustration/rubber-stamp-activity-word-isolated-260nw-227246755.jpg', 'link': 'L2' }]},
+    {'id': 3, 'Flagships': [{'id':1, 'name': 'Activity1' , 'pic': 'https://www.shutterstock.com/image-illustration/rubber-stamp-activity-word-isolated-260nw-227246755.jpg', 'link': 'L1' },{'id':2 ,'name': 'Activity2', 'pic': 'https://www.shutterstock.com/image-illustration/rubber-stamp-activity-word-isolated-260nw-227246755.jpg', 'link': 'L2' }]},
+    {'id': 4, 'Ambiance': [{'id':1, 'name': 'Look1' , 'pic': 'https://static.vecteezy.com/system/resources/previews/029/282/609/large_2x/relaxing-ambiance-wooden-table-on-blurred-mountain-and-grass-perfect-for-product-display-ai-generated-photo.jpg', 'link': 'L1' },{'id':2 ,'name': 'Look2', 'pic': 'https://static01.nyt.com/images/2021/02/18/fashion/11ambience-videos-1/merlin_183424581_675ed475-cf23-43a6-bcff-b3254b0c621f-articleLarge.jpg?quality=75&auto=webp&disable=upscale', 'link': 'L2' }]}
+]
+
+export default StoriesList;

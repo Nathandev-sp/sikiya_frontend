@@ -1,0 +1,32 @@
+[
+      {
+        "id": 1,
+        "command": "What is there to do right now?"
+      },
+      {
+        "id": 2,
+        "command": "What can I do over the weekend?"
+      },
+      {
+        "id": 3,
+        "command": "What is interesting for the next few weeks?"
+      },
+      {
+        "id": 4,
+        "command": "I am travelling soon, what can I do next?"
+      },
+      {
+        "id": 5,
+        "command": "I want to plan a period of activities."
+      },
+      {
+        "id": 6,
+        "command": "I have a date, what can we do?"
+      },
+      {
+        "id": 7,
+        "command": "Where are the best vibes right now?"
+      }
+]
+
+  

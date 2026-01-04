@@ -1,0 +1,9 @@
+{
+    "ReviewList": [
+      { "id": 1, "more": "I really liked the vibes of the place.", "name": "Watson", "profile": require('../../../../assets/Images/ProfilePic/Pic1.jpg'), "stars": 3 },
+      { "id": 2, "more": "I really liked the vibes of the place.", "name": "Michael", "profile": require('../../../../assets/Images/ProfilePic/Pic2.jpg'), "stars": 4 },
+      { "id": 3, "more": "I really liked the vibes of the place.", "name": "Jordan", "profile": require('../../../../assets/Images/ProfilePic/Pic3.jpg'), "stars": 5 },
+      { "id": 4, "more": "I really liked the vibes of the place.", "name": "Julia", "profile": require('../../../../assets/Images/ProfilePic/Pic4.jpg'), "stars": 2 },
+      { "id": 5, "more": "I really liked the vibes of the place.", "name": "Mark", "profile": require('../../../../assets/Images/ProfilePic/Pic5.jpg'), "stars": 3 }
+    ]
+}

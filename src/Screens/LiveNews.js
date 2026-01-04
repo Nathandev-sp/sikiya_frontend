@@ -1,0 +1,897 @@
+import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { Ionicons } from '@expo/vector-icons';
+import AppScreenBackgroundColor, { 
+    main_Style, 
+    articleTitleFont, 
+    articleTitleSize,
+    articleTitleFontWeight,
+    articleTitleColor,
+    generalTitleColor,
+    generalTitleFont,
+    generalTitleSize,
+    generalTitleFontWeight,
+    generalTextColor,
+    generalTextSize,
+    generalTextFont,
+    generalTextFontWeight,
+    generalSmallTextSize,
+    withdrawnTitleColor,
+    genBtnBackgroundColor,
+    MainBrownSecondaryColor,
+    MainSecondaryBlueColor,
+    generalActiveOpacity,
+    generalLineHeight
+} from '../styles/GeneralAppStyle';
+import SikiyaAPI from '../../API/SikiyaAPI';
+import CommentInputModal from '../../FeedbackComponent/CommentInputModal';
+import FeedbackContainer from '../../FeedbackComponent/FeedbackContainer';
+import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { formatNumber } from '../utils/numberFormatter';
+import { Context as AuthContext } from '../Context/AuthContext';
+import { useRewardedAd } from '../Components/Ads/RewardedAd';
+import RewardedAdModal from '../Components/Ads/RewardedAdModal';
+
+const LiveNews = ({ preloadedVideos }) => {
+    const { width, height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+    const flatListRef = useRef(null);
+    const navigation = useNavigation();
+    const videoPlayersRef = useRef({});
+    
+    // Auth context for user role
+    const { state } = useContext(AuthContext);
+    const userRole = state?.role || 'general';
+    const isGeneralUser = userRole === 'general';
+    
+    // Rewarded ad hook (only for general users)
+    const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd();
+    
+    // State management
+    const [videos, setVideos] = useState([]);
+    const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+    const [showComments, setShowComments] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [refreshCommentsKey, setRefreshCommentsKey] = useState(0);
+    const [isLoading, setIsLoading] = useState(!preloadedVideos); // Don't show loading if we have preloaded videos
+    const [error, setError] = useState(null);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMoreVideos, setHasMoreVideos] = useState(true);
+    
+    // Ad-related state (only for general users)
+    const watchedVideosRef = useRef(new Set()); // Track unique videos watched
+    const [showAdModal, setShowAdModal] = useState(false);
+    const [isShowingAd, setIsShowingAd] = useState(false);
+    const videosSinceLastAdRef = useRef(0); // Track videos watched since last ad
+    
+    const iconColor = AppScreenBackgroundColor;
+
+    // Get current video data
+    const currentVideo = videos[currentVideoIndex];
+
+    // Fetch videos with pagination
+    const fetchVideos = useCallback(async (page = 1, append = false) => {
+        try {
+            if (!append) {
+                setIsLoading(true);
+            } else {
+                setIsLoadingMore(true);
+            }
+            setError(null);
+            const response = await SikiyaAPI.get(`videos/home?page=${page}&limit=20`);
+            // The API returns { videos: [...], pagination: {...} }
+            const newVideos = response.data.videos || [];
+            
+            if (append) {
+                setVideos(prevVideos => [...prevVideos, ...newVideos]);
+            } else {
+                setVideos(newVideos);
+            }
+            
+            // Update pagination state
+            if (response.data.pagination) {
+                setCurrentPage(response.data.pagination.currentPage);
+                setHasMoreVideos(response.data.pagination.currentPage < response.data.pagination.totalPages);
+            }
+        } catch (error) {
+            console.error('Error fetching videos:', error);
+            if (!append) {
+                setError('Failed to load videos. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
+            setIsLoadingMore(false);
+        }
+    }, []);
+
+    // Load more videos when user is near the end
+    const loadMoreVideos = useCallback(() => {
+        if (!isLoadingMore && hasMoreVideos && videos.length > 0) {
+            const nextPage = currentPage + 1;
+            fetchVideos(nextPage, true); // Append to existing videos
+        }
+    }, [isLoadingMore, hasMoreVideos, currentPage, videos.length, fetchVideos]);
+
+    // Initialize with preloaded videos
+    useEffect(() => {
+        if (preloadedVideos && preloadedVideos.videos) {
+            setVideos(preloadedVideos.videos || []);
+            // Since we preloaded 5 videos from page 1, we're still on page 1
+            // Next load should be page 2 (or continue from page 1 if we want to get the remaining 15)
+            // For simplicity, we'll start loading from page 2 next
+            setCurrentPage(1);
+            // Check if there are more videos to load
+            if (preloadedVideos.pagination) {
+                setHasMoreVideos(preloadedVideos.pagination.currentPage < preloadedVideos.pagination.totalPages);
+            }
+            setIsLoading(false);
+        } else if (!preloadedVideos) {
+            // If no preloaded videos, fetch first page
+            fetchVideos(1, false);
+        }
+    }, [preloadedVideos, fetchVideos]);
+
+    // Handle scroll to change current video and load more when near end
+    const onViewableItemsChanged = useRef(({ viewableItems }) => {
+        if (viewableItems.length > 0) {
+            const visibleIndex = viewableItems[0].index;
+            const currentVideo = videos[visibleIndex];
+            
+            // Don't track if modal is showing or if not a general user
+            if (currentVideo && isGeneralUser && !showAdModal) {
+                const videoId = currentVideo._id;
+                
+                // Track unique videos watched
+                if (!watchedVideosRef.current.has(videoId)) {
+                    watchedVideosRef.current.add(videoId);
+                    videosSinceLastAdRef.current += 1;
+                    
+                    // Show ad modal after 10 videos
+                    if (videosSinceLastAdRef.current >= 10) {
+                        setShowAdModal(true);
+                    }
+                }
+            }
+            
+            setCurrentVideoIndex(visibleIndex);
+            setShowComments(false); // Close comments when switching videos
+            
+            // Load more videos when user is within 3 videos of the end (only if not blocked by ad)
+            if (visibleIndex >= videos.length - 3 && hasMoreVideos && !isLoadingMore && !showAdModal) {
+                loadMoreVideos();
+            }
+        }
+    }).current;
+
+    const viewabilityConfig = useRef({
+        itemVisiblePercentThreshold: 80
+    }).current;
+
+    // Handler functions
+    const handleShare = async () => {
+        console.log('Share button pressed');
+        // Implement share functionality
+    };
+
+
+    const handleComments = () => {
+        setShowComments(!showComments);
+    };
+
+    const onSendComment = async (text) => {
+        if (!text || !currentVideo?._id) return;
+
+        try {
+            const payload = {
+                comment_content: text,
+                mainComment: true,
+            };
+
+            const response = await SikiyaAPI.post(`/video/${currentVideo._id}/comment`, payload);
+
+            if (response.status === 201) {
+                console.log('Comment sent successfully:', response.data);
+                setRefreshCommentsKey(prevKey => prevKey + 1);
+                setModalVisible(false);
+            } else {
+                console.error('Error sending comment:', response);
+            }
+        } catch (error) {
+            console.error('Error sending comment:', error);
+        }
+    };
+
+    // Pause all videos when screen loses focus
+    useFocusEffect(
+        useCallback(() => {
+            // Screen is focused - videos will be played by VideoItemComponent based on isActive
+            return () => {
+                // Screen is unfocused - pause all videos
+                Object.values(videoPlayersRef.current).forEach(player => {
+                    if (player) {
+                        player.pause();
+                    }
+                });
+            };
+        }, [])
+    );
+
+    const handleProfile = () => {
+        if (currentVideo?.journalist_id?._id) {
+            navigation.navigate('AuthorProfile', { userId: currentVideo.journalist_id._id });
+        }
+    };
+
+    // Render individual video item
+    const renderVideoItem = ({ item, index }) => {
+        const isActive = index === currentVideoIndex;
+        
+        return (
+            <VideoItemComponent 
+                item={item}
+                isActive={isActive}
+                width={width}
+                height={height}
+                iconColor={iconColor}
+                showComments={showComments && isActive}
+                refreshCommentsKey={refreshCommentsKey}
+                handleComments={handleComments}
+                handleShare={handleShare}
+                handleProfile={handleProfile}
+                onSendComment={onSendComment}
+                setModalVisible={setModalVisible}
+                videoPlayersRef={videoPlayersRef}
+            />
+        );
+    };
+
+    // Handle rewarded ad watch
+    const handleWatchAd = async () => {
+        if (!isAdLoaded) {
+            console.warn('Ad not loaded yet');
+            return;
+        }
+        
+        setIsShowingAd(true);
+        setShowAdModal(false);
+        
+        try {
+            const earned = await showRewardedAd();
+            
+            if (earned) {
+                // User watched ad successfully - reset counter
+                videosSinceLastAdRef.current = 0;
+                setShowAdModal(false);
+            } else {
+                // User closed ad without watching - show modal again
+                setShowAdModal(true);
+            }
+        } catch (error) {
+            console.error('Error showing rewarded ad:', error);
+            // On error, allow user to continue (don't block them)
+            videosSinceLastAdRef.current = 0;
+            setShowAdModal(false);
+        } finally {
+            setIsShowingAd(false);
+        }
+    };
+    
+    // Handle cancel ad modal
+    const handleCancelAd = () => {
+        // User cancelled - keep modal open so they must watch ad to continue
+        // Modal will remain visible, blocking further video viewing
+        // They can only continue after watching the ad
+    };
+    
+    // Disable FlatList scrolling when comments are open or ad modal is showing
+    const isScrollingEnabled = !showComments && !showAdModal;
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+                <MediumLoadingState />
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color={withdrawnTitleColor} />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity 
+                        style={styles.retryButton}
+                        onPress={() => {
+                            setError(null);
+                            fetchVideos(1, false);
+                        }}
+                    >
+                        <Text style={styles.retryButtonText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    return(
+        <SafeAreaView style={styles.safeArea} edges={['right']}>
+            <StatusBar barStyle="light-content" />
+            <FlatList
+                ref={flatListRef}
+                data={videos}
+                renderItem={renderVideoItem}
+                keyExtractor={(item, index) => item._id || index.toString()}
+                pagingEnabled
+                showsVerticalScrollIndicator={false}
+                snapToAlignment="center"
+                snapToInterval={height}
+                decelerationRate="fast"
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                getItemLayout={(data, index) => ({
+                    length: height,
+                    offset: height * index,
+                    index,
+                })}
+                removeClippedSubviews={false}
+                scrollEnabled={isScrollingEnabled}
+                onEndReached={loadMoreVideos}
+                onEndReachedThreshold={0.5}
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="videocam-off-outline" size={64} color={withdrawnTitleColor} />
+                        <Text style={styles.emptyText}>No videos available</Text>
+                    </View>
+                }
+                ListFooterComponent={
+                    isLoadingMore ? (
+                        <View style={styles.loadingMoreContainer}>
+                            <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
+                            <Text style={styles.loadingMoreText}>Loading more videos...</Text>
+                        </View>
+                    ) : null
+                }
+            />
+            
+            {/* Comment Input Modal - moved outside FlatList like NewsHome */}
+            <CommentInputModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                onSend={onSendComment}
+                placeholder="Write your comment..."
+            />
+            
+            {/* Rewarded Ad Modal - only for general users */}
+            {isGeneralUser && (
+                <RewardedAdModal
+                    visible={showAdModal}
+                    onWatchAd={handleWatchAd}
+                    onCancel={handleCancelAd}
+                    isShowingAd={isShowingAd}
+                    isAdLoaded={isAdLoaded}
+                />
+            )}
+        </SafeAreaView>
+    );
+}
+
+// Separate component for each video item
+const VideoItemComponent = ({ 
+    item, 
+    isActive, 
+    width, 
+    height, 
+    iconColor,
+    showComments,
+    refreshCommentsKey,
+    handleComments,
+    handleShare,
+    handleProfile,
+    onSendComment,
+    setModalVisible,
+    videoPlayersRef
+}) => {
+    const [liked, setLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(item?.number_of_likes || 0);
+    const [isLiking, setIsLiking] = useState(false);
+    const viewTrackedRef = useRef(false); // Track if view has been recorded
+    const watchTimeStartRef = useRef(null); // Track when video started playing
+    const watchTimeIntervalRef = useRef(null); // Interval for tracking watch time
+
+    const videoPlayer = useVideoPlayer(
+        item?.video_url || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", 
+        player => {
+            player.loop = true;
+            // Store player reference
+            if (item?._id) {
+                videoPlayersRef.current[item._id] = player;
+            }
+            if (isActive) {
+                player.play();
+            } else {
+                player.pause();
+            }
+        }
+    );
+
+    useEffect(() => {
+        if (isActive) {
+            videoPlayer.play();
+            
+            // Track video view when it becomes active (first time)
+            if (!viewTrackedRef.current && item?._id) {
+                const trackView = async () => {
+                    try {
+                        await SikiyaAPI.post(`/video/${item._id}/track/view`);
+                        viewTrackedRef.current = true;
+                    } catch (error) {
+                        console.error('Error tracking video view:', error);
+                    }
+                };
+                trackView();
+            }
+
+            // Start tracking watch time
+            if (item?._id) {
+                watchTimeStartRef.current = Date.now();
+                
+                // Track watch time every 30 seconds
+                watchTimeIntervalRef.current = setInterval(async () => {
+                    try {
+                        if (watchTimeStartRef.current) {
+                            const timeSpent = (Date.now() - watchTimeStartRef.current) / (1000 * 60 * 60); // Convert to hours
+                            if (timeSpent >= 0.0083) { // Track if at least 30 seconds (0.0083 hours)
+                                await SikiyaAPI.post(`/video/${item._id}/track/watch`, {
+                                    hours_watched: timeSpent
+                                });
+                                watchTimeStartRef.current = Date.now(); // Reset timer
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error tracking video watch time:', error);
+                    }
+                }, 30000); // Every 30 seconds
+            }
+        } else {
+            videoPlayer.pause();
+            
+            // Stop tracking watch time when video becomes inactive
+            if (watchTimeIntervalRef.current) {
+                clearInterval(watchTimeIntervalRef.current);
+                watchTimeIntervalRef.current = null;
+            }
+            
+            // Track final watch time before switching videos
+            if (watchTimeStartRef.current && item?._id) {
+                const finalTimeSpent = (Date.now() - watchTimeStartRef.current) / (1000 * 60 * 60);
+                if (finalTimeSpent >= 0.0083) { // At least 30 seconds
+                    SikiyaAPI.post(`/video/${item._id}/track/watch`, {
+                        hours_watched: finalTimeSpent
+                    }).catch(err => console.error('Error tracking final watch time:', err));
+                }
+                watchTimeStartRef.current = null;
+            }
+        }
+    }, [isActive, videoPlayer, item?._id]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (item?._id && videoPlayersRef.current[item._id]) {
+                videoPlayersRef.current[item._id].pause();
+                delete videoPlayersRef.current[item._id];
+            }
+            
+            // Track final watch time on unmount
+            if (watchTimeStartRef.current && item?._id) {
+                const finalTimeSpent = (Date.now() - watchTimeStartRef.current) / (1000 * 60 * 60);
+                if (finalTimeSpent >= 0.0083) { // At least 30 seconds
+                    SikiyaAPI.post(`/video/${item._id}/track/watch`, {
+                        hours_watched: finalTimeSpent
+                    }).catch(err => console.error('Error tracking final watch time on unmount:', err));
+                }
+            }
+            
+            // Clear intervals
+            if (watchTimeIntervalRef.current) {
+                clearInterval(watchTimeIntervalRef.current);
+            }
+            
+            // Reset tracking refs
+            viewTrackedRef.current = false;
+            watchTimeStartRef.current = null;
+        };
+    }, [item?._id]);
+
+    // Check like status when component mounts and reset tracking when video changes
+    useEffect(() => {
+        if (item?._id) {
+            checkLikeStatus();
+            // Reset tracking refs when video changes
+            viewTrackedRef.current = false;
+            if (watchTimeIntervalRef.current) {
+                clearInterval(watchTimeIntervalRef.current);
+                watchTimeIntervalRef.current = null;
+            }
+            watchTimeStartRef.current = null;
+        }
+    }, [item?._id]);
+
+    const checkLikeStatus = async () => {
+        if (!item?._id) return;
+        try {
+            const response = await SikiyaAPI.get(`/like/video/${item._id}/check`);
+            if (response.data) {
+                setLiked(response.data.isLiked || false);
+                if (response.data.number_of_likes !== undefined) {
+                    setLikeCount(response.data.number_of_likes);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking like status:', error);
+            setLiked(false);
+        }
+    };
+
+    const handleLike = async () => {
+        if (isLiking || !item?._id) return;
+        
+        setIsLiking(true);
+        const previousLiked = liked;
+        const previousCount = likeCount;
+        
+        // Optimistic update
+        setLiked(!liked);
+        setLikeCount(liked ? likeCount - 1 : likeCount + 1);
+        
+        try {
+            let response;
+            if (liked) {
+                // Unlike the video
+                response = await SikiyaAPI.delete(`/like/video/${item._id}`);
+            } else {
+                // Like the video
+                response = await SikiyaAPI.post(`/like/video/${item._id}`);
+            }
+            
+            // Update state from backend response
+            if (response.data) {
+                setLiked(response.data.liked !== undefined ? response.data.liked : !liked);
+                if (response.data.number_of_likes !== undefined && response.data.number_of_likes !== null) {
+                    setLikeCount(response.data.number_of_likes);
+                } else {
+                    // If count not in response, refresh status
+                    checkLikeStatus();
+                }
+            } else {
+                // If no data in response, refresh status
+                checkLikeStatus();
+            }
+        } catch (error) {
+            console.error('Error toggling like:', error);
+            // Revert on error
+            setLiked(previousLiked);
+            setLikeCount(previousCount);
+        } finally {
+            setIsLiking(false);
+        }
+    };
+
+    return (
+        <View style={[styles.videoContainer, { height }]}>
+            <VideoView 
+                style={[styles.fullScreenVideo, { width, height }]} 
+                player={videoPlayer} 
+                allowsFullscreen={false}
+                allowsPictureInPicture={false}
+                nativeControls={false}
+                contentFit="cover"
+            />
+            
+            {/* Bottom Info Section */}
+            <View style={styles.bottomInfoSection}>
+                {/* Title on the left */}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.articleTitle} numberOfLines={3}>
+                        {item?.video_title || "Live News Video"}
+                    </Text>
+                    {item?.journalist_id && (
+                        <View style={styles.authorInfo}>
+                            <Text style={styles.authorName}>
+                                {item.journalist_id.firstname} {item.journalist_id.lastname}
+                            </Text>
+                        </View>
+                    )}
+                </View>
+                
+                {/* Vertical Action Buttons on the right */}
+                <View style={styles.verticalActionButtons}>
+                    {/* Like Button */}
+                    <View style={styles.actionButtonGroup}>
+                        <TouchableOpacity 
+                            style={[styles.actionButton, main_Style.genButtonElevation]} 
+                            onPress={handleLike}
+                            activeOpacity={generalActiveOpacity}
+                            disabled={isLiking}
+                        >
+                            <Ionicons 
+                                name={liked ? "heart" : "heart-outline"} 
+                                size={24} 
+                                color={liked ? "#FF3040" : iconColor} 
+                            />
+                        </TouchableOpacity>
+                        {likeCount > 0 && (
+                            <Text style={styles.actionCount}>{formatNumber(likeCount)}</Text>
+                        )}
+                    </View>
+                    
+                    {/* Comments Button */}
+                    <View style={styles.actionButtonGroup}>
+                        <TouchableOpacity 
+                            style={[styles.actionButton, main_Style.genButtonElevation]} 
+                            onPress={handleComments}
+                            activeOpacity={generalActiveOpacity}
+                        >
+                            <Ionicons name="chatbubble-outline" size={24} color={iconColor} />
+                        </TouchableOpacity>
+                        {item?.number_of_comments > 0 && (
+                            <Text style={styles.actionCount}>{formatNumber(item.number_of_comments)}</Text>
+                        )}
+                    </View>
+                    
+                    {/* Share Button */}
+                    <TouchableOpacity 
+                        style={[styles.actionButton, main_Style.genButtonElevation]} 
+                        onPress={handleShare}
+                        activeOpacity={generalActiveOpacity}
+                    >
+                        <Ionicons name="share-social-outline" size={24} color={iconColor} />
+                    </TouchableOpacity>
+                    
+                    {/* Profile Button */}
+                    <TouchableOpacity 
+                        style={[styles.actionButton, main_Style.genButtonElevation]} 
+                        onPress={handleProfile}
+                        activeOpacity={generalActiveOpacity}
+                    >
+                        <Ionicons name="person-outline" size={24} color={iconColor} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* Comments Island Overlay */}
+            {showComments && (
+                <View style={[styles.commentsIsland, main_Style.genButtonElevation]}>
+                    <View style={styles.commentsHeader}>
+                        <Text style={styles.commentsTitle}>Comments</Text>
+                        <View style={styles.commentsHeaderRight}>
+                            <TouchableOpacity 
+                                onPress={() => setModalVisible(true)}
+                                style={[styles.addCommentButton, main_Style.genButtonElevation]}
+                                activeOpacity={generalActiveOpacity}
+                            >
+                                <Ionicons name="add" size={24} color={MainBrownSecondaryColor} />
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={handleComments}
+                                style={styles.closeButton}
+                                activeOpacity={generalActiveOpacity}
+                            >
+                                <Ionicons name="close" size={24} color={generalTitleColor} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    
+                    <ScrollView 
+                        style={styles.commentsContent}
+                        contentContainerStyle={styles.commentsContentContainer}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled={true}
+                    >
+                        <View style = {{ paddingTop: 8}}></View>
+                        <FeedbackContainer 
+                            videoId={item?._id} 
+                            refreshKey={refreshCommentsKey}
+                            hideHeader={true}
+                        />
+                    </ScrollView>
+                </View>
+            )}
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+        backgroundColor: AppScreenBackgroundColor,
+    },
+    errorText: {
+        fontSize: generalTextSize,
+        color: generalTextColor,
+        fontFamily: generalTextFont,
+        textAlign: 'center',
+        marginTop: 16,
+        marginBottom: 24,
+    },
+    retryButton: {
+        backgroundColor: MainBrownSecondaryColor,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: AppScreenBackgroundColor,
+        fontSize: generalTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#000',
+    },
+    emptyText: {
+        fontSize: generalTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        marginTop: 16,
+    },
+    videoContainer: {
+        position: 'relative',
+        width: '100%',
+    },
+    fullScreenVideo: {
+        backgroundColor: '#000',
+    },
+    bottomInfoSection: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 60,
+        paddingTop: 40,
+    },
+    titleContainer: {
+        flex: 1,
+        marginRight: 12,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 0.5,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    articleTitle: {
+        fontSize: articleTitleSize,
+        fontWeight: articleTitleFontWeight,
+        color: AppScreenBackgroundColor,
+        fontFamily: articleTitleFont,
+        lineHeight: generalLineHeight,
+        marginBottom: 6,
+    },
+    authorInfo: {
+        marginTop: 4,
+    },
+    authorName: {
+        fontSize: generalSmallTextSize,
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+    },
+    verticalActionButtons: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 16,
+    },
+    actionButtonGroup: {
+        alignItems: 'center',
+    },
+    actionButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 50,
+        width: 50,
+        borderRadius: 25,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    actionCount: {
+        fontSize: generalSmallTextSize,
+        color: AppScreenBackgroundColor,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+        marginTop: 4,
+    },
+    commentsIsland: {
+        position: 'absolute',
+        top: '30%',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: AppScreenBackgroundColor,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingTop: 16,
+        paddingBottom: 20,
+        paddingHorizontal: 4,
+        //backgroundColor: 'red',
+    },
+    commentsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+        paddingHorizontal: 16,
+    },
+    commentsHeaderRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    addCommentButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        backgroundColor: genBtnBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    commentsTitle: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+    },
+    commentsCount: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    commentsContent: {
+        flex: 1,
+        width: '100%',
+        //backgroundColor: 'red',
+    },
+    commentsContentContainer: {
+        paddingRight: '0%',
+        //backgroundColor: 'blue',
+    },
+    loadingMoreContainer: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingMoreText: {
+        marginTop: 8,
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+    },
+});
+
+export default LiveNews;
