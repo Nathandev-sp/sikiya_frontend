@@ -17,14 +17,18 @@ const AuthorProfileScreen = ({ route }) => {
     const [loading, setLoading] = useState(true);
     const [isNotPremiumUser, setIsNotPremiumUser] = useState(false);
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isOwnProfile, setIsOwnProfile] = useState(false);
 
-    // Function to check if current user follows this user
+    // Function to check if current user follows this user and if it's own profile
     const checkFollowStatus = async (targetUserId) => {
         try {
             const response = await SikiyaAPI.get(`/follow/check/${targetUserId}`);
+            // Backend now returns isOwnProfile
+            setIsOwnProfile(response.data.isOwnProfile || false);
             return response.data.isFollowing || false;
         } catch (err) {
             console.log('Error checking follow status:', err);
+            setIsOwnProfile(false);
             return false;
         }
     };
@@ -177,7 +181,7 @@ const AuthorProfileScreen = ({ route }) => {
                 {/* Profile Card */}
                 <View style={[styles.profileCard, main_Style.genButtonElevation]}>
                     {/* Name - Centered */}
-                    <Text style={styles.name}>{user.firstname} {user.lastname}</Text>
+                    <Text style={styles.name}>{user.displayName}</Text>
                     
                     {/* Image and Stats Row */}
                     <View style={styles.imageAndStatsRow}>
@@ -222,10 +226,20 @@ const AuthorProfileScreen = ({ route }) => {
                     {/* Follow Button and Share Button Row */}
                     <View style={styles.buttonRow}>
                         <View style={[styles.followButtonContainer, main_Style.genButtonElevation]}>
-                            <FollowButton 
-                                initialFollowed={isFollowing}
-                                onToggle={handleFollowToggle}
-                            />
+                            {isOwnProfile ? (
+                                <TouchableOpacity 
+                                    style={styles.selfProfileButton}
+                                    activeOpacity={0.8}
+                                    disabled
+                                >
+                                    <Text style={styles.selfProfileText}>Self Profile</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <FollowButton 
+                                    initialFollowed={isFollowing}
+                                    onToggle={handleFollowToggle}
+                                />
+                            )}
                         </View>
                         <TouchableOpacity 
                             style={[styles.shareButton, main_Style.genButtonElevation]}
@@ -590,6 +604,32 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: generalLineHeight,
         paddingHorizontal: 16,
+    },
+    selfProfileButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: MainBrownSecondaryColor,
+        borderWidth: 1,
+        borderColor: MainBrownSecondaryColor,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 120,
+        shadowColor: MainBrownSecondaryColor,
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    selfProfileText: {
+        fontWeight: '600',
+        fontSize: 12,
+        fontFamily: generalTextFont,
+        letterSpacing: 0.3,
+        color: '#FFFFFF',
     },
 });
 

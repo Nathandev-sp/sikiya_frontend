@@ -35,12 +35,14 @@ import { Context as AuthContext } from '../Context/AuthContext';
 import { useRewardedAd } from '../Components/Ads/RewardedAd';
 import RewardedAdModal from '../Components/Ads/RewardedAdModal';
 
-const LiveNews = ({ preloadedVideos }) => {
+const LiveNews = ({ preloadedVideos, route }) => {
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
+    const { videoId } = route?.params || {};
     const flatListRef = useRef(null);
     const navigation = useNavigation();
     const videoPlayersRef = useRef({});
+    const scrollToVideoIdRef = useRef(null); // Track if we need to scroll to a specific video
     
     // Auth context for user role
     const { state } = useContext(AuthContext);
@@ -87,7 +89,12 @@ const LiveNews = ({ preloadedVideos }) => {
             const newVideos = response.data.videos || [];
             
             if (append) {
-                setVideos(prevVideos => [...prevVideos, ...newVideos]);
+                // Filter out duplicates based on _id before appending
+                setVideos(prevVideos => {
+                    const existingIds = new Set(prevVideos.map(v => v._id));
+                    const uniqueVideos = newVideos.filter(v => v._id && !existingIds.has(v._id));
+                    return [...prevVideos, ...uniqueVideos];
+                });
             } else {
                 setVideos(newVideos);
             }
@@ -134,6 +141,41 @@ const LiveNews = ({ preloadedVideos }) => {
             fetchVideos(1, false);
         }
     }, [preloadedVideos, fetchVideos]);
+
+    // Handle scrolling to specific video when videoId is provided (from notification)
+    useEffect(() => {
+        const scrollToVideo = async () => {
+            if (!videoId || videos.length === 0 || !flatListRef.current) return;
+
+            // First, try to find the video in the current list
+            const videoIndex = videos.findIndex(v => v._id === videoId);
+            
+            if (videoIndex !== -1) {
+                // Video is already in the list, scroll to it
+                setTimeout(() => {
+                    flatListRef.current?.scrollToIndex({ index: videoIndex, animated: true });
+                    setCurrentVideoIndex(videoIndex);
+                }, 500); // Small delay to ensure list is rendered
+            } else {
+                // Video not in list, fetch it and add to the beginning
+                try {
+                    const response = await SikiyaAPI.get(`/video/${videoId}`);
+                    const video = response.data;
+                    // Add video to the beginning of the list
+                    setVideos(prev => [video, ...prev]);
+                    // Scroll to index 0
+                    setTimeout(() => {
+                        flatListRef.current?.scrollToIndex({ index: 0, animated: true });
+                        setCurrentVideoIndex(0);
+                    }, 500);
+                } catch (error) {
+                    console.error('Error fetching video:', error);
+                }
+            }
+        };
+
+        scrollToVideo();
+    }, [videoId, videos]);
 
     // Handle scroll to change current video and load more when near end
     const onViewableItemsChanged = useRef(({ viewableItems }) => {

@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import FollowButton from '../Components/FollowButton';
-import { articleTitleColor, articleTitleFont, cardBackgroundColor, genBtnBackgroundColor, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainBrownColor, secCardBackgroundColor, withdrawnTitleColor } from "../styles/GeneralAppStyle";
+import { articleTitleColor, articleTitleFont, cardBackgroundColor, genBtnBackgroundColor, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainBrownColor, secCardBackgroundColor, withdrawnTitleColor, MainBrownSecondaryColor } from "../styles/GeneralAppStyle";
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../utils/imageUrl';
+import SikiyaAPI from '../../API/SikiyaAPI';
 
 const PeopleDisplay = ({ journalist, onFollowToggle }) => {
     const { width, height } = useWindowDimensions();
@@ -26,6 +27,7 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
     const lastname = journalist.lastname || "";
     const role = formatRole(journalist.role);
     const isFollowing = journalist.isFollowing || false;
+    const isOwnProfile = journalist.isOwnProfile || false;
     
     // Get profile picture URL or use default
     const profilePicture = journalist.profile_picture 
@@ -39,7 +41,7 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
     }
 
     const handleFollowToggle = () => {
-        if (onFollowToggle) {
+        if (onFollowToggle && !isOwnProfile) {
             onFollowToggle(journalist._id, isFollowing);
         }
     }
@@ -73,10 +75,20 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
                 
                 {/* Follow Button - Far Right */}
                 <View style={styles.rightSection}>
-                    <FollowButton 
-                        initialFollowed={isFollowing}
-                        onToggle={handleFollowToggle}
-                    />
+                    {isOwnProfile ? (
+                        <TouchableOpacity 
+                            style={styles.selfProfileButton}
+                            activeOpacity={0.8}
+                            disabled
+                        >
+                            <Text style={styles.selfProfileText}>Self Profile</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <FollowButton 
+                            initialFollowed={isFollowing}
+                            onToggle={handleFollowToggle}
+                        />
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -156,6 +168,32 @@ const styles = StyleSheet.create({
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+    },
+    selfProfileButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: MainBrownSecondaryColor,
+        borderWidth: 1,
+        borderColor: MainBrownSecondaryColor,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 120,
+        shadowColor: MainBrownSecondaryColor,
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.08,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    selfProfileText: {
+        fontWeight: '600',
+        fontSize: 12,
+        fontFamily: generalTextFont,
+        letterSpacing: 0.3,
+        color: '#FFFFFF',
     },
 });
 

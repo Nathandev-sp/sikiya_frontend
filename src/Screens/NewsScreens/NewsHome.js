@@ -279,9 +279,11 @@ const createStyles = (height) => StyleSheet.create({
 });
 
 const NewsHome = ({ route }) => {
-    const { article } = route.params;
+    const { article: articleParam, articleId } = route.params || {};
     // Log article journalist data to debug trust score
     //console.log('Article journalist data:', article);
+    const [article, setArticle] = useState(articleParam);
+    const [isLoadingArticle, setIsLoadingArticle] = useState(false);
     const [commentLoading, setCommentLoading] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
@@ -295,8 +297,28 @@ const NewsHome = ({ route }) => {
     const styles = createStyles(height);
     const navigation = useNavigation();
 
+    // Fetch article by ID if articleId is provided but article is not
+    useEffect(() => {
+        const fetchArticleById = async () => {
+            if (articleId && !article) {
+                setIsLoadingArticle(true);
+                try {
+                    const response = await SikiyaAPI.get(`/articles/${articleId}`);
+                    setArticle(response.data);
+                } catch (error) {
+                    console.error('Error fetching article:', error);
+                    // Optionally show error message or navigate back
+                } finally {
+                    setIsLoadingArticle(false);
+                }
+            }
+        };
+
+        fetchArticleById();
+    }, [articleId, article]);
+
     // Get article_other_images directly from the article prop
-    const articleOtherImages = article.article_other_images || [];
+    const articleOtherImages = article?.article_other_images || [];
 
     const onViewRef = useRef(({ viewableItems }) => {
         if (viewableItems.length > 0) {
@@ -422,7 +444,21 @@ const NewsHome = ({ route }) => {
         };
     }, [article?._id]);
 
-    console.log('Fetched article:', article);
+    //console.log('Fetched article:', article);
+
+    // Show loading state while fetching article
+    if (isLoadingArticle) {
+        return (
+            <SafeAreaView style={main_Style.safeArea}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
+                    <Text style={{ marginTop: 16, fontSize: 16, color: generalTextColor }}>
+                        Loading article...
+                    </Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     if (!article) {
         return (
@@ -449,7 +485,7 @@ const NewsHome = ({ route }) => {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
-            <BannerAdComponent />
+            
             <ScrollView
                 style={styles.scrollViewContainer}
                 contentContainerStyle={{ flexGrow: 1 }}
@@ -556,6 +592,7 @@ const NewsHome = ({ route }) => {
 
                 {/* Content Section with Rounded Top */}
                 <View style={styles.contentSection}>
+                    
                     {/* Source/Author Info */}
                     <View style={styles.sourceContainer}>
                         <TouchableOpacity
@@ -611,6 +648,7 @@ const NewsHome = ({ route }) => {
                     </View>
 
                     {/* Article Highlight (Summary/Major Idea) */}
+                    
                     <View style={styles.highlightSection}>
                         <Text style={styles.highlightLabel}>Highlights</Text>
                         <Text style={styles.highlightText}>{article.article_highlight}</Text>
@@ -642,6 +680,7 @@ const NewsHome = ({ route }) => {
                     </View>
                 </View>
             </ScrollView>
+            <BannerAdComponent position="bottom" />
         </View>
     );
 };

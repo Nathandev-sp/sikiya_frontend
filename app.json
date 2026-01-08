@@ -13,13 +13,23 @@
       "backgroundColor": "#F0F0F0"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sikiya.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.sikiya.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,7 +37,26 @@
     "plugins": [
       "expo-font",
       "expo-video",
-      "react-native-google-mobile-ads"
-    ]
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-4209533645500238~3629996423"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.png",
+          "color": "#04698F",
+          "sounds": []
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "960ca8c8-7e44-4e44-9c92-f52c3fc09da2"
+      }
+    }
   }
 }

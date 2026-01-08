@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginRight: 16,
     marginTop: 2,
-    marginBottom: 2,
-    paddingVertical: 8,
+    marginBottom: 6,
+    paddingVertical: 0,
     //backgroundColor: 'red',
   },
   logo: {

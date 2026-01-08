@@ -11,7 +11,7 @@ const AppPreloadingScreen = () => {
       <StatusBar barStyle={"light-content"} />
       <View style={styles.logoContainer}>
         <Image 
-          source={require("../../assets/SikiyaLogoV2/Nathan's Approved Sikiya Logo NB Brown.png")}
+          source={require("../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
           style={[styles.logo]}
           resizeMode="contain"
         />

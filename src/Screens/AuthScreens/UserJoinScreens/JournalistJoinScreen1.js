@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +15,9 @@ import VerticalSpacer from "../../../Components/UI/VerticalSpacer";
 const JournalistJoinScreen1 = ({ navigation }) => {
   const { height, width } = useWindowDimensions();
   const scrollRef = useRef(null);
+  const firstNameInputRef = useRef(null);
+  const lastNameInputRef = useRef(null);
+  const phoneNumberInputRef = useRef(null);
 
   // Form input for all the data
   const [journalistFormData, setJournalistFormData] = useState({
@@ -35,6 +38,14 @@ const JournalistJoinScreen1 = ({ navigation }) => {
   const [firstNameFocused, setFirstNameFocused] = useState(false);
   const [lastNameFocused, setLastNameFocused] = useState(false);
   const [phoneNumberFocused, setPhoneNumberFocused] = useState(false);
+
+  // Function to dismiss keyboard and blur all inputs
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+    firstNameInputRef.current?.blur();
+    lastNameInputRef.current?.blur();
+    phoneNumberInputRef.current?.blur();
+  };
 
   const handleFormChanges = (key, value) => {
     setJournalistFormData({ ...journalistFormData, [key]: value });
@@ -123,6 +134,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                 ]}>
                   <Ionicons name="person-outline" style={auth_Style.authLogo}/>
                   <TextInput
+                    ref={firstNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your first name"
@@ -148,6 +160,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                 ]}>
                   <Ionicons name="person-outline" style={auth_Style.authLogo}/>
                   <TextInput
+                    ref={lastNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your last name"
@@ -171,6 +184,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   onSelect={date => handleFormChanges('dob', date)}
                   error={error.dob}
                   label="Date of Birth"
+                  onOpen={dismissKeyboard}
                 />
               </View>
 
@@ -184,6 +198,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                       onSelect={code => handleFormChanges('phoneCountryCode', code)}
                       error={error.phoneCountryCode}
                       placeholder="Code"
+                      onOpen={dismissKeyboard}
                     />
                   </View>
                   <View style={[
@@ -194,6 +209,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   ]}>
                     <Ionicons name="call-outline" style={auth_Style.authLogo}/>
                     <TextInput
+                      ref={phoneNumberInputRef}
                       style={auth_Style.input}
                       hitSlop={defaultButtonHitslop}
                       placeholder="Phone number"
@@ -233,6 +249,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   countryList={AllCountries}
                   error={error.country}
                   label="Country of residence"
+                  onOpen={dismissKeyboard}
                 />
               </View>
 
@@ -246,6 +263,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   error={error.city}
                   label="City of residence"
                   placeholder="Select your city"
+                  onOpen={dismissKeyboard}
                 />
               </View>
 
@@ -258,6 +276,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   countryList={AfricanCountries}
                   error={error.countryOfInterest}
                   label="African Country of Interest"
+                  onOpen={dismissKeyboard}
                 />
               </View>
 

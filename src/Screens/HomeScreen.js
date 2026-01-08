@@ -21,7 +21,18 @@ const HomeScreen = ({route}) => {
     const preloadedHeadlines = route?.params?.preloadedHeadlines;
 
     // Making the API Request ------------------ /top-headlines
-    const [articles, setArticles] = useState(preloadedHomeArticles || []);
+    // Cache articles per category to prevent disappearing during transitions
+    const [articlesByCategory, setArticlesByCategory] = useState({
+        'Explore': preloadedHomeArticles || [],
+        'Politics': [],
+        'Economy': [],
+        'Social': [],
+        'Tech': [],
+        'Business': [],
+        'Sports': [],
+        'Culture': [],
+        'World': [],
+    });
     const [loading, setLoading] = useState(!preloadedHomeArticles);
     const [showLoader, setShowLoader] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -31,6 +42,9 @@ const HomeScreen = ({route}) => {
     
     // Get headline article IDs to exclude from main list
     const headlineArticleIds = useRef(new Set());
+    
+    // Get current articles for selected category
+    const articles = articlesByCategory[selectedCategory] || [];
     
     // Extract headline IDs from preloaded headlines
     useEffect(() => {
@@ -100,7 +114,11 @@ const HomeScreen = ({route}) => {
                 return isUnique && notInHeadlines;
             });
             
-            setArticles(uniqueArticles);
+            // Update articles cache for this category
+            setArticlesByCategory(prev => ({
+                ...prev,
+                [category]: uniqueArticles
+            }));
             
             // Reset pagination for this category
             setCategoryPages(prev => ({
@@ -150,10 +168,14 @@ const HomeScreen = ({route}) => {
                     !headlineArticleIds.current.has(a._id)
                 );
                 
-                setArticles(prev => {
-                    const existingIds = new Set(prev.map(a => a._id));
+                setArticlesByCategory(prev => {
+                    const currentArticles = prev[category] || [];
+                    const existingIds = new Set(currentArticles.map(a => a._id));
                     const uniqueNewArticles = newArticles.filter(a => !existingIds.has(a._id));
-                    return [...prev, ...uniqueNewArticles];
+                    return {
+                        ...prev,
+                        [category]: [...currentArticles, ...uniqueNewArticles]
+                    };
                 });
                 
                 // Update page number for this category
@@ -180,13 +202,13 @@ const HomeScreen = ({route}) => {
         } finally {
             setLoadingMore(false);
         }
-    }, [loadingMore, hasMoreByCategory, categoryPages, selectedCategory]);
+    }, [loadingMore, hasMoreByCategory, categoryPages]);
 
     //------------------------------------------
 
     const HomeHeaderHeight = scrollY.interpolate({
         inputRange: [0, 200],
-        outputRange: [330, 0],
+        outputRange: [320, 0],
         extrapolate: 'clamp',
     });
 
@@ -210,19 +232,28 @@ const HomeScreen = ({route}) => {
             clearTimeout(loaderTimeoutRef.current);
         }
         
-        // Smooth transition - update category immediately
+        // Smooth transition - update category immediately (this will show cached articles if available)
         setSelectedCategory(categoryName);
-        setLoading(true);
-        setShowLoader(false); // Reset loader visibility
         
-        // Delay showing loader by 300ms for smooth transition
-        loaderTimeoutRef.current = setTimeout(() => {
-            if (loading) {
+        // Check if we already have articles for this category
+        const hasCachedArticles = articlesByCategory[categoryName] && articlesByCategory[categoryName].length > 0;
+        
+        if (!hasCachedArticles) {
+            // Only show loading if we don't have cached articles
+            setLoading(true);
+            setShowLoader(false); // Reset loader visibility
+            
+            // Delay showing loader by 300ms for smooth transition
+            loaderTimeoutRef.current = setTimeout(() => {
                 setShowLoader(true);
-            }
-        }, 300);
+            }, 300);
+        } else {
+            // We have cached articles, no need to show loader
+            setLoading(false);
+            setShowLoader(false);
+        }
         
-        // Fetch articles for the selected category
+        // Fetch articles for the selected category (will update cache)
         await fetchTopHeadlines(categoryName, false);
     };
 
@@ -240,7 +271,11 @@ const HomeScreen = ({route}) => {
                 !headlineArticleIds.current.has(article._id)
             );
             
-            setArticles(filteredArticles);
+            // Update articles cache for this category
+            setArticlesByCategory(prev => ({
+                ...prev,
+                [selectedCategory]: filteredArticles
+            }));
             
             // Reset pagination
             setCategoryPages(prev => ({
@@ -263,23 +298,14 @@ const HomeScreen = ({route}) => {
 
     // Get articles for selected category (excluding headline articles)
     const getCategoryArticles = useCallback(() => {
-        let filteredArticles;
-        
-        // For Explore, show all articles (no filtering by article_group)
-        if (selectedCategory === 'Explore') {
-            filteredArticles = articles;
-        } else {
-            // Filter articles by article_group
-            filteredArticles = articles.filter(article => {
-                return article.article_group === selectedCategory;
-            });
-        }
+        // Get articles from cache for the selected category
+        const categoryArticles = articlesByCategory[selectedCategory] || [];
         
         // Exclude articles that are in headlines
-        return filteredArticles.filter(article => {
+        return categoryArticles.filter(article => {
             return !headlineArticleIds.current.has(article._id);
         });
-    }, [articles, selectedCategory]);
+    }, [articlesByCategory, selectedCategory]);
 
     // Handle infinite scroll
     const handleLoadMore = useCallback(() => {

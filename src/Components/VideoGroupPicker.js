@@ -13,12 +13,20 @@ const VideoGroupPicker = ({
   error,
   containerStyle,
   inputStyle,
+  onOpen,
 }) => {
   const { height } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
 
   const handleCancel = () => {
     setVisible(false);
+  };
+
+  const handleOpen = () => {
+    if (onOpen) {
+      onOpen();
+    }
+    setVisible(true);
   };
 
   return (
@@ -29,7 +37,7 @@ const VideoGroupPicker = ({
           containerStyle,
           error && auth_Style.inputErrorCont,
         ]}
-        onPress={() => setVisible(true)}
+        onPress={handleOpen}
         activeOpacity={0.8}
       >
         <Ionicons name="grid-outline" style={auth_Style.authLogo} />

@@ -7,7 +7,7 @@ import DateConverter from '../src/Helpers/DateConverter';
 import SikiyaAPI from '../API/SikiyaAPI';
 import { getImageUrl } from '../src/utils/imageUrl';
 
-const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, showSubComments}) => {
+const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, showSubComments, showDeleteButton, onDelete}) => {
 
     const navigation = useNavigation()
     const [reaction, setReaction] = useState('none');
@@ -55,8 +55,10 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
 
     const goToAuthorProfile = () => {
         navigation.navigate('AuthorProfile', {userId: comment.comment_author_id._id})
-        console.log("Comment author ID:", comment.comment_author_id._id);
+        //console.log("Comment author ID:", comment.comment_author_id._id);
     }
+
+    //console.log("Comment author:", comment.comment_author_id);
     
 
     return(
@@ -76,9 +78,18 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
                     onPress={goToAuthorProfile}
                     hitSlop={defaultButtonHitslop}
                 >
-                    <Text style={styles.authorName}>{comment.comment_author_id.firstname} {comment.comment_author_id.lastname}</Text>
+                    <Text style={styles.authorName}>{comment.comment_author_id.displayName}</Text>
                     <Text style={styles.datePosted}>{DateConverter(comment.created_on)}</Text>
                 </TouchableOpacity>
+                {showDeleteButton && onDelete && (
+                    <TouchableOpacity 
+                        style={styles.deleteButton}
+                        onPress={onDelete}
+                        hitSlop={defaultButtonHitslop}
+                    >
+                        <Ionicons name="trash-outline" size={20} color="#E74C3C" />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.commentTextContainer}>
@@ -285,6 +296,10 @@ const styles = StyleSheet.create({
         color: '#28A745',
         fontFamily: generalTitleFont,
         marginLeft: 4,
+    },
+    deleteButton: {
+        padding: 8,
+        marginLeft: 8,
     },
 });
 

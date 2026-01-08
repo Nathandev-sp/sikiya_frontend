@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, TextInput, Switch, Linking, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleTextSize, articleTitleSize, auth_Style, cardBackgroundColor, commentTextSize, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, largeTextSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
@@ -20,6 +20,13 @@ const ProfileSettingScreen = () => {
     const navigation = useNavigation();
     const { state } = useContext(AuthContext);
     const { firstname: initialFirstname, lastname: initialLastname } = route.params || {};
+    const scrollViewRef = useRef(null);
+    const displayNameInputRef = useRef(null);
+    const biographyInputRef = useRef(null);
+    const areaOfExpertiseInputRef = useRef(null);
+    const displayNameContainerRef = useRef(null);
+    const biographyContainerRef = useRef(null);
+    const areaOfExpertiseContainerRef = useRef(null);
 
     const [firstname, setFirstname] = useState(initialFirstname || '');
     const [lastname, setLastname] = useState(initialLastname || '');
@@ -32,8 +39,14 @@ const ProfileSettingScreen = () => {
     const [showVerificationInfo, setShowVerificationInfo] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     const [profileImageKey, setProfileImageKey] = useState(null);
+    const [profileImageVersion, setProfileImageVersion] = useState(Date.now()); // Cache-busting version
     const [uploadingImage, setUploadingImage] = useState(false);
     const [userRole, setUserRole] = useState(null);
+    
+    // Focus states for inputs
+    const [displayNameFocused, setDisplayNameFocused] = useState(false);
+    const [biographyFocused, setBiographyFocused] = useState(false);
+    const [areaOfExpertiseFocused, setAreaOfExpertiseFocused] = useState(false);
 
     //Adding states for loading and error handling can be done here
     const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +101,8 @@ const ProfileSettingScreen = () => {
             });
 
             setProfileImageKey(response.data.imageKey);
+            // Update version to force image refresh (cache-busting)
+            setProfileImageVersion(Date.now());
             console.log('Profile image uploaded successfully');
             console.log('Profile image key:', response.data.imageKey);
             console.log('Profile image URL:', response.data.imageUrl);
@@ -272,7 +287,11 @@ const ProfileSettingScreen = () => {
                 <GoBackButton />
             </View>
             
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                ref={scrollViewRef}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 
                 {/* Header Section */}
                 <View style={styles.headerSection}>
@@ -287,9 +306,15 @@ const ProfileSettingScreen = () => {
                                 <SmallLoadingState />
                             ) : profileImageKey ? (
                                 <Image 
-                                    key={profileImageKey}
-                                    source={{ uri: getImageUrl(profileImageKey) }}
-                                    style={styles.profileImage} 
+                                    key={`${profileImageKey}-${profileImageVersion}`}
+                                    source={{ 
+                                        uri: `${getImageUrl(profileImageKey)}?v=${profileImageVersion}`,
+                                        cache: 'reload'
+                                    }}
+                                    style={styles.profileImage}
+                                    onError={(error) => {
+                                        console.log('Image load error:', error);
+                                    }}
                                 />
                             ) : (
                                 <Image 
@@ -358,16 +383,20 @@ const ProfileSettingScreen = () => {
                     <VerticalSpacer height={20} />
 
                     {/* Display Name (editable when toggle is OFF) */}
-                    <View style={styles.inputGroup}>
+                    <View style={styles.inputGroup} ref={displayNameContainerRef}>
                         <Text style={styles.label}>Display Name</Text>
                         {useFullNameAsDisplay ? (
                             <View style={[styles.input, styles.disabledInput]}>
                                 <Text style={styles.disabledInputText}>{displayName || 'Not set'}</Text>
                             </View>
                         ) : (
-                            <View style={styles.inputContainer}>
+                            <View style={[
+                                styles.inputContainer,
+                                displayNameFocused && styles.inputFocused
+                            ]}>
                                 <Ionicons name="at-outline" style={styles.inputIcon} />
                                 <TextInput
+                                    ref={displayNameInputRef}
                                     style={styles.inputText}
                                     value={customDisplayName}
                                     onChangeText={setCustomDisplayName}
@@ -375,6 +404,14 @@ const ProfileSettingScreen = () => {
                                     placeholderTextColor="#999"
                                     autoCapitalize="none"
                                     hitSlop={defaultButtonHitslop}
+                                    onFocus={() => {
+                                        setDisplayNameFocused(true);
+                                        // Scroll to a specific position to bring input into view
+                                        setTimeout(() => {
+                                            scrollViewRef.current?.scrollTo({ y: 200, animated: true });
+                                        }, 300);
+                                    }}
+                                    onBlur={() => setDisplayNameFocused(false)}
                                 />
                             </View>
                         )}
@@ -401,10 +438,15 @@ const ProfileSettingScreen = () => {
                     </View>
 
                     {/* Biography */}
-                    <View style={styles.inputGroup}>
+                    <View style={styles.inputGroup} ref={biographyContainerRef}>
                         <Text style={styles.label}>Biography</Text>
                         <TextInput
-                            style={[styles.input, styles.textArea]}
+                            ref={biographyInputRef}
+                            style={[
+                                styles.input, 
+                                styles.textArea,
+                                biographyFocused && styles.inputFocused
+                            ]}
                             value={biography}
                             onChangeText={setBiography}
                             placeholder="Tell us about yourself..."
@@ -412,6 +454,14 @@ const ProfileSettingScreen = () => {
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
+                            onFocus={() => {
+                                setBiographyFocused(true);
+                                // Scroll to a specific position to bring input into view
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollTo({ y: 400, animated: true });
+                                }, 300);
+                            }}
+                            onBlur={() => setBiographyFocused(false)}
                         />
                         <Text style={styles.helperText}>
                             Share your story, interests, or background ({biography.length}/500)
@@ -421,10 +471,15 @@ const ProfileSettingScreen = () => {
                    
 
                     {/* Area of Expertise */}
-                    <View style={styles.inputGroup}>
+                    <View style={styles.inputGroup} ref={areaOfExpertiseContainerRef}>
                         <Text style={styles.label}>Area of Expertise</Text>
                         <TextInput
-                            style={[styles.input, styles.textArea]}
+                            ref={areaOfExpertiseInputRef}
+                            style={[
+                                styles.input, 
+                                styles.textArea,
+                                areaOfExpertiseFocused && styles.inputFocused
+                            ]}
                             value={areaOfExpertise}
                             onChangeText={setAreaOfExpertise}
                             placeholder="What are your areas of expertise?"
@@ -432,6 +487,14 @@ const ProfileSettingScreen = () => {
                             multiline
                             numberOfLines={3}
                             textAlignVertical="top"
+                            onFocus={() => {
+                                setAreaOfExpertiseFocused(true);
+                                // Scroll to a specific position to bring input into view
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollTo({ y: 600, animated: true });
+                                }, 300);
+                            }}
+                            onBlur={() => setAreaOfExpertiseFocused(false)}
                         />
                         <Text style={styles.helperText}>
                             List your professional skills, knowledge areas, or interests ({areaOfExpertise.length}/300)
@@ -660,8 +723,8 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
     },
     input: {
-        backgroundColor: secCardBackgroundColor,
-        borderRadius: 4,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
         fontSize: generalTextSize,
@@ -673,8 +736,8 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: secCardBackgroundColor,
-        borderRadius: 4,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e0e0e0',
         paddingHorizontal: 12,
@@ -696,8 +759,13 @@ const styles = StyleSheet.create({
         maxHeight: 150,
         paddingTop: 10,
     },
+    inputFocused: {
+        borderColor: '#2BA1E6',
+        borderWidth: 1.5,
+        backgroundColor: '#F0F6FA',
+    },
     disabledInput: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: "#FFFFFF",
     },
     disabledInputText: {
         color: '#666',

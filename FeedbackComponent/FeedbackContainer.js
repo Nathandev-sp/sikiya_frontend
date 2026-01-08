@@ -33,6 +33,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             }
         };
         if (articleId || videoId) fetchComments();
+        
     }, [articleId, videoId, refreshKey]);
 
     if (loading || commentLoading) {
@@ -46,7 +47,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
         );
     }
 
-    //console.log('Fetched comments:', comments);
+    console.log('Fetched comments:', comments);
 
     const commentCount = comments.length;
     const formattedCount = commentCount >= 1000 ? `${(commentCount / 1000).toFixed(1)}k` : commentCount.toString();

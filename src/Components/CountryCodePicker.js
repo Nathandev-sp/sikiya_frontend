@@ -105,6 +105,7 @@ const CountryCodePicker = ({
   error,
   containerStyle,
   inputStyle,
+  onOpen,
 }) => {
   const { height } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
@@ -144,7 +145,10 @@ const CountryCodePicker = ({
           containerStyle,
           error && auth_Style.inputErrorCont,
         ]}
-        onPress={() => setVisible(true)}
+        onPress={() => {
+          if (onOpen) onOpen();
+          setVisible(true);
+        }}
         activeOpacity={0.8}
       >
         <Ionicons name="call-outline" style={auth_Style.authLogo} />

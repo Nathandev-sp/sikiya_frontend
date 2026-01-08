@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, StatusBar} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import SikiyaAPI from '../../../API/SikiyaAPI';
@@ -292,10 +292,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={main_Style.safeArea} edges={['top']}>
       <StatusBar barStyle={"dark-content"} />
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
         <ScrollView 
           ref={scrollRef}
           style={styles.scrollView}
@@ -386,6 +382,16 @@ const NewArticleImageScreen = ({ navigation, route }) => {
               <Text style={styles.proofTitle}>Proof</Text>
             </View>
 
+            {/* Disclaimer Text */}
+            <View style={styles.disclaimerContainer}>
+              <Text style={styles.disclaimerText}>
+                • Please ensure that every article you submit meets the highest standards of accuracy and quality{'\n'}
+                • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
+                • Every article will undergo a review and evaluation process before being published{'\n'}
+                • Article submissions are final. Submitting low-quality or inaccurate content may negatively impact your trust score and reduce the visibility of your future articles.
+              </Text>
+            </View>
+
             {/* Proof Photo */}
             <TouchableOpacity 
               style={[
@@ -435,7 +441,10 @@ const NewArticleImageScreen = ({ navigation, route }) => {
                 textAlignVertical="top"
                 onFocus={() => {
                   setProofTextFocused(true);
-                  scrollRef.current?.scrollTo({ y: 600, animated: true });
+                  // Scroll to a specific position to bring input into view
+                  setTimeout(() => {
+                    scrollRef.current?.scrollTo({ y: 600, animated: true });
+                  }, 300);
                 }}
                 onBlur={() => setProofTextFocused(false)}
               />
@@ -454,7 +463,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -505,7 +513,7 @@ const styles = StyleSheet.create({
   mainPhotoContainer: {
     width: '100%',
     aspectRatio: 1.25 / 0.8, // 1.25 width : 0.8 height ratio
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
@@ -528,7 +536,7 @@ const styles = StyleSheet.create({
   additionalPhotoContainer: {
     flex: 1,
     height: 100,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
@@ -542,7 +550,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
   },
   photoPlaceholderText: {
     marginTop: 8,
@@ -572,10 +580,24 @@ const styles = StyleSheet.create({
     color: generalTitleColor,
     marginLeft: 8,
   },
+  disclaimerContainer: {
+    backgroundColor: lightBannerBackgroundColor,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: MainBrownSecondaryColor,
+  },
+  disclaimerText: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: generalTextColor,
+    lineHeight: 20,
+  },
   proofPhotoContainer: {
     width: '100%',
     aspectRatio: 1.25 / 0.8, // 1.25 width : 0.8 height ratio
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -587,7 +609,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   textArea: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
     fontSize: generalTextSize,

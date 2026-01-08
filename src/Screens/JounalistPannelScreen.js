@@ -71,7 +71,12 @@ const JounalistPannelScreen = ({ navigation }) => {
       const newSubmissions = data.submissions || data || [];
       
       if (append) {
-        setSubmissions(prev => [...prev, ...newSubmissions]);
+        // Filter out duplicates based on _id before appending
+        setSubmissions(prev => {
+          const existingIds = new Set(prev.map(s => s._id));
+          const uniqueSubmissions = newSubmissions.filter(s => s._id && !existingIds.has(s._id));
+          return [...prev, ...uniqueSubmissions];
+        });
       } else {
         setSubmissions(newSubmissions);
       }

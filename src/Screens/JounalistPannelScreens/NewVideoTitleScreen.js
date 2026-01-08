@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style} from '../../styles/GeneralAppStyle';
@@ -14,6 +14,7 @@ import SikiyaAPI from '../../../API/SikiyaAPI';
 
 const NewVideoTitleScreen = ({ navigation }) => {
   const scrollRef = useRef(null);
+  const titleInputRef = useRef(null);
   
   // Form data state
   const [videoData, setVideoData] = useState({
@@ -25,6 +26,17 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
   // Focus states for inputs
   const [titleFocused, setTitleFocused] = useState(false);
+
+  // Function to dismiss keyboard and blur all inputs
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+    titleInputRef.current?.blur();
+  };
+
+  // Word count helper
+  const getWordCount = (text) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
 
   // Error states for validation
   const [errors, setErrors] = useState({});
@@ -62,11 +74,21 @@ const NewVideoTitleScreen = ({ navigation }) => {
       }
     });
 
+    // Validate title word count (minimum 8 words)
+    const titleWordCount = getWordCount(videoData.videoTitle);
+    if (titleWordCount < 8) {
+      newErrors.videoTitle = true;
+    }
+
     setErrors(newErrors);
 
     // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields');
+      if (titleWordCount < 8 && videoData.videoTitle) {
+        Alert.alert('Title Too Short', 'Video title must be at least 8 words long.');
+      } else {
+        Alert.alert('Missing Fields', 'Please fill in all required fields');
+      }
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
@@ -156,14 +178,20 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
           {/* Video Title Input */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Video Title</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>Video Title</Text>
+              <Text style={styles.wordCount}>
+                {getWordCount(videoData.videoTitle)} words (min: 8)
+              </Text>
+            </View>
             <TextInput
+              ref={titleInputRef}
               style={[
                 styles.titleInput,
                 titleFocused && styles.inputFocused,
                 errors.videoTitle && styles.inputError
               ]}
-              placeholder="Enter video title"
+              placeholder="Enter video title (minimum 8 words)"
               placeholderTextColor={withdrawnTitleColor}
               value={videoData.videoTitle}
               onChangeText={(text) => handleFormChange('videoTitle', text)}
@@ -185,6 +213,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
               placeholder="Select country"
               label="Country"
               error={errors.country}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -198,6 +227,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
               placeholder="Select city"
               label="City"
               error={errors.city}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -210,6 +240,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
               placeholder="Select video category"
               label="Video Category"
               error={errors.videoGroup}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -266,15 +297,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 20,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   label: {
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
     color: generalTitleColor,
-    marginBottom: 4,
+  },
+  wordCount: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
   },
   titleInput: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
     fontSize: articleTextSize,

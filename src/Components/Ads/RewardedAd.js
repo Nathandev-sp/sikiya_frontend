@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import { Context as AuthContext } from '../../Context/AuthContext';
 
 // Conditionally import AdMob (only if package is installed)
-let RewardedAd, RewardedAdEventType, TestIds;
+let RewardedAd, RewardedAdEventType, AdEventType, TestIds;
 try {
     const admob = require('react-native-google-mobile-ads');
     RewardedAd = admob.RewardedAd;
+    // Try to get RewardedAdEventType, fallback to AdEventType if it doesn't exist
     RewardedAdEventType = admob.RewardedAdEventType;
+    AdEventType = admob.AdEventType;
     TestIds = admob.TestIds;
 } catch (error) {
     // Package not installed or not available (e.g., in Expo Go)
     console.warn('react-native-google-mobile-ads not available:', error.message);
     RewardedAd = null;
     RewardedAdEventType = null;
+    AdEventType = null;
     TestIds = null;
 }
 
@@ -34,12 +38,24 @@ try {
  * }
  */
 export const useRewardedAd = (adUnitId) => {
+    const { state } = useContext(AuthContext);
+    const userRole = state?.role;
     const [rewardedAd, setRewardedAd] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    // Don't show ads for journalist, contributor, or admin
+    const adFreeRoles = ['journalist', 'contributor', 'admin'];
+    const shouldShowAds = !adFreeRoles.includes(userRole);
 
     useEffect(() => {
         // If AdMob is not available, don't set up ad
         if (!RewardedAd) {
+            return;
+        }
+
+        // Don't load ads for ad-free roles
+        if (!shouldShowAds) {
+            setIsLoaded(false);
             return;
         }
 
@@ -58,13 +74,21 @@ export const useRewardedAd = (adUnitId) => {
             requestNonPersonalizedAdsOnly: false,
         });
 
+        // Determine which event type to use - RewardedAdEventType if available, otherwise AdEventType
+        const EventType = (RewardedAdEventType && RewardedAdEventType.LOADED) ? RewardedAdEventType : AdEventType;
+        
+        if (!EventType || !EventType.LOADED || !EventType.CLOSED) {
+            console.warn('Ad event types not available or invalid');
+            return;
+        }
+
         // Listen for ad loaded event
-        const unsubscribeLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        const unsubscribeLoaded = ad.addAdEventListener(EventType.LOADED, () => {
             setIsLoaded(true);
         });
 
         // Listen for ad closed event (reload for next use)
-        const unsubscribeClosed = ad.addAdEventListener(RewardedAdEventType.CLOSED, () => {
+        const unsubscribeClosed = ad.addAdEventListener(EventType.CLOSED, () => {
             setIsLoaded(false);
             // Reload ad for next use
             ad.load();
@@ -80,31 +104,56 @@ export const useRewardedAd = (adUnitId) => {
             unsubscribeLoaded();
             unsubscribeClosed();
         };
-    }, [adUnitId]);
+    }, [adUnitId, shouldShowAds, userRole]); // Re-run if role changes
 
     const showRewardedAd = async () => {
+        // Don't show ads for ad-free roles
+        if (!shouldShowAds) {
+            return false;
+        }
+
         if (!RewardedAd || !rewardedAd || !isLoaded) {
             console.warn('Rewarded ad not available or not loaded yet');
             return false;
         }
 
         return new Promise((resolve) => {
-            // Listen for user earned reward
-            const unsubscribeEarned = rewardedAd.addAdEventListener(
-                RewardedAdEventType.EARNED_REWARD,
-                (reward) => {
-                    console.log('User earned reward:', reward);
-                    unsubscribeEarned();
-                    resolve(true);
-                }
-            );
+            // Determine which event type to use
+            const EventType = (RewardedAdEventType && RewardedAdEventType.LOADED) ? RewardedAdEventType : AdEventType;
+            
+            if (!EventType || !EventType.CLOSED) {
+                console.warn('Ad event types not available or invalid');
+                resolve(false);
+                return;
+            }
+
+            // Listen for user earned reward - use EARNED_REWARD if available in RewardedAdEventType
+            let unsubscribeEarned = null;
+            if (RewardedAdEventType && RewardedAdEventType.EARNED_REWARD) {
+                unsubscribeEarned = rewardedAd.addAdEventListener(
+                    RewardedAdEventType.EARNED_REWARD,
+                    (reward) => {
+                        console.log('User earned reward:', reward);
+                        if (unsubscribeEarned) unsubscribeEarned();
+                        resolve(true);
+                    }
+                );
+            } else {
+                // Fallback: if EARNED_REWARD doesn't exist, we'll resolve true when ad is shown
+                // (This is not ideal but prevents the error)
+                console.warn('EARNED_REWARD event type not available, using fallback');
+            }
 
             // Listen for ad closed without reward
             const unsubscribeClosed = rewardedAd.addAdEventListener(
-                RewardedAdEventType.CLOSED,
+                EventType.CLOSED,
                 () => {
+                    if (unsubscribeEarned) unsubscribeEarned();
                     unsubscribeClosed();
-                    resolve(false);
+                    // If we didn't get EARNED_REWARD event, assume user didn't complete the ad
+                    if (!RewardedAdEventType || !RewardedAdEventType.EARNED_REWARD) {
+                        resolve(false);
+                    }
                 }
             );
 

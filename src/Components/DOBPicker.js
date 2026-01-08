@@ -14,6 +14,7 @@ const DatePickerModal = ({
   inputStyle,
   minimumDate = new Date(1900, 0, 1),
   maximumDate = new Date(),
+  onOpen,
 }) => {
   const [visible, setVisible] = useState(false);
   const [tempDate, setTempDate] = useState(
@@ -77,7 +78,10 @@ const DatePickerModal = ({
             containerStyle,
             error && auth_Style.inputErrorCont,
           ]}
-          onPress={() => setVisible(true)}
+          onPress={() => {
+            if (onOpen) onOpen();
+            setVisible(true);
+          }}
           activeOpacity={0.8}
         >
           <Ionicons name="calendar-outline" style={auth_Style.authLogo} />

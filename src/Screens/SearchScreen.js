@@ -79,18 +79,24 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             // Check follow status for each journalist (they should already be filtered, but double-check)
             const journalistsWithFollowStatus = await Promise.all(journalists.map(async (journalist) => {
                 const userId = journalist._id;
-                if (!userId) return { ...journalist, isFollowing: false, role: 'journalist' };
+                if (!userId) return { ...journalist, isFollowing: false, isOwnProfile: false, role: 'journalist' };
                 
-                const isFollowing = await checkFollowStatus(userId);
+                const followResponse = await SikiyaAPI.get(`/follow/check/${userId}`);
                 return {
                     ...journalist,
-                    isFollowing: isFollowing,
+                    isFollowing: followResponse.data.isFollowing || false,
+                    isOwnProfile: followResponse.data.isOwnProfile || false,
                     role: 'journalist'
                 };
             }));
             
             if (append) {
-                setPeopleArray(prev => [...prev, ...journalistsWithFollowStatus]);
+                // Filter out duplicates based on _id before appending
+                setPeopleArray(prev => {
+                    const existingIds = new Set(prev.map(p => p._id));
+                    const newJournalists = journalistsWithFollowStatus.filter(j => !existingIds.has(j._id));
+                    return [...prev, ...newJournalists];
+                });
             } else {
                 setPeopleArray(journalistsWithFollowStatus);
             }
@@ -137,7 +143,12 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             const articles = data.articles || data || [];
             
             if (append) {
-                setArticlesArray(prev => [...prev, ...articles]);
+                // Filter out duplicates based on _id before appending
+                setArticlesArray(prev => {
+                    const existingIds = new Set(prev.map(a => a._id));
+                    const newArticles = articles.filter(a => a._id && !existingIds.has(a._id));
+                    return [...prev, ...newArticles];
+                });
             } else {
                 setArticlesArray(articles);
             }
@@ -172,7 +183,12 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             const articles = data.articles || data || [];
             
             if (append) {
-                setArticlesArray(prev => [...prev, ...articles]);
+                // Filter out duplicates based on _id before appending
+                setArticlesArray(prev => {
+                    const existingIds = new Set(prev.map(a => a._id));
+                    const newArticles = articles.filter(a => a._id && !existingIds.has(a._id));
+                    return [...prev, ...newArticles];
+                });
             } else {
                 setArticlesArray(articles);
                 setHasSearched(true);
@@ -211,18 +227,24 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             // Check follow status for each journalist (they should already be filtered, but double-check)
             const journalistsWithFollowStatus = await Promise.all(journalists.map(async (journalist) => {
                 const userId = journalist._id;
-                if (!userId) return { ...journalist, isFollowing: false, role: 'journalist' };
+                if (!userId) return { ...journalist, isFollowing: false, isOwnProfile: false, role: 'journalist' };
                 
-                const isFollowing = await checkFollowStatus(userId);
+                const followResponse = await SikiyaAPI.get(`/follow/check/${userId}`);
                 return {
                     ...journalist,
-                    isFollowing: isFollowing,
+                    isFollowing: followResponse.data.isFollowing || false,
+                    isOwnProfile: followResponse.data.isOwnProfile || false,
                     role: 'journalist'
                 };
             }));
             
             if (append) {
-                setPeopleArray(prev => [...prev, ...journalistsWithFollowStatus]);
+                // Filter out duplicates based on _id before appending
+                setPeopleArray(prev => {
+                    const existingIds = new Set(prev.map(p => p._id));
+                    const newJournalists = journalistsWithFollowStatus.filter(j => j._id && !existingIds.has(j._id));
+                    return [...prev, ...newJournalists];
+                });
             } else {
                 setPeopleArray(journalistsWithFollowStatus);
                 setHasSearched(true);

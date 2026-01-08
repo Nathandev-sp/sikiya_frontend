@@ -61,6 +61,12 @@ const SettingsScreen = () => {
             description: 'Change app language'
         },
         {
+            title: 'Notification Preferences',
+            icon: <Ionicons name="notifications-outline" size={24} />,
+            onPress: () => navigation.navigate('NotificationPreferences', { firstname, lastname }),
+            description: 'Manage your notification settings'
+        },
+        {
             title: 'Help & Support',
             icon: <Ionicons name="help-circle-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('HelpSupportSettings', { firstname, lastname }),

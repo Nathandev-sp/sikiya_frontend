@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback, useRef} from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight } from '../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ const UserProfileScreen = ({route}) => {
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [imageVersion, setImageVersion] = useState(Date.now()); // Cache-busting version
     const isFirstMount = useRef(true);
 
     // Get preloaded user profile data from route params
@@ -46,6 +47,8 @@ const UserProfileScreen = ({route}) => {
         try {
             const response = await SikiyaAPI.get('/user/profile/');
             setUserProfile(response.data);
+            // Update image version to force refresh
+            setImageVersion(Date.now());
         } catch (error) {
             console.error('Error fetching user profile:', error.message);
         } finally {
@@ -77,6 +80,8 @@ const UserProfileScreen = ({route}) => {
                     try {
                         const response = await SikiyaAPI.get('/user/profile/');
                         setUserProfile(response.data);
+                        // Update image version to force refresh
+                        setImageVersion(Date.now());
                     } catch (error) {
                         console.error('Error fetching user profile:', error.message);
                     }
@@ -88,6 +93,21 @@ const UserProfileScreen = ({route}) => {
 
     const handleSettingsPress = () => {
         navigation.navigate('Settings', {firstname: userProfile?.firstname, lastname: userProfile?.lastname});
+    }
+
+    const handleTestNotification = async () => {
+        try {
+            const response = await SikiyaAPI.post('/user/test-notification');
+            if (response.data.success) {
+                Alert.alert('Success', 'Test notification sent! Check your device for the notification.');
+            } else {
+                Alert.alert('Error', 'Failed to send notification: ' + (response.data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error sending test notification:', error);
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to send notification';
+            Alert.alert('Error', errorMessage);
+        }
     }
 
     if (isLoading) {
@@ -118,14 +138,24 @@ const UserProfileScreen = ({route}) => {
                             resizeMode="contain"
                         />
                     </View>
-                    <TouchableOpacity 
-                        style={[styles.settingsButton, main_Style.genButtonElevation]}
-                        onPress={handleSettingsPress}
-                        activeOpacity={0.7}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Ionicons name="settings-outline" size={24} color={generalTitleColor} />
-                    </TouchableOpacity>
+                    <View style={styles.headerButtonsContainer}>
+                        <TouchableOpacity 
+                            style={[styles.testNotificationButton, main_Style.genButtonElevation]}
+                            onPress={handleTestNotification}
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Ionicons name="notifications-outline" size={20} color={MainBrownSecondaryColor} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.settingsButton, main_Style.genButtonElevation]}
+                            onPress={handleSettingsPress}
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Ionicons name="settings-outline" size={24} color={generalTitleColor} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Profile Card */}
@@ -134,10 +164,13 @@ const UserProfileScreen = ({route}) => {
                         {/* Profile photo */}
                         <View style={styles.profileImageContainer}>
                             <Image 
-                                key={userProfile?.profile_picture || 'default'}
+                                key={`${userProfile?.profile_picture || 'default'}-${imageVersion}`}
                                 source={
                                     userProfile?.profile_picture 
-                                        ? { uri: getImageUrl(userProfile.profile_picture)}
+                                        ? { 
+                                            uri: `${getImageUrl(userProfile.profile_picture)}?v=${imageVersion}`,
+                                            cache: 'reload'
+                                          }
                                         : require('../../assets/functionalImages/ProfilePic.png')
                                 } 
                                 style={styles.profileImage}
@@ -251,6 +284,21 @@ const styles = StyleSheet.create({
         width: 120,
         height: 40,
     },
+    headerButtonsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    testNotificationButton: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8,
+        backgroundColor: genBtnBackgroundColor,
+        borderWidth: 1.5,
+        borderColor: MainBrownSecondaryColor,
+    },
     settingsButton: {
         width: 40,
         height: 40,
@@ -258,7 +306,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 8,
         backgroundColor: genBtnBackgroundColor,
-        marginLeft: 12,
     },
     profileCard: {
         backgroundColor: genBtnBackgroundColor,

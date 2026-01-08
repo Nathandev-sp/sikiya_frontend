@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar} from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, StatusBar} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, generalTitleSize, generalTitleFontWeight, generalSmallTextSize, articleTextSize, largeTextSize, generalTextSize} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, generalTitleSize, generalTitleFontWeight, generalSmallTextSize, articleTextSize, largeTextSize, generalTextSize, lightBannerBackgroundColor} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 
 const NewShortVideoScreen = ({ navigation, route }) => {
   const { videoId, videoTitle, videoData } = route.params || {};
+  const scrollRef = useRef(null);
   const [video, setVideo] = useState(null);
   const [proofPhoto, setProofPhoto] = useState(null);
   const [proofText, setProofText] = useState('');
@@ -287,14 +288,12 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={main_Style.safeArea} edges={['top']}>
       <StatusBar barStyle={"dark-content"} />
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
         <ScrollView 
+          ref={scrollRef}
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Header with Back Button and Image */}
           <View style={styles.headerContainer}>
@@ -359,6 +358,16 @@ const NewShortVideoScreen = ({ navigation, route }) => {
               <Text style={styles.proofTitle}>Proof</Text>
             </View>
 
+            {/* Disclaimer Text */}
+            <View style={styles.disclaimerContainer}>
+              <Text style={styles.disclaimerText}>
+                • Please ensure that every video you submit meets the highest standards of accuracy and quality{'\n'}
+                • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
+                • Every video will undergo a review and evaluation process before being published{'\n'}
+                • Video submissions are final. Submitting low-quality or inaccurate content may negatively impact your trust score and reduce the visibility of your future videos.
+              </Text>
+            </View>
+
             {/* Proof Photo */}
             <TouchableOpacity 
               style={[
@@ -406,7 +415,13 @@ const NewShortVideoScreen = ({ navigation, route }) => {
                 multiline
                 numberOfLines={6}
                 textAlignVertical="top"
-                onFocus={() => setProofTextFocused(true)}
+                onFocus={() => {
+                  setProofTextFocused(true);
+                  // Scroll to a specific position to bring input into view
+                  setTimeout(() => {
+                    scrollRef.current?.scrollTo({ y: 600, animated: true });
+                  }, 300);
+                }}
                 onBlur={() => setProofTextFocused(false)}
               />
             </View>
@@ -424,7 +439,6 @@ const NewShortVideoScreen = ({ navigation, route }) => {
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -513,7 +527,7 @@ const styles = StyleSheet.create({
   videoContainer: {
     width: '100%',
     height: 300,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
@@ -543,7 +557,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
   },
   videoPlaceholderText: {
     marginTop: 12,
@@ -562,7 +576,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
   },
   photoPlaceholderText: {
     marginTop: 8,
@@ -571,7 +585,7 @@ const styles = StyleSheet.create({
     color: withdrawnTitleColor,
   },
   textArea: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
     fontSize: articleTextSize,
@@ -605,7 +619,7 @@ const styles = StyleSheet.create({
   proofPhotoContainer: {
     width: '100%',
     aspectRatio: 1.25 / 0.8, // 1.25 width : 0.8 height ratio
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -618,6 +632,20 @@ const styles = StyleSheet.create({
   },
   proofTextArea: {
     minHeight: 120,
+  },
+  disclaimerContainer: {
+    backgroundColor: lightBannerBackgroundColor,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: MainBrownSecondaryColor,
+  },
+  disclaimerText: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: generalTextColor,
+    lineHeight: 20,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Expo automatically loads .env files and makes EXPO_PUBLIC_* variables available
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://60eae9483175.ngrok-free.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://sikiya-backend.onrender.com';
 
 const SikiyaAPI = axios.create({
     baseURL: API_URL,
@@ -18,6 +18,24 @@ SikiyaAPI.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor to detect network errors
+SikiyaAPI.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Check if it's a network error (no response from server)
+    if (!error.response) {
+      // Network error - no internet, server unreachable, etc.
+      error.isNetworkError = true;
+      error.errorType = 'network';
+    } else if (error.response.status >= 500) {
+      // Server error (5xx) - critical error
+      error.isCriticalError = true;
+      error.errorType = 'critical';
+    }
+    return Promise.reject(error);
+  }
 );
 
 // Saved Articles API Functions

@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "./src/Screens/HomeScreen"; // Home screen
 import JounalistPannelScreen from './src/Screens/JounalistPannelScreen'; // Saved screen
 import LiveNews from './src/Screens/LiveNews'; // Live news screen
-import SearchScreen from './src/Screens/SearchScreen'; // Search screen
+import SearchScreenHello from './src/Screens/SearchScreen'; // Search screen
 import UserProfileScreen from './src/Screens/UserProfileScreen'
 import SettingsScreen from './src/Screens/UserProfileScreens/SettingsScreen'; // Settings screen
 import AuthorProfileScreen from './src/Screens/SecondaryScreens/AuthorProfileScreen';
@@ -58,15 +58,18 @@ import PaymentMethodSettingScreen from './src/Screens/UserProfileScreens/Payment
 import CommentHistorySettingScreen from './src/Screens/UserProfileScreens/CommentHistorySettingScreen';
 import LanguageSettingScreen from './src/Screens/UserProfileScreens/LanguageSettingScreen';
 import HelpSupportSettingScreen from './src/Screens/UserProfileScreens/HelpSupportSettingScreen';
+import NotificationPreferencesScreen from './src/Screens/UserProfileScreens/NotificationPreferencesScreen';
 import UserFollowScreen from './src/Screens/UserProfileScreens/UserFollowScreen';
 // --------------------------------------------------
 
 // Ref imports ----------------------------------
-import { setNavigator } from './src/Helpers/NavigationRef';
+import { setNavigator, getNavigator } from './src/Helpers/NavigationRef';
 // --------------------------------------------------
 
 // Pre-loading screens imports ----------------------------------
 import AppPreloadingScreen from './src/Screens/AppPreloadingScreen';
+import NetworkErrorScreen from './src/Screens/ErrorScreens/NetworkErrorScreen';
+import CriticalErrorScreen from './src/Screens/ErrorScreens/CriticalErrorScreen';
 // --------------------------------------------------
 
 // context imports ----------------------------------
@@ -74,6 +77,10 @@ import { Provider as AuthProvider } from './src/Context/AuthContext'; // Auth co
 import { Context as AuthContext } from './src/Context/AuthContext'; // Auth context
 import sleep from './src/Helpers/Sleep';
 import SikiyaAPI from './API/SikiyaAPI';
+import { 
+  initializePushNotifications, 
+  setupNotificationListeners 
+} from './src/services/notificationService';
 // --------------------------------------------------
 
 
@@ -174,6 +181,43 @@ function HomeStack({preloadedHomeArticles, preloadedHeadlines}) {
 }
 // Closing the Home Stack Navigator -------------------------
 
+// Live News Stack Navigator -------------------------
+const LiveNewsStack = createNativeStackNavigator();
+
+function LiveNewsStackNav({preloadedVideos}) {
+  return (
+    <LiveNewsStack.Navigator
+      screenOptions={({ route }) => ({
+        headerStyle: { backgroundColor: '#04698F', borderBottomWidth: 0, shadowOpacity: 0 },
+        headerTintColor: '#fff',
+      })}
+    >
+      <LiveNewsStack.Screen name="LiveNews" component={LiveNews} options={{headerShown: false}} initialParams={{preloadedVideos}} />
+      <LiveNewsStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+    </LiveNewsStack.Navigator>
+  );
+}
+// Closing the Live News Stack Navigator -------------------------
+
+// Search Stack Navigator -------------------------
+const SearchStack = createNativeStackNavigator();
+
+function SearchStackNav({preloadedSearchJournalist, preloadedSearchArticles}) {
+  return (
+    <SearchStack.Navigator
+      screenOptions={({ route }) => ({
+        headerStyle: { backgroundColor: '#04698F', borderBottomWidth: 0, shadowOpacity: 0 },
+        headerTintColor: '#fff',
+      })}
+    >
+      <SearchStack.Screen name="SearchScreen" component={SearchScreenHello} options={{headerShown: false}} initialParams={{preloadedSearchJournalist, preloadedSearchArticles}} />
+      <SearchStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <SearchStack.Screen name="NewsHome" component={NewsHome} options={{headerShown: false}} />
+    </SearchStack.Navigator>
+  );
+}
+// Closing the Search Stack Navigator -------------------------
+
 // Subscription Stack Navigator -------------------------
 const SubscriptionStack = createNativeStackNavigator();
 function SubscriptionStackNav() {
@@ -231,6 +275,7 @@ function UserProfileStackNav({preloadedUserProfile}) {
       
       <UserProfileStack.Screen name="CommentSettings" component={CommentHistorySettingScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="LanguageSettings" component={LanguageSettingScreen} options={{headerShown: false}} />
+      <UserProfileStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="HelpSupportSettings" component={HelpSupportSettingScreen} options={{headerShown: false}} />
     </UserProfileStack.Navigator>
   )
@@ -252,8 +297,23 @@ function MyTabs({preloadedHomeArticles, preloadedSearchJournalist, preloadedSear
     return (
    
       <Tab.Navigator
-        screenOptions={({ route }) => ({
+        screenOptions={({ route, navigation }) => {
+          // Check if we're in a submission screen by looking at the navigation state
+          const state = navigation.getState();
+          let shouldHideTabBar = false;
+          
+          if (state) {
+            const currentRoute = state.routes[state.index];
+            if (currentRoute?.name === 'Journalist panel' && currentRoute?.state) {
+              const nestedState = currentRoute.state;
+              const nestedRoute = nestedState.routes?.[nestedState.index];
+              const currentScreenName = nestedRoute?.name;
+              const hideTabBarScreens = ['NewArticle', 'NewArticleImage', 'NewVideoTitle', 'NewVideo'];
+              shouldHideTabBar = hideTabBarScreens.includes(currentScreenName);
+            }
+          }
 
+          return {
           tabBarIcon: ({ focused, color}) => {
             let icon;
             const onColor = MainBrownSecondaryColor  //#9D7340 #2B4570 #AD7520
@@ -283,21 +343,22 @@ function MyTabs({preloadedHomeArticles, preloadedSearchJournalist, preloadedSear
         tabBarActiveTintColor: 'black',
         tabBarInactiveTintColor: 'gray',
         tabBarShowLabel: false,
-        tabBarStyle: {
+        tabBarStyle: shouldHideTabBar ? { display: 'none' } : {
           backgroundColor: AppScreenBackgroundColor,  //#02040F rich black #111944 #0E0308nice black
           height: 70,
           paddingTop: 6,
         },
-      })}
+        };
+        }}
         >
         <Tab.Screen name="Home" options={{headerShown: false}}>
           {() => <HomeStack preloadedHomeArticles={preloadedHomeArticles} preloadedHeadlines={preloadedHeadlines} />}
         </Tab.Screen>
         <Tab.Screen name="Live" options={{headerShown: false}}>
-          {() => <LiveNews preloadedVideos={preloadedVideos} />}
+          {() => <LiveNewsStackNav preloadedVideos={preloadedVideos} />}
         </Tab.Screen>
         <Tab.Screen name="Search" options={{headerShown: false}}> 
-          {() => <SearchScreen preloadedSearchJournalist={preloadedSearchJournalist} preloadedSearchArticles={preloadedSearchArticles} />}
+          {() => <SearchStackNav preloadedSearchJournalist={preloadedSearchJournalist} preloadedSearchArticles={preloadedSearchArticles} />}
         </Tab.Screen>
         {isJournalist ? (<Tab.Screen name="Journalist panel" component={JournalistPanelStackNav} options={{headerShown: false}} />) : null}
         <Tab.Screen name="UserProfileGroup" options={{headerShown: false}}>
@@ -315,7 +376,9 @@ function MyTabs({preloadedHomeArticles, preloadedSearchJournalist, preloadedSear
 // Create a separate component for the content that needs context
 const AppContent = () => {
   const { state, tryLocalSignin } = useContext(AuthContext);
+  const [errorState, setErrorState] = useState(null); // { type: 'network' | 'critical', message: string }
   const [isAppLoading, setIsAppLoading] = useState(true);
+  const [retryKey, setRetryKey] = useState(0); // Key to force re-run of preload
 
   // Initializing preloading states --------------------------
   const [preloadedHomeArticles, setPreloadedHomeArticles] = useState(null);
@@ -330,6 +393,12 @@ const AppContent = () => {
 
   //trying to signin locally
   useEffect(() => {
+    // Safety timeout - always finish loading after 10 seconds max
+    const safetyTimeout = setTimeout(() => {
+      console.log('Safety timeout reached - forcing app to load');
+      setIsAppLoading(false);
+    }, 10000);
+
     const preloadApp = async () => {
       try {
         // Try to sign in locally - this will gracefully handle if there's no token
@@ -340,34 +409,300 @@ const AppContent = () => {
           console.log('Local signin check completed (user may need to sign in):', err.message || err);
         }
         
-        // Add any preload for the app
-        const homeArticlesResponse = await SikiyaAPI.get('articles/home');
-        setPreloadedHomeArticles(homeArticlesResponse.data);
-        const preloadedSearchJournalistResponse = await SikiyaAPI.get('/journalists/random');
-        setPreloadedSearchJournalist(preloadedSearchJournalistResponse.data);
-        const preloadedSearchArticlesResponse = await SikiyaAPI.get('/article/search');
-        setPreloadedSearchArticles(preloadedSearchArticlesResponse.data);
-        const userProfileResponse = await SikiyaAPI.get('/user/profile/');
-        setPreloadedUserProfile(userProfileResponse.data);
-        const preloadedHeadlinesResponse = await SikiyaAPI.get('/articles/home/headlines');
-        setPreloadedHeadlines(preloadedHeadlinesResponse.data);
-        // Preload first 5 videos for LiveNews screen
-        const preloadedVideosResponse = await SikiyaAPI.get('videos/home?page=1&limit=5');
-        setPreloadedVideos(preloadedVideosResponse.data);
-        // Simulate other preloading tasks if necessary
+        // Initialize push notifications (only if user is authenticated)
+        if (state.token) {
+          try {
+            await initializePushNotifications();
+          } catch (err) {
+            console.log('Push notification initialization failed (non-critical):', err.message || err);
+          }
+        }
+        
+        // Add any preload for the app - make each call independent so failures don't block the app
+        // Use Promise.allSettled so one failure doesn't stop others
+        const preloadPromises = [
+          // Public endpoints - can load without auth
+          SikiyaAPI.get('articles/home').then(res => res.data).catch(err => {
+            console.log('Failed to load home articles:', err.message);
+            // Check for network or critical errors
+            if (err.isNetworkError) {
+              setErrorState({ type: 'network' });
+            } else if (err.isCriticalError) {
+              setErrorState({ type: 'critical', message: 'Server error. Please try again later.' });
+            }
+            return null;
+          }),
+          SikiyaAPI.get('/journalists/random').then(res => res.data).catch(err => {
+            console.log('Failed to load journalists:', err.message);
+            if (err.isNetworkError && !errorState) {
+              setErrorState({ type: 'network' });
+            } else if (err.isCriticalError && !errorState) {
+              setErrorState({ type: 'critical', message: 'Server error. Please try again later.' });
+            }
+            return null;
+          }),
+          SikiyaAPI.get('/article/search').then(res => res.data).catch(err => {
+            console.log('Failed to load search articles:', err.message);
+            if (err.isNetworkError && !errorState) {
+              setErrorState({ type: 'network' });
+            } else if (err.isCriticalError && !errorState) {
+              setErrorState({ type: 'critical', message: 'Server error. Please try again later.' });
+            }
+            return null;
+          }),
+          SikiyaAPI.get('/articles/home/headlines').then(res => res.data).catch(err => {
+            console.log('Failed to load headlines:', err.message);
+            if (err.isNetworkError && !errorState) {
+              setErrorState({ type: 'network' });
+            } else if (err.isCriticalError && !errorState) {
+              setErrorState({ type: 'critical', message: 'Server error. Please try again later.' });
+            }
+            return null;
+          }),
+          SikiyaAPI.get('videos/home?page=1&limit=5').then(res => res.data).catch(err => {
+            console.log('Failed to load videos:', err.message);
+            if (err.isNetworkError && !errorState) {
+              setErrorState({ type: 'network' });
+            } else if (err.isCriticalError && !errorState) {
+              setErrorState({ type: 'critical', message: 'Server error. Please try again later.' });
+            }
+            return null;
+          }),
+        ];
 
-        //console.log("Preloaded home articles:", preloadedHomeArticles);
+        // Only load user profile if user is authenticated
+        if (state.token) {
+          preloadPromises.push(
+            SikiyaAPI.get('/user/profile/').then(res => res.data).catch(err => {
+              console.log('Failed to load user profile:', err.message);
+              return null;
+            })
+          );
+        }
 
-        await sleep(40); // Simulate a delay for preloading
+        // Wait for all calls with timeout (8 seconds max total)
+        let results;
+        try {
+          results = await Promise.race([
+            Promise.allSettled(preloadPromises),
+            new Promise((resolve) => {
+              setTimeout(() => {
+                console.log('Preload timeout - continuing anyway');
+                resolve(preloadPromises.map(() => ({ status: 'rejected', reason: 'Timeout' })));
+              }, 8000); // 8 second timeout
+            })
+          ]);
+        } catch (err) {
+          console.log('Error in preload promises:', err);
+          results = preloadPromises.map(() => ({ status: 'rejected', reason: 'Error' }));
+        }
+
+        // Set data from results
+        if (Array.isArray(results)) {
+          if (results[0]?.status === 'fulfilled' && results[0].value) {
+            setPreloadedHomeArticles(results[0].value);
+          }
+          if (results[1]?.status === 'fulfilled' && results[1].value) {
+            setPreloadedSearchJournalist(results[1].value);
+          }
+          if (results[2]?.status === 'fulfilled' && results[2].value) {
+            setPreloadedSearchArticles(results[2].value);
+          }
+          if (results[3]?.status === 'fulfilled' && results[3].value) {
+            setPreloadedHeadlines(results[3].value);
+          }
+          if (results[4]?.status === 'fulfilled' && results[4].value) {
+            setPreloadedVideos(results[4].value);
+          }
+          if (state.token && results[5]?.status === 'fulfilled' && results[5].value) {
+            setPreloadedUserProfile(results[5].value);
+          }
+        }
+
+        // Small delay to show loading screen briefly
+        await sleep(1000); // 1 second minimum loading time
       } catch (error) {
         console.error("Error preloading app:", error);
-      }finally{
+        // Even if there's an error, continue loading the app
+      } finally {
+        // Always set loading to false, even if everything fails
+        console.log('Preloading complete, showing app');
+        clearTimeout(safetyTimeout); // Clear safety timeout since we're done
         setIsAppLoading(false);
       }
     };
 
     preloadApp();
+
+    // Cleanup safety timeout on unmount
+    return () => {
+      clearTimeout(safetyTimeout);
+    };
+  }, [state.token, retryKey]); // Re-run if token changes or retry is triggered
+
+  // Set up notification listeners
+  useEffect(() => {
+    // Handle notifications when app is in foreground
+    const handleNotificationReceived = (notification) => {
+      console.log('Notification received in foreground:', notification);
+      // You can add custom handling here, e.g., show an in-app banner
+    };
+
+    // Handle when user taps on a notification
+    const handleNotificationTapped = (response) => {
+      console.log('User tapped notification:', response);
+      const data = response.notification.request.content.data;
+      
+      if (!data || !data.type) {
+        console.warn('Notification data missing or invalid');
+        return;
+      }
+
+      // Use a small delay to ensure navigation is ready
+      setTimeout(() => {
+        try {
+          // Get navigation from the ref
+          const navigation = getNavigator();
+          if (!navigation) {
+            console.warn('Navigation not available');
+            return;
+          }
+
+          // Navigate based on notification type
+          // Note: We need to navigate to the tab first, then to the screen within that stack
+          if (data.type === 'new_article') {
+            if (data.articleId) {
+              // Navigate to Home tab, then to NewsHome screen
+              navigation.navigate('Home', {
+                screen: 'NewsHome',
+                params: { articleId: data.articleId }
+              });
+            }
+          } else if (data.type === 'article_approved') {
+            if (data.articleId) {
+              // Navigate to Home tab, then to NewsHome screen for approved articles
+              navigation.navigate('Home', {
+                screen: 'NewsHome',
+                params: { articleId: data.articleId }
+              });
+            }
+          } else if (data.type === 'new_video') {
+            if (data.videoId) {
+              // Navigate to Live tab, then to LiveNews screen
+              navigation.navigate('Live', {
+                screen: 'LiveNews',
+                params: { videoId: data.videoId }
+              });
+            }
+          } else if (data.type === 'video_approved') {
+            if (data.videoId) {
+              // Navigate to Live tab, then to LiveNews screen for approved videos
+              navigation.navigate('Live', {
+                screen: 'LiveNews',
+                params: { videoId: data.videoId }
+              });
+            }
+          } else if (data.type === 'new_comment' || data.type === 'comment_reply') {
+            if (data.articleId) {
+              navigation.navigate('Home', {
+                screen: 'NewsHome',
+                params: { articleId: data.articleId }
+              });
+            } else if (data.videoId) {
+              navigation.navigate('Live', {
+                screen: 'LiveNews',
+                params: { videoId: data.videoId }
+              });
+            }
+          } else if (data.type === 'new_follower') {
+            if (data.followerId) {
+              // Navigate to Home tab, then to AuthorProfile screen
+              navigation.navigate('Home', {
+                screen: 'AuthorProfile',
+                params: { userId: data.followerId }
+              });
+            }
+          } else if (data.type === 'article_first_like' || data.type === 'article_milestone_likes' || data.type === 'article_milestone_comments') {
+            if (data.articleId) {
+              // Navigate to Home tab, then to NewsHome screen
+              navigation.navigate('Home', {
+                screen: 'NewsHome',
+                params: { articleId: data.articleId }
+              });
+            }
+          } else if (data.type === 'video_milestone_comments') {
+            if (data.videoId) {
+              // Navigate to Live tab, then to LiveNews screen
+              navigation.navigate('Live', {
+                screen: 'LiveNews',
+                params: { videoId: data.videoId }
+              });
+            }
+          } else if (data.type === 'article_rejected' || data.type === 'video_rejected') {
+            // Navigate to journalist panel for rejected content
+            navigation.navigate('Journalist');
+          } else if (data.type === 'article_approved') {
+            // Navigate to NewsHome for approved articles (same as new_article)
+            if (data.articleId) {
+              navigation.navigate('Home', {
+                screen: 'NewsHome',
+                params: { articleId: data.articleId }
+              });
+            }
+          } else if (data.type === 'video_approved') {
+            // Navigate to LiveNews for approved videos (same as new_video)
+            if (data.videoId) {
+              navigation.navigate('Live', {
+                screen: 'LiveNews',
+                params: { videoId: data.videoId }
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error navigating from notification:', error);
+        }
+      }, 500);
+    };
+
+    // Set up listeners
+    const subscriptions = setupNotificationListeners(
+      handleNotificationReceived,
+      handleNotificationTapped
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      subscriptions.forEach(subscription => subscription.remove());
+    };
   }, []);
+
+  // Show error screens if there's an error
+  if (errorState) {
+    if (errorState.type === 'network') {
+      return (
+        <NetworkErrorScreen 
+          onRetry={() => {
+            setErrorState(null);
+            // Retry by re-initializing the app
+            setIsAppLoading(true);
+            setRetryKey(prev => prev + 1); // Trigger useEffect to re-run
+          }} 
+        />
+      );
+    } else if (errorState.type === 'critical') {
+      return (
+        <CriticalErrorScreen 
+          onRetry={() => {
+            setErrorState(null);
+            // Retry by re-initializing the app
+            setIsAppLoading(true);
+            setRetryKey(prev => prev + 1); // Trigger useEffect to re-run
+          }}
+          errorMessage={errorState.message}
+        />
+      );
+    }
+  }
 
   if (isAppLoading) {
     // You can implement a splash screen or loading indicator here
@@ -380,7 +715,7 @@ const AppContent = () => {
   console.log("AppContent state:", state);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={(nav) => setNavigator(nav)}>
       {!state.token ? (
         <AuthStackNavigator />
       ) : state.verifiedEmail === false ? (

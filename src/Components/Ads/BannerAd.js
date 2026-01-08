@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
+import { Context as AuthContext } from '../../Context/AuthContext';
 
 // Conditionally import AdMob (only if package is installed)
 let BannerAdComponent, BannerAdSize, TestIds;
@@ -31,7 +32,15 @@ const BannerAd = ({
     style,
     adUnitId 
 }) => {
+    const { state } = useContext(AuthContext);
+    const userRole = state?.role;
     const [adUnit, setAdUnit] = useState(null);
+
+    // Don't show ads for journalist, contributor, or admin
+    const adFreeRoles = ['journalist', 'contributor', 'admin'];
+    if (adFreeRoles.includes(userRole)) {
+        return null;
+    }
 
     useEffect(() => {
         // If AdMob is not available, don't set ad unit

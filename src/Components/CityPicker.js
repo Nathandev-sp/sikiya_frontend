@@ -16,9 +16,9 @@ const countryNameMap = {
   "Congo-Brazzaville": "Republic of the Congo",
   "CAR": "Central African Republic",
   "Central African Republic": "Central African Republic",
-  "Cabo Verde": "Cape Verde",
+  "Cabo Verde": "Cabo Verde",
   "Cape Verde": "Cape Verde",
-  "São Tomé and Príncipe": "Sao Tome and Principe",
+  "São Tomé and Príncipe": "São Tomé and Príncipe",
   "São Tomé and Principe": "Sao Tome and Principe",
   "Sao Tome and Principe": "Sao Tome and Principe",
   "Côte d'Ivoire": "Ivory Coast",
@@ -34,6 +34,7 @@ const CityPicker = ({
   error,
   containerStyle,
   inputStyle,
+  onOpen,
 }) => {
   const { height } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
@@ -96,7 +97,12 @@ const CityPicker = ({
           error && auth_Style.inputErrorCont,
           isDisabled && styles.disabledContainer,
         ]}
-        onPress={() => !isDisabled && setVisible(true)}
+        onPress={() => {
+          if (!isDisabled) {
+            if (onOpen) onOpen();
+            setVisible(true);
+          }
+        }}
         activeOpacity={isDisabled ? 1 : 0.8}
         disabled={isDisabled}
       >

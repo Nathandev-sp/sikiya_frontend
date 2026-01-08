@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, Switch, Alert, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, Switch, Alert, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, secCardBackgroundColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
@@ -242,6 +242,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   ]}>
                     <Ionicons name="at-outline" style={auth_Style.authLogo}/>
                     <TextInput
+                      ref={nicknameInputRef}
                       style={auth_Style.input}
                       hitSlop={defaultButtonHitslop}
                       placeholder="Enter your nickname"
@@ -278,6 +279,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="business-outline" style={auth_Style.authLogo}/>
                   <TextInput
+                    ref={mediaCompanyInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder={journalistInfo2.affiliated ? "Enter your media company" : "Independent Journalist"}
@@ -304,6 +306,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="bulb-outline" style={auth_Style.authLogo}/>
                   <TextInput
+                    ref={areaOfExpertiseInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="e.g., Politics, Sports, Technology"
@@ -330,6 +333,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="document-text-outline" style={[auth_Style.authLogo, { alignSelf: 'flex-start', marginTop: 8 }]}/>
                   <TextInput
+                    ref={descriptionInputRef}
                     style={[auth_Style.input, { height: 80, textAlignVertical: 'top', paddingTop: 8 }]}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Tell us about yourself and your experience"

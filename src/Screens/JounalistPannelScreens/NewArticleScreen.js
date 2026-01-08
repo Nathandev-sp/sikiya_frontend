@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style} from '../../styles/GeneralAppStyle';
@@ -14,6 +14,9 @@ import SikiyaAPI from '../../../API/SikiyaAPI';
 
 const NewArticleScreen = ({ navigation }) => {
   const scrollRef = useRef(null);
+  const titleInputRef = useRef(null);
+  const highlightInputRef = useRef(null);
+  const fullArticleInputRef = useRef(null);
   
   // Form data state
   const [articleData, setArticleData] = useState({
@@ -29,6 +32,14 @@ const NewArticleScreen = ({ navigation }) => {
   const [titleFocused, setTitleFocused] = useState(false);
   const [highlightFocused, setHighlightFocused] = useState(false);
   const [fullArticleFocused, setFullArticleFocused] = useState(false);
+
+  // Function to dismiss keyboard and blur all inputs
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+    titleInputRef.current?.blur();
+    highlightInputRef.current?.blur();
+    fullArticleInputRef.current?.blur();
+  };
 
   // Error states for validation
   const [errors, setErrors] = useState({});
@@ -188,6 +199,7 @@ const NewArticleScreen = ({ navigation }) => {
               </Text>
             </View>
             <TextInput
+              ref={titleInputRef}
               style={[
                 styles.titleInput,
                 titleFocused && styles.inputFocused,
@@ -214,6 +226,7 @@ const NewArticleScreen = ({ navigation }) => {
               </Text>
             </View>
             <TextInput
+              ref={highlightInputRef}
               style={[
                 styles.textArea, 
                 styles.highlightTextArea,
@@ -251,6 +264,7 @@ const NewArticleScreen = ({ navigation }) => {
               </Text>
             </View>
             <TextInput
+              ref={fullArticleInputRef}
               style={[
                 styles.textArea, 
                 styles.fullArticleTextArea,
@@ -289,6 +303,7 @@ const NewArticleScreen = ({ navigation }) => {
               placeholder="Select country"
               label="Country"
               error={errors.country}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -302,6 +317,7 @@ const NewArticleScreen = ({ navigation }) => {
               placeholder="Select city"
               label="City"
               error={errors.city}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -314,6 +330,7 @@ const NewArticleScreen = ({ navigation }) => {
               placeholder="Select article category"
               label="Article Category"
               error={errors.articleGroup}
+              onOpen={dismissKeyboard}
             />
           </View>
 
@@ -393,7 +410,7 @@ const styles = StyleSheet.create({
     color: withdrawnTitleColor,
   },
   titleInput: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
     fontSize: articleTextSize,
@@ -412,7 +429,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   textArea: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
     fontSize: generalTextSize,

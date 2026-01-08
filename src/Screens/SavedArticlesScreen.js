@@ -42,7 +42,15 @@ const SavedArticlesScreen = ({ navigation }) => {
       if (shouldRefresh || pageNumber === 1) {
         setSavedArticles(articles);
       } else {
-        setSavedArticles(prevArticles => [...prevArticles, ...articles]);
+        // Filter out duplicates based on savedArticleId (or article._id) before appending
+        setSavedArticles(prevArticles => {
+          const existingIds = new Set(prevArticles.map(a => a.savedArticleId || a.article?._id || a._id));
+          const uniqueArticles = articles.filter(a => {
+            const id = a.savedArticleId || a.article?._id || a._id;
+            return id && !existingIds.has(id);
+          });
+          return [...prevArticles, ...uniqueArticles];
+        });
       }
       
       // Update pagination state
