@@ -172,7 +172,7 @@ const createStyles = (height) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 0,
         paddingBottom: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#F0F0F0',
@@ -220,6 +220,7 @@ const createStyles = (height) => StyleSheet.create({
         backgroundColor: lightBannerBackgroundColor,
         borderRadius: 12,
         padding: 12,
+        marginTop: 20,
         marginBottom: 20,
         borderLeftWidth: 4,
         borderLeftColor: MainSecondaryBlueColor,
@@ -635,6 +636,7 @@ const NewsHome = ({ route }) => {
                                         })()}
                                     </Text>
                                 </View>
+                                
                                 <Text style={styles.authorName}>
                                     {article.journalist?.journalist_affiliation || 
                                      article.journalist?.affiliation || 
@@ -648,6 +650,7 @@ const NewsHome = ({ route }) => {
                     </View>
 
                     {/* Article Highlight (Summary/Major Idea) */}
+                    <BannerAdComponent position="bottom" />
                     
                     <View style={styles.highlightSection}>
                         <Text style={styles.highlightLabel}>Highlights</Text>
@@ -680,7 +683,7 @@ const NewsHome = ({ route }) => {
                     </View>
                 </View>
             </ScrollView>
-            <BannerAdComponent position="bottom" />
+            
         </View>
     );
 };

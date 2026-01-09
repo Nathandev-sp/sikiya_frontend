@@ -65,7 +65,7 @@ const BannerAd = ({
 
     return (
         <View style={[styles.container, position === 'top' && styles.topContainer, style]}>
-            <Text style={styles.adLabel}>Advertisement</Text>
+            <Text style={styles.adLabel}></Text>
             <BannerAdComponent
                 unitId={adUnit}
                 size={BannerAdSize.FULL_BANNER}
@@ -79,14 +79,14 @@ const BannerAd = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 10,
+        marginBottom: 0,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',
     },
     topContainer: {
-        marginTop: Platform.OS === 'ios' ? 0 : 0,
+        marginTop: Platform.OS === 'ios' ? 20 : 20,
     },
     adLabel: {
         fontSize: 12,

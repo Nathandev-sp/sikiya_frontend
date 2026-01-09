@@ -137,6 +137,9 @@ const CommentInputModal = ({ visible, onClose, onSend, placeholder, mode = "arti
                   ? "Add a comment"
                   : `Reply to${replyToName ? ` ${replyToName}` : ""}`}
               </Text>
+              {mode === "article" && (
+                <Text style={styles.subNote}>You can't delete main comments.</Text>
+              )}
             </View>
             <TouchableOpacity 
               onPress={handleClose} 
@@ -263,6 +266,12 @@ const styles = StyleSheet.create({
     fontWeight: generalTitleFontWeight,
     color: generalTitleColor,
   },
+  subNote: {
+    marginTop: 4,
+    fontSize: withdrawnTitleSize,
+    color: withdrawnTitleColor,
+    fontFamily: generalTextFont,
+  },
   closeButton: {
     padding: 4,
     marginLeft: 12,
@@ -284,8 +293,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   input: {
-    minHeight: 44,
-    maxHeight: 120,
+    minHeight: 60,
+    maxHeight: 180,
     borderColor: '#E0E0E0',
     borderWidth: 0.8,
     borderRadius: 8,

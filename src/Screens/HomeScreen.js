@@ -275,7 +275,7 @@ const HomeScreen = ({route}) => {
     //------------------------------------------
 
     const HomeHeaderHeight = scrollY.interpolate({
-        inputRange: [0, 200],
+        inputRange: [20, 200],
         outputRange: [320, 0],
         extrapolate: 'clamp',
     });
@@ -510,7 +510,7 @@ const HomeScreen = ({route}) => {
     const renderListHeader = useCallback(() => (
         <>
             {/* Category Selection Buttons */}
-            <View style={{ marginTop: 4 }}>
+            <View style={{ marginTop: 16 }}>
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false}
