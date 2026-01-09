@@ -8,8 +8,6 @@ import AppScreenBackgroundColor, {
     generalTextColor, 
     generalTextFont, 
     generalTextSize, 
-    generalTitleColor, 
-    generalTitleFont, 
     generalTitleFontWeight, 
     mainBrownColor, 
     withdrawnTitleColor, 
@@ -51,7 +49,11 @@ const JournalistSubmissionCard = ({submission}) => {
         if (isVideo && submission.video_front_image) {
             return { uri: getImageUrl(submission.video_front_image) };
         }
-        // Use placeholder if no image
+        // Use video camera image for videos, placeholder for articles
+        if (isVideo) {
+            return require('../../assets/functionalImages/video-camera.png');
+        }
+        // Use placeholder for articles
         return require('../../assets/functionalImages/FrontImagePlaceholder.png');
     };
 
@@ -62,7 +64,7 @@ const JournalistSubmissionCard = ({submission}) => {
                 <View style={styles.imageContainer}>
                     <Image 
                         style={styles.frontImage}
-                        defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
+                        defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
                         source={getImageSource()}
                     />
                     <View style={styles.imageOverlay} pointerEvents="none" />
@@ -135,7 +137,7 @@ const JournalistSubmissionCard = ({submission}) => {
                 {/* Approval Message - only show if not pending */}
                 {submission.approval_status !== 'pending' && submission.approval_reason && (
                     <View style={styles.messageContainer}>
-                        <Text style={styles.messageLabel}>Approval Message:</Text>
+                        <Text style={styles.messageLabel}>Decision Message:</Text>
                         <Text style={styles.messageText}>{submission.approval_reason}</Text>
                     </View>
                 )}
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginVertical: 6,
         alignSelf: 'center',
-        padding: 8,
+        padding: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
@@ -160,17 +162,17 @@ const styles = StyleSheet.create({
     introContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     imageContainer: {
-        width: 120,
-        height: 90,
+        width: 100,
+        height: 75,
         borderRadius: 8,
         backgroundColor: mainBrownColor,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
-        marginRight: 12,
+        marginRight: 10,
         position: 'relative',
     },
     imageOverlay: {
@@ -191,26 +193,26 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        minHeight: 90,
-        paddingVertical: 2,
+        minHeight: 75,
+        paddingVertical: 0,
     },
     titleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        marginBottom: 8,
-        minHeight: 50,
+        marginBottom: 6,
+        minHeight: 40,
     },
     cardTitle: {
-        fontSize: articleTextSize,
+        fontSize: generalTextSize,
         fontWeight: generalTitleFontWeight,
         color: articleTitleColor,
         fontFamily: articleTitleFont,
-        lineHeight: 20,
+        lineHeight: 18,
     },
     typeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
+        marginTop: 2,
     },
     typeIcon: {
         marginRight: 6,
@@ -224,17 +226,17 @@ const styles = StyleSheet.create({
     approvalSection: {
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
-        paddingTop: 12,
+        paddingTop: 8,
         marginTop: 4,
     },
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     statusLabel: {
-        fontSize: commentTextSize,
+        fontSize: withdrawnTitleSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: '500',
@@ -253,13 +255,13 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     statusText: {
-        fontSize: commentTextSize,
+        fontSize: withdrawnTitleSize,
         fontFamily: generalTextFont,
         fontWeight: '600',
     },
     dateRow: {
-        marginTop: 8,
-        marginBottom: 4,
+        marginTop: 6,
+        marginBottom: 3,
     },
     dateItem: {
         flexDirection: 'row',
@@ -281,8 +283,8 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     messageContainer: {
-        marginTop: 8,
-        padding: 10,
+        marginTop: 6,
+        padding: 8,
         backgroundColor: '#F9FAFB',
         borderRadius: 8,
     },

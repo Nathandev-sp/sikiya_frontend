@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import JournalistSubmissionCard from '../Components/JournalistSubmissionCard';
@@ -100,6 +101,24 @@ const JounalistPannelScreen = ({ navigation }) => {
   useEffect(() => {
     fetchSubmissions(1, false);
   }, []);
+
+  // Refresh submissions when screen comes into focus (e.g., returning from submission screens)
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh submissions when screen is focused
+      fetchSubmissions(1, false);
+      // Also refresh stats
+      const refreshStats = async () => {
+        try {
+          const response = await SikiyaAPI.get('/journalist/stats');
+          setStats(response.data);
+        } catch (err) {
+          console.error('Error fetching stats:', err);
+        }
+      };
+      refreshStats();
+    }, [])
+  );
 
   // Load more submissions
   const loadMoreSubmissions = () => {

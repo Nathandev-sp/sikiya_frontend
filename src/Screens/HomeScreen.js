@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect, useCallback} from 'react';
+import React, {useRef, useState, useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, Text, ScrollView, TouchableOpacity, Animated, useWindowDimensions, ActivityIndicator, StatusBar} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,18 @@ import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import NewsCartv2 from '../Components/NewsCartv2';
 import sleep from '../Helpers/Sleep';
 import BannerAdComponent from '../Components/Ads/BannerAd';
+
+// Create a completely stable Highlights wrapper component outside HomeScreen
+// This ensures it's never recreated and never rerenders
+const StableHighlightsWrapper = React.memo(({ preloadedHeadlines, headerHeight }) => {
+    return (
+        <Animated.View style={{ height: headerHeight }}>
+            <HighLight preloadedHeadlines={preloadedHeadlines} />
+        </Animated.View>
+    );
+}, () => true); // Always return true = never rerender
+
+StableHighlightsWrapper.displayName = 'StableHighlightsWrapper';
 
 const HomeScreen = ({route}) => {
 
@@ -38,10 +50,17 @@ const HomeScreen = ({route}) => {
     const [refreshing, setRefreshing] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('Explore'); // Default to Explore
+    const [filteringCategory, setFilteringCategory] = useState(false); // For client-side filtering
     const loaderTimeoutRef = useRef(null);
     
     // Get headline article IDs to exclude from main list
     const headlineArticleIds = useRef(new Set());
+    
+    // Memoize preloadedHeadlines to prevent unnecessary rerenders
+    const stablePreloadedHeadlines = useRef(preloadedHeadlines);
+    useEffect(() => {
+        stablePreloadedHeadlines.current = preloadedHeadlines;
+    }, [preloadedHeadlines]);
     
     // Get current articles for selected category
     const articles = articlesByCategory[selectedCategory] || [];
@@ -98,7 +117,7 @@ const HomeScreen = ({route}) => {
 
     const fetchTopHeadlines = async (category = null, isInitial = false) => {
         try {
-            const limit = category === 'Explore' ? 5 : 5; // Load 5 articles initially for all categories
+            const limit = category === 'Explore' ? 10 : 10; // Load 10 articles initially
             // For Explore, don't pass article_group (shows all articles)
             const endpoint = category === 'Explore' 
                 ? `articles/home?page=1&limit=${limit}` 
@@ -134,9 +153,19 @@ const HomeScreen = ({route}) => {
             }));
         } catch (error) {
             console.error('Error fetching top headlines:', error);
+            // On error, set hasMore to false for this category
+            setHasMoreByCategory(prev => ({
+                ...prev,
+                [category]: false
+            }));
         } finally {
-            setLoading(false);
+            // Only set loading=false if this was initial load
+            // For category switching, loading should already be false
+            if (isInitial) {
+                setLoading(false);
+            }
             setShowLoader(false);
+            setFilteringCategory(false);
             // Clear any pending timeout
             if (loaderTimeoutRef.current) {
                 clearTimeout(loaderTimeoutRef.current);
@@ -155,47 +184,86 @@ const HomeScreen = ({route}) => {
         const limit = 10; // Load 10 articles per pagination
 
         try {
-            // For Explore, don't pass article_group
-            const endpoint = category === 'Explore'
-                ? `articles/home?page=${nextPage}&limit=${limit}`
-                : `articles/home?article_group=${category}&page=${nextPage}&limit=${limit}`;
-            
-            const response = await SikiyaAPI.get(endpoint);
-            
-            if (response.data.length > 0) {
-                // Add new articles to existing ones, filtering out duplicates and headline articles
-                const newArticles = response.data.filter(a => 
-                    !headlineArticleIds.current.has(a._id)
-                );
+            if (category === 'Explore') {
+                // For Explore, load from all categories (no article_group filter)
+                const endpoint = `articles/home?page=${nextPage}&limit=${limit}`;
+                const response = await SikiyaAPI.get(endpoint);
                 
-                setArticlesByCategory(prev => {
-                    const currentArticles = prev[category] || [];
-                    const existingIds = new Set(currentArticles.map(a => a._id));
-                    const uniqueNewArticles = newArticles.filter(a => !existingIds.has(a._id));
-                    return {
+                if (response.data.length > 0) {
+                    // Add new articles to existing ones, filtering out duplicates and headline articles
+                    const newArticles = response.data.filter(a => 
+                        !headlineArticleIds.current.has(a._id)
+                    );
+                    
+                    setArticlesByCategory(prev => {
+                        const currentArticles = prev[category] || [];
+                        const existingIds = new Set(currentArticles.map(a => a._id));
+                        const uniqueNewArticles = newArticles.filter(a => !existingIds.has(a._id));
+                        return {
+                            ...prev,
+                            [category]: [...currentArticles, ...uniqueNewArticles]
+                        };
+                    });
+                    
+                    // Update page number for this category
+                    setCategoryPages(prev => ({
                         ...prev,
-                        [category]: [...currentArticles, ...uniqueNewArticles]
-                    };
-                });
-                
-                // Update page number for this category
-                setCategoryPages(prev => ({
-                    ...prev,
-                    [category]: nextPage
-                }));
+                        [category]: nextPage
+                    }));
 
-                // Check if there are more articles
-                if (response.data.length < limit) {
+                    // Check if there are more articles
+                    if (response.data.length < limit) {
+                        setHasMoreByCategory(prev => ({
+                            ...prev,
+                            [category]: false
+                        }));
+                    }
+                } else {
                     setHasMoreByCategory(prev => ({
                         ...prev,
                         [category]: false
                     }));
                 }
             } else {
-                setHasMoreByCategory(prev => ({
-                    ...prev,
-                    [category]: false
-                }));
+                // For specific categories, only load articles with that article_group
+                const endpoint = `articles/home?article_group=${category}&page=${nextPage}&limit=${limit}`;
+                const response = await SikiyaAPI.get(endpoint);
+                
+                if (response.data.length > 0) {
+                    // Add new articles to existing ones, filtering out duplicates and headline articles
+                    const newArticles = response.data.filter(a => 
+                        !headlineArticleIds.current.has(a._id)
+                    );
+                    
+                    setArticlesByCategory(prev => {
+                        const currentArticles = prev[category] || [];
+                        const existingIds = new Set(currentArticles.map(a => a._id));
+                        const uniqueNewArticles = newArticles.filter(a => !existingIds.has(a._id));
+                        return {
+                            ...prev,
+                            [category]: [...currentArticles, ...uniqueNewArticles]
+                        };
+                    });
+                    
+                    // Update page number for this category
+                    setCategoryPages(prev => ({
+                        ...prev,
+                        [category]: nextPage
+                    }));
+
+                    // Check if there are more articles
+                    if (response.data.length < limit) {
+                        setHasMoreByCategory(prev => ({
+                            ...prev,
+                            [category]: false
+                        }));
+                    }
+                } else {
+                    setHasMoreByCategory(prev => ({
+                        ...prev,
+                        [category]: false
+                    }));
+                }
             }
         } catch (error) {
             console.error('Error fetching more articles:', error);
@@ -232,63 +300,150 @@ const HomeScreen = ({route}) => {
             clearTimeout(loaderTimeoutRef.current);
         }
         
-        // Smooth transition - update category immediately (this will show cached articles if available)
-        setSelectedCategory(categoryName);
+        // IMPORTANT: Never set loading=true when switching categories
+        // This prevents the full-screen loader from appearing and hiding the logo
         
-        // Check if we already have articles for this category
-        const hasCachedArticles = articlesByCategory[categoryName] && articlesByCategory[categoryName].length > 0;
-        
-        if (!hasCachedArticles) {
-            // Only show loading if we don't have cached articles
-            setLoading(true);
-            setShowLoader(false); // Reset loader visibility
-            
-            // Delay showing loader by 300ms for smooth transition
-            loaderTimeoutRef.current = setTimeout(() => {
-                setShowLoader(true);
-            }, 300);
-        } else {
-            // We have cached articles, no need to show loader
-            setLoading(false);
-            setShowLoader(false);
+        // For Explore, just switch - no filtering needed
+        if (categoryName === 'Explore') {
+            setSelectedCategory(categoryName);
+            setFilteringCategory(false);
+            setLoading(false); // Ensure loading is false
+            return;
         }
         
-        // Fetch articles for the selected category (will update cache)
-        await fetchTopHeadlines(categoryName, false);
+        // For other categories, filter from Explore cache (client-side filtering)
+        const exploreArticles = articlesByCategory['Explore'] || [];
+        
+        // Check if we have Explore articles to filter from
+        if (exploreArticles.length > 0) {
+            // Show filtering state (only in bottom half)
+            setFilteringCategory(true);
+            
+            // Filter articles by category from Explore cache
+            const filteredArticles = exploreArticles.filter(article => 
+                article.article_group === categoryName
+            );
+            
+            // Update category immediately with filtered articles
+            setSelectedCategory(categoryName);
+            
+            // Update cache for this category with filtered articles
+            setArticlesByCategory(prev => ({
+                ...prev,
+                [categoryName]: filteredArticles
+            }));
+            
+            // Reset pagination for this category
+            setCategoryPages(prev => ({
+                ...prev,
+                [categoryName]: 1
+            }));
+            
+            // If we have filtered articles, allow pagination
+            // If no filtered articles, still allow pagination to fetch from API
+            setHasMoreByCategory(prev => ({
+                ...prev,
+                [categoryName]: true // Always true initially, will be updated by pagination
+            }));
+            
+            // Ensure loading is false (never show full-screen loader)
+            setLoading(false);
+            setShowLoader(false);
+            
+            // Hide filtering state after a short delay for smooth transition
+            setTimeout(() => {
+                setFilteringCategory(false);
+            }, 200);
+            
+            // IMPORTANT: Always fetch page 1 from API in background to get full list
+            // This ensures pagination works correctly (we need the full API list, not just filtered cache)
+            // Fetch from API in background to populate the full category list
+            fetchTopHeadlines(categoryName, false).then(() => {
+                // After fetching, update hasMore based on actual API results
+                const apiArticles = articlesByCategory[categoryName] || [];
+                if (apiArticles.length < 10) {
+                    setHasMoreByCategory(prev => ({
+                        ...prev,
+                        [categoryName]: false
+                    }));
+                }
+            }).catch(err => {
+                console.error('Error fetching category articles:', err);
+            });
+        } else {
+            // No Explore articles yet, fetch from API
+            // But don't show full-screen loader - keep the screen visible
+            setSelectedCategory(categoryName);
+            setLoading(false); // Don't set loading=true - this would hide the screen
+            setFilteringCategory(true); // Show bottom loader instead
+            
+            // Fetch articles for the selected category
+            await fetchTopHeadlines(categoryName, false);
+        }
     };
 
     const refreshArticlesScreen = async () => {
         setRefreshing(true);
         try {
-            const limit = 5; // Initial load is 5 articles
-            const endpoint = selectedCategory === 'Explore'
-                ? `articles/home?page=1&limit=${limit}`
-                : `articles/home?article_group=${selectedCategory}&page=1&limit=${limit}`;
-            const response = await SikiyaAPI.get(endpoint);
+            const limit = 10; // Initial load is 10 articles
             
-            // Filter out headline articles
-            const filteredArticles = response.data.filter(article => 
-                !headlineArticleIds.current.has(article._id)
-            );
-            
-            // Update articles cache for this category
-            setArticlesByCategory(prev => ({
-                ...prev,
-                [selectedCategory]: filteredArticles
-            }));
-            
-            // Reset pagination
-            setCategoryPages(prev => ({
-                ...prev,
-                [selectedCategory]: 1
-            }));
-            
-            // Reset hasMore
-            const hasMore = filteredArticles.length >= limit;
-            setHasMoreByCategory(prev => ({
-                ...prev,
-                [selectedCategory]: hasMore
-            }));
+            if (selectedCategory === 'Explore') {
+                // Refresh Explore - fetch all articles
+                const endpoint = `articles/home?page=1&limit=${limit}`;
+                const response = await SikiyaAPI.get(endpoint);
+                
+                // Filter out headline articles
+                const filteredArticles = response.data.filter(article => 
+                    !headlineArticleIds.current.has(article._id)
+                );
+                
+                // Update articles cache for Explore
+                setArticlesByCategory(prev => ({
+                    ...prev,
+                    'Explore': filteredArticles
+                }));
+                
+                // Reset pagination
+                setCategoryPages(prev => ({
+                    ...prev,
+                    'Explore': 1
+                }));
+                
+                // Reset hasMore
+                const hasMore = filteredArticles.length >= limit;
+                setHasMoreByCategory(prev => ({
+                    ...prev,
+                    'Explore': hasMore
+                }));
+            } else {
+                // For specific categories, refresh from API
+                const endpoint = `articles/home?article_group=${selectedCategory}&page=1&limit=${limit}`;
+                const response = await SikiyaAPI.get(endpoint);
+                
+                // Filter out headline articles
+                const filteredArticles = response.data.filter(article => 
+                    !headlineArticleIds.current.has(article._id)
+                );
+                
+                // Update articles cache for this category
+                setArticlesByCategory(prev => ({
+                    ...prev,
+                    [selectedCategory]: filteredArticles
+                }));
+                
+                // Reset pagination
+                setCategoryPages(prev => ({
+                    ...prev,
+                    [selectedCategory]: 1
+                }));
+                
+                // Reset hasMore
+                const hasMore = filteredArticles.length >= limit;
+                setHasMoreByCategory(prev => ({
+                    ...prev,
+                    [selectedCategory]: hasMore
+                }));
+            }
         } catch (error) {
             console.error('Error fetching top headlines:', error);
         } finally {
@@ -331,27 +486,29 @@ const HomeScreen = ({route}) => {
 
     // Render empty state
     const renderEmptyState = () => {
-        if (loading) return null;
+        // Don't show empty state if we're filtering (show loader instead)
+        if (filteringCategory) return null;
         
-        return (
-            <View style={styles.emptyContainer}>
-                <Ionicons name="newspaper-outline" size={64} color={generalTextColor} style={{ opacity: 0.3 }} />
-                <Text style={styles.emptyText}>No articles found</Text>
-                <Text style={styles.emptySubtext}>
-                    {`No ${selectedCategory} articles available at the moment`}
-                </Text>
-            </View>
-        );
+        // Show empty state if no articles and not loading
+        const currentArticles = getCategoryArticles();
+        if (currentArticles.length === 0 && !loading && !loadingMore) {
+            return (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="newspaper-outline" size={64} color={generalTextColor} style={{ opacity: 0.3 }} />
+                    <Text style={styles.emptyText}>No articles found</Text>
+                    <Text style={styles.emptySubtext}>
+                        {`No ${selectedCategory} articles available at the moment`}
+                    </Text>
+                </View>
+            );
+        }
+        
+        return null;
     };
 
-    // Render list header (highlights and categories)
+    // Render list header (categories only; highlights & banner rendered outside FlatList)
     const renderListHeader = useCallback(() => (
         <>
-            {/* Highlight Section */}
-            <Animated.View style={{ height: HomeHeaderHeight }}>
-                <HighLight preloadedHeadlines={preloadedHeadlines} />
-            </Animated.View>
-
             {/* Category Selection Buttons */}
             <View style={{ marginTop: 4 }}>
                 <ScrollView 
@@ -392,11 +549,21 @@ const HomeScreen = ({route}) => {
                     ))}
                 </ScrollView>
             </View>
+            
+            {/* Filtering loader - only shows in bottom half */}
+            {filteringCategory && (
+                <View style={styles.filteringLoader}>
+                    <ActivityIndicator size="small" color={MainSecondaryBlueColor} />
+                </View>
+            )}
         </>
-    ), [selectedCategory, categories, handleCategoryPress]);
+    ), [selectedCategory, categories, handleCategoryPress, filteringCategory]);
 
-    // Show BigLoaderAnim during initial loading or category filtering (with delay)
-    if (loading && (articles.length === 0 || showLoader)) {
+    // Show BigLoaderAnim ONLY during initial app load (first time, no preloaded data)
+    // NEVER show full screen loader when switching categories - always show the screen with empty state if needed
+    const isInitialLoad = loading && !preloadedHomeArticles && articlesByCategory['Explore'].length === 0;
+    
+    if (isInitialLoad) {
         return (
             <SafeAreaView style={[main_Style.safeArea, styles.loadingContainer]} edges={['top', 'left', 'right']}>
                 <BigLoaderAnim />
@@ -407,7 +574,13 @@ const HomeScreen = ({route}) => {
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle={"dark-content"} />
-            <BannerAdComponent />
+            {/* Highlights at top, completely stable and not tied to category changes */}
+            <StableHighlightsWrapper 
+                preloadedHeadlines={stablePreloadedHeadlines.current} 
+                headerHeight={HomeHeaderHeight}
+            />
+            {/* Banner directly under the logo/flash news */}
+            <BannerAdComponent position="top" />
             {refreshing && <MediumLoadingState />}
             <Animated.FlatList
                 data={getCategoryArticles()}
@@ -544,6 +717,11 @@ const styles = StyleSheet.create({
         marginTop: 8,
         textAlign: 'center',
         opacity: 0.6,
+    },
+    filteringLoader: {
+        paddingVertical: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

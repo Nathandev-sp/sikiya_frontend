@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { Context as AuthContext } from '../../Context/AuthContext';
 
 // Conditionally import AdMob (only if package is installed)
@@ -65,6 +65,7 @@ const BannerAd = ({
 
     return (
         <View style={[styles.container, position === 'top' && styles.topContainer, style]}>
+            <Text style={styles.adLabel}>Advertisement</Text>
             <BannerAdComponent
                 unitId={adUnit}
                 size={BannerAdSize.FULL_BANNER}
@@ -78,6 +79,7 @@ const BannerAd = ({
 
 const styles = StyleSheet.create({
     container: {
+        marginTop: 10,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
@@ -85,6 +87,12 @@ const styles = StyleSheet.create({
     },
     topContainer: {
         marginTop: Platform.OS === 'ios' ? 0 : 0,
+    },
+    adLabel: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 4,
+        fontWeight: '500',
     },
 });
 

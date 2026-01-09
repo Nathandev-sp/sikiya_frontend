@@ -1,4 +1,4 @@
-import React,{useEffect, useState, useMemo} from 'react';
+import React,{useEffect, useState, useMemo, useRef} from 'react';
 import { View, Image, StyleSheet, Dimensions, Text, FlatList } from 'react-native';
 import FlashNewsItem from './FlashNewsItem';
 import samples from '../../SampleContent/samples';
@@ -10,8 +10,13 @@ const HighLight = React.memo(({preloadedHeadlines}) => {
 
    // Making the API Request ------------------ /top-headlines
       const [flashNews, setFlashNews] = useState([]);
+      const initializedRef = useRef(false);
   
       useEffect(() => {
+        // Only initialize once - never refetch
+        if (initializedRef.current) return;
+        initializedRef.current = true;
+        
         const fetchHeadlines = async () => {
             try {
               if (!preloadedHeadlines) {
@@ -27,7 +32,7 @@ const HighLight = React.memo(({preloadedHeadlines}) => {
         };
 
         fetchHeadlines();
-      }, []);
+      }, [preloadedHeadlines]);
   
       //------------------------------------------
 
@@ -63,6 +68,29 @@ const HighLight = React.memo(({preloadedHeadlines}) => {
         </View>
     </View>
   );
+}, (prevProps, nextProps) => {
+    // Custom comparison: only rerender if preloadedHeadlines actually changes
+    // Compare by reference and length to avoid unnecessary rerenders
+    const prevHeadlines = prevProps.preloadedHeadlines;
+    const nextHeadlines = nextProps.preloadedHeadlines;
+    
+    // If both are undefined/null, don't rerender
+    if (!prevHeadlines && !nextHeadlines) return true;
+    
+    // If one is undefined and other isn't, rerender
+    if (!prevHeadlines || !nextHeadlines) return false;
+    
+    // If arrays have different lengths, rerender
+    if (prevHeadlines.length !== nextHeadlines.length) return false;
+    
+    // If same reference, don't rerender
+    if (prevHeadlines === nextHeadlines) return true;
+    
+    // Compare IDs to see if content actually changed
+    const prevIds = prevHeadlines.map(h => h._id || h.article_id).sort().join(',');
+    const nextIds = nextHeadlines.map(h => h._id || h.article_id).sort().join(',');
+    
+    return prevIds === nextIds; // Return true if same (don't rerender), false if different (rerender)
 });
 
 HighLight.displayName = 'HighLight';

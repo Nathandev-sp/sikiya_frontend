@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, StatusBar} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, StatusBar, KeyboardAvoidingView, Platform} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, generalTitleSize, generalTitleFontWeight, generalSmallTextSize, articleTextSize, largeTextSize, generalTextSize, lightBannerBackgroundColor} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
+import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 
@@ -278,7 +279,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.loadingContainer}>
-          <MediumLoadingState />
+          <BigLoaderAnim />
           <Text style={styles.loadingText}>Submitting video...</Text>
         </View>
       </SafeAreaView>
@@ -288,6 +289,11 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={main_Style.safeArea} edges={['top']}>
       <StatusBar barStyle={"dark-content"} />
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
         <ScrollView 
           ref={scrollRef}
           style={styles.scrollView}
@@ -417,10 +423,10 @@ const NewShortVideoScreen = ({ navigation, route }) => {
                 textAlignVertical="top"
                 onFocus={() => {
                   setProofTextFocused(true);
-                  // Scroll to a specific position to bring input into view
+                  // Scroll to bring input into view above keyboard
                   setTimeout(() => {
-                    scrollRef.current?.scrollTo({ y: 600, animated: true });
-                  }, 300);
+                    scrollRef.current?.scrollTo({ y: 800, animated: true });
+                  }, 400);
                 }}
                 onBlur={() => setProofTextFocused(false)}
               />
@@ -437,8 +443,8 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             <Text style={styles.submitButtonText}>Submit Video</Text>
           </TouchableOpacity>
 
-          <View style={styles.bottomSpacer} />
         </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -662,9 +668,6 @@ const styles = StyleSheet.create({
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
     color: AppScreenBackgroundColor,
-  },
-  bottomSpacer: {
-    height: 20,
   },
   loadingContainer: {
     flex: 1,
