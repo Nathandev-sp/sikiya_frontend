@@ -13,14 +13,17 @@
       "backgroundColor": "#F0F0F0"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.sikiya.app",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
           "remote-notification"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "We use your location to show nearby news and relevant content while you use the app.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We use your location to keep local content and notifications relevant, even when the app is running in the background."
       }
     },
     "android": {

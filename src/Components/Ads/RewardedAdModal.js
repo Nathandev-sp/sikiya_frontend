@@ -9,7 +9,15 @@ import { generalTextColor, generalTextFont, generalTextSize, generalTitleFont, g
  * Modal that prompts user to watch a rewarded ad to continue watching videos.
  * Appears after user watches 10 videos (for general users only).
  */
-const RewardedAdModal = ({ visible, onWatchAd, onCancel, isShowingAd, isAdLoaded }) => {
+const RewardedAdModal = ({ 
+    visible, 
+    onWatchAd, 
+    onCancel, 
+    isShowingAd, 
+    isAdLoaded,
+    title = "Watch an Ad to Continue",
+    message = "You've watched 10 videos! Watch a short ad to unlock 10 more videos.",
+}) => {
     return (
         <Modal
             visible={visible}
@@ -23,10 +31,10 @@ const RewardedAdModal = ({ visible, onWatchAd, onCancel, isShowingAd, isAdLoaded
                         <Ionicons name="videocam" size={64} color={MainBrownSecondaryColor} />
                     </View>
                     
-                    <Text style={styles.title}>Watch an Ad to Continue</Text>
+                    <Text style={styles.title}>{title}</Text>
                     
                     <Text style={styles.message}>
-                        You've watched 10 videos! Watch a short ad to unlock 10 more videos.
+                        {message}
                     </Text>
                     
                     {isShowingAd ? (

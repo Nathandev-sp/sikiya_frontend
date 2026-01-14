@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ import AppScreenBackgroundColor, {
     genBtnBackgroundColor,
     MainBrownSecondaryColor,
     MainSecondaryBlueColor,
+    lightBannerBackgroundColor,
     generalActiveOpacity,
     generalLineHeight
 } from '../styles/GeneralAppStyle';
@@ -50,7 +51,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const isGeneralUser = userRole === 'general';
     
     // Rewarded ad hook (only for general users)
-    const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd();
+    const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
+    const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
     
     // State management
     const [videos, setVideos] = useState([]);
@@ -63,14 +65,31 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [hasMoreVideos, setHasMoreVideos] = useState(true);
+    const [videoLimitReached, setVideoLimitReached] = useState(false);
+    const [videoQuota, setVideoQuota] = useState(null);
+    const [videoQuotaLoading, setVideoQuotaLoading] = useState(false);
+    const [commentQuota, setCommentQuota] = useState(null);
+    const [commentQuotaLoading, setCommentQuotaLoading] = useState(false);
+    const [commentLoading, setCommentLoading] = useState(false);
     
     // Ad-related state (only for general users)
     const watchedVideosRef = useRef(new Set()); // Track unique videos watched
     const [showAdModal, setShowAdModal] = useState(false);
     const [isShowingAd, setIsShowingAd] = useState(false);
+    const [pendingRewardAction, setPendingRewardAction] = useState(null); // 'videos' | 'comments'
     const videosSinceLastAdRef = useRef(0); // Track videos watched since last ad
     
     const iconColor = AppScreenBackgroundColor;
+
+    const rewardedModalCopy = pendingRewardAction === 'comments'
+        ? {
+            title: 'Watch an Ad to Comment',
+            message: 'Watch a quick ad to unlock another main comment for today.',
+        }
+        : {
+            title: 'Watch an Ad to Continue',
+            message: 'Watch a short ad to unlock 10 more videos.',
+        };
 
     // Get current video data
     const currentVideo = videos[currentVideoIndex];
@@ -123,6 +142,74 @@ const LiveNews = ({ preloadedVideos, route }) => {
         }
     }, [isLoadingMore, hasMoreVideos, currentPage, videos.length, fetchVideos]);
 
+    // Video quota handlers (general users)
+    const fetchVideoQuota = useCallback(async () => {
+        try {
+            setVideoQuotaLoading(true);
+            const res = await SikiyaAPI.get('/user/videos/quota');
+            setVideoQuota(res.data);
+        } catch (err) {
+            console.error('Error fetching video quota:', err?.response?.data || err.message);
+        } finally {
+            setVideoQuotaLoading(false);
+        }
+    }, []);
+
+    const handleVideoQuotaExceeded = useCallback((data) => {
+        setVideoLimitReached(true);
+        setPendingRewardAction('videos');
+        if (data) setVideoQuota(data);
+        fetchVideoQuota();
+    }, [fetchVideoQuota]);
+
+    const handleUnlockVideos = useCallback(() => {
+        if (!isGeneralUser) return;
+        handleWatchAd('videos');
+    }, [handleWatchAd, isGeneralUser]);
+
+    const handleUpgradeVideos = useCallback(() => {
+        Alert.alert(
+            'Upgrade',
+            'Upgrade to Contributor for unlimited videos.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK' }
+            ]
+        );
+    }, []);
+
+    // Comment quota handlers (general users)
+    const fetchCommentQuota = useCallback(async () => {
+        if (!isGeneralUser) return;
+        try {
+            setCommentQuotaLoading(true);
+            const res = await SikiyaAPI.get('/user/comments/quota');
+            setCommentQuota(res.data);
+        } catch (err) {
+            console.error('Error fetching comment quota:', err?.response?.data || err.message);
+            setCommentQuota(null);
+        } finally {
+            setCommentQuotaLoading(false);
+        }
+    }, [isGeneralUser]);
+
+    const handleUnlockComment = useCallback(() => {
+        if (!isGeneralUser) return;
+        setPendingRewardAction('comments');
+        setShowAdModal(true);
+    }, [isGeneralUser]);
+
+    const handleUpgradeComment = useCallback(() => {
+        Alert.alert(
+            'Upgrade',
+            'Upgrade to unlock unlimited main comments.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK' }
+            ]
+        );
+    }, []);
+
     // Initialize with preloaded videos
     useEffect(() => {
         if (preloadedVideos && preloadedVideos.videos) {
@@ -141,6 +228,13 @@ const LiveNews = ({ preloadedVideos, route }) => {
             fetchVideos(1, false);
         }
     }, [preloadedVideos, fetchVideos]);
+
+    // Preload comment quota for general users
+    useEffect(() => {
+        if (isGeneralUser) {
+            fetchCommentQuota();
+        }
+    }, [isGeneralUser, fetchCommentQuota]);
 
     // Handle scrolling to specific video when videoId is provided (from notification)
     useEffect(() => {
@@ -184,16 +278,18 @@ const LiveNews = ({ preloadedVideos, route }) => {
             const currentVideo = videos[visibleIndex];
             
             // Don't track if modal is showing or if not a general user
-            if (currentVideo && isGeneralUser && !showAdModal) {
+            if (currentVideo && isGeneralUser && !showAdModal && !videoLimitReached) {
                 const videoId = currentVideo._id;
                 
                 // Track unique videos watched
                 if (!watchedVideosRef.current.has(videoId)) {
                     watchedVideosRef.current.add(videoId);
                     videosSinceLastAdRef.current += 1;
-                    
-                    // Show ad modal after 10 videos
-                    if (videosSinceLastAdRef.current >= 10) {
+
+                    // Stop feed after 10 videos for general users
+                    if (videosSinceLastAdRef.current > 10) {
+                        setVideoLimitReached(true);
+                        setPendingRewardAction('videos');
                         setShowAdModal(true);
                     }
                 }
@@ -203,7 +299,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
             setShowComments(false); // Close comments when switching videos
             
             // Load more videos when user is within 3 videos of the end (only if not blocked by ad)
-            if (visibleIndex >= videos.length - 3 && hasMoreVideos && !isLoadingMore && !showAdModal) {
+            if (visibleIndex >= videos.length - 3 && hasMoreVideos && !isLoadingMore && !showAdModal && !videoLimitReached) {
                 loadMoreVideos();
             }
         }
@@ -224,10 +320,22 @@ const LiveNews = ({ preloadedVideos, route }) => {
         setShowComments(!showComments);
     };
 
+    const openCommentModal = useCallback(async () => {
+        if (isGeneralUser) {
+            await fetchCommentQuota();
+        }
+        setModalVisible(true);
+    }, [fetchCommentQuota, isGeneralUser]);
+
     const onSendComment = async (text) => {
         if (!text || !currentVideo?._id) return;
+        if (isGeneralUser && commentQuota && (commentQuota.remaining ?? 0) <= 0) {
+            Alert.alert('Limit reached', 'You reached your free main comments limit for today.');
+            return;
+        }
 
         try {
+            setCommentLoading(true);
             const payload = {
                 comment_content: text,
                 mainComment: true,
@@ -239,11 +347,30 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 console.log('Comment sent successfully:', response.data);
                 setRefreshCommentsKey(prevKey => prevKey + 1);
                 setModalVisible(false);
+                // Optimistically decrement quota and increment comment count on the current video
+                setCommentQuota(prev => prev ? {
+                    ...prev,
+                    remaining: prev.remaining !== undefined ? Math.max(0, prev.remaining - 1) : prev.remaining,
+                    used: prev.used !== undefined ? prev.used + 1 : prev.used,
+                } : prev);
+                setVideos(prev => prev.map(v => v._id === currentVideo._id
+                    ? { ...v, number_of_comments: (v.number_of_comments || 0) + 1 }
+                    : v
+                ));
+                await fetchCommentQuota();
             } else {
                 console.error('Error sending comment:', response);
             }
         } catch (error) {
             console.error('Error sending comment:', error);
+            if (error?.response?.status === 403) {
+                Alert.alert(
+                    'Limit reached',
+                    error?.response?.data?.error || 'Main comment limit reached for today.'
+                );
+            }
+        } finally {
+            setCommentLoading(false);
         }
     };
 
@@ -287,50 +414,79 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 onSendComment={onSendComment}
                 setModalVisible={setModalVisible}
                 videoPlayersRef={videoPlayersRef}
+            onVideoQuotaExceeded={handleVideoQuotaExceeded}
+            openCommentModal={openCommentModal}
             />
         );
     };
 
     // Handle rewarded ad watch
-    const handleWatchAd = async () => {
+    const handleWatchAd = async (actionOverride = null) => {
+        const action = actionOverride || pendingRewardAction;
+        if (!action) return;
+
         if (!isAdLoaded) {
             console.warn('Ad not loaded yet');
+            Alert.alert('Please wait', 'Ad is still loading. Try again in a moment.');
             return;
         }
         
         setIsShowingAd(true);
-        setShowAdModal(false);
+        if (!actionOverride) {
+            setShowAdModal(false);
+        }
         
+        let earned = false;
         try {
-            const earned = await showRewardedAd();
-            
-            if (earned) {
-                // User watched ad successfully - reset counter
-                videosSinceLastAdRef.current = 0;
-                setShowAdModal(false);
-            } else {
-                // User closed ad without watching - show modal again
-                setShowAdModal(true);
-            }
+            earned = await showRewardedAd();
         } catch (error) {
             console.error('Error showing rewarded ad:', error);
-            // On error, allow user to continue (don't block them)
-            videosSinceLastAdRef.current = 0;
+        }
+
+        if (!earned) {
+            setIsShowingAd(false);
+            if (!actionOverride) {
+                setShowAdModal(true);
+            }
+            return;
+        }
+
+        try {
+            if (action === 'videos') {
+                setVideoQuotaLoading(true);
+                await SikiyaAPI.post('/user/videos/unlock');
+                await fetchVideoQuota();
+                // Reset local counters and unlock the feed
+                watchedVideosRef.current = new Set();
+                videosSinceLastAdRef.current = 0;
+                setVideoLimitReached(false);
+            } else if (action === 'comments') {
+                setCommentQuotaLoading(true);
+                await SikiyaAPI.post('/user/comments/unlock');
+                await fetchCommentQuota();
+            }
+            setPendingRewardAction(null);
             setShowAdModal(false);
+        } catch (error) {
+            console.error('Error unlocking after rewarded ad:', error?.response?.data || error.message);
+            Alert.alert('Unlock failed', error?.response?.data?.error || 'Please try again.');
+            if (!actionOverride) {
+                setShowAdModal(true);
+            }
         } finally {
+            setVideoQuotaLoading(false);
+            setCommentQuotaLoading(false);
             setIsShowingAd(false);
         }
     };
     
     // Handle cancel ad modal
     const handleCancelAd = () => {
-        // User cancelled - keep modal open so they must watch ad to continue
-        // Modal will remain visible, blocking further video viewing
-        // They can only continue after watching the ad
+        setShowAdModal(false);
     };
     
     // Disable FlatList scrolling when comments are open or ad modal is showing
-    const isScrollingEnabled = !showComments && !showAdModal;
+    const isScrollingEnabled = !showComments && !showAdModal && !videoLimitReached;
 
     if (isLoading) {
         return (
@@ -406,17 +562,57 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 onClose={() => setModalVisible(false)}
                 onSend={onSendComment}
                 placeholder="Write your comment..."
+                isLoading={commentLoading}
+                quota={isGeneralUser ? commentQuota : null}
+                quotaLoading={commentQuotaLoading}
+                onUnlock={handleUnlockComment}
+                onUpgrade={handleUpgradeComment}
+                userRole={userRole}
             />
             
-            {/* Rewarded Ad Modal - only for general users */}
-            {isGeneralUser && (
+            {/* Rewarded Ad Modal - only for general users and only for comment unlocks */}
+            {isGeneralUser && pendingRewardAction === 'comments' && (
                 <RewardedAdModal
                     visible={showAdModal}
                     onWatchAd={handleWatchAd}
                     onCancel={handleCancelAd}
                     isShowingAd={isShowingAd}
                     isAdLoaded={isAdLoaded}
+                    title={rewardedModalCopy.title}
+                    message={rewardedModalCopy.message}
                 />
+            )}
+
+            {/* Video quota overlay */}
+            {videoLimitReached && (
+                <View style={styles.videoQuotaOverlay}>
+                    <Text style={styles.quotaTitle}>You reached your free video limit.</Text>
+                    <Text style={styles.quotaSub}>
+                        Watch an ad to unlock 10 more, or upgrade for unlimited videos.
+                    </Text>
+                    <View style={styles.quotaActions}>
+                        <TouchableOpacity 
+                            style={[styles.quotaButton, styles.quotaPrimary]}
+                            onPress={handleUnlockVideos}
+                            disabled={videoQuotaLoading}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
+                            <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>Watch an ad</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.quotaButton, styles.quotaSecondary]}
+                            onPress={handleUpgradeVideos}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                            <Text style={styles.quotaButtonText}>Upgrade</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.quotaRemaining}>
+                        Remaining today: {videoQuotaLoading ? '...' : videoQuota?.remaining ?? 0} of {videoQuota?.dailyLimit ?? 10} (+{videoQuota?.unlocked ?? 0} unlocked)
+                    </Text>
+                </View>
             )}
         </SafeAreaView>
     );
@@ -436,8 +632,22 @@ const VideoItemComponent = ({
     handleProfile,
     onSendComment,
     setModalVisible,
-    videoPlayersRef
+    videoPlayersRef,
+    onVideoQuotaExceeded,
+    openCommentModal,
 }) => {
+    const resolveJournalistName = (journalist) => {
+        if (!journalist) return '';
+        return (
+            journalist.displayName ||
+            journalist.displayname ||
+            journalist.display_name ||
+            journalist.name ||
+            journalist.username ||
+            `${journalist.firstname || ''} ${journalist.lastname || ''}`.trim()
+        ).trim();
+    };
+
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(item?.number_of_likes || 0);
     const [isLiking, setIsLiking] = useState(false);
@@ -472,7 +682,11 @@ const VideoItemComponent = ({
                         await SikiyaAPI.post(`/video/${item._id}/track/view`);
                         viewTrackedRef.current = true;
                     } catch (error) {
-                        console.error('Error tracking video view:', error);
+                        if (error?.response?.status === 403) {
+                            onVideoQuotaExceeded && onVideoQuotaExceeded(error?.response?.data);
+                        } else {
+                            console.error('Error tracking video view:', error);
+                        }
                     }
                 };
                 trackView();
@@ -500,7 +714,13 @@ const VideoItemComponent = ({
                 }, 30000); // Every 30 seconds
             }
         } else {
-            videoPlayer.pause();
+            if (videoPlayer && typeof videoPlayer.pause === 'function') {
+                try {
+                    videoPlayer.pause();
+                } catch (err) {
+                    console.warn('Video pause failed', err);
+                }
+            }
             
             // Stop tracking watch time when video becomes inactive
             if (watchTimeIntervalRef.current) {
@@ -524,8 +744,15 @@ const VideoItemComponent = ({
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (item?._id && videoPlayersRef.current[item._id]) {
-                videoPlayersRef.current[item._id].pause();
+            const player = item?._id ? videoPlayersRef?.current?.[item._id] : null;
+            if (player && typeof player.pause === 'function') {
+                try {
+                    player.pause();
+                } catch (err) {
+                    console.warn('Video pause on unmount failed', err);
+                }
+            }
+            if (item?._id && videoPlayersRef?.current?.[item._id]) {
                 delete videoPlayersRef.current[item._id];
             }
             
@@ -572,6 +799,8 @@ const VideoItemComponent = ({
                 setLiked(response.data.isLiked || false);
                 if (response.data.number_of_likes !== undefined) {
                     setLikeCount(response.data.number_of_likes);
+                    // Keep parent list in sync
+                    setVideos(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
                 }
             }
         } catch (error) {
@@ -606,6 +835,7 @@ const VideoItemComponent = ({
                 setLiked(response.data.liked !== undefined ? response.data.liked : !liked);
                 if (response.data.number_of_likes !== undefined && response.data.number_of_likes !== null) {
                     setLikeCount(response.data.number_of_likes);
+                    setVideos(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
                 } else {
                     // If count not in response, refresh status
                     checkLikeStatus();
@@ -645,8 +875,25 @@ const VideoItemComponent = ({
                     {item?.journalist_id && (
                         <View style={styles.authorInfo}>
                             <Text style={styles.authorName}>
-                                {item.journalist_id.firstname} {item.journalist_id.lastname}
+                                {resolveJournalistName(item.journalist_id)}
                             </Text>
+                            <View style={styles.locationDateRow}>
+                                <View style={styles.locationInfo}>
+                                    <Ionicons name="location" size={14} color="#fff" />
+                                    <Text style={styles.locationTextOverlay}>
+                                        {item.location || item.concerned_city || item.concerned_country || 'Location'}
+                                    </Text>
+                                </View>
+                                <Text style={styles.dateTextOverlay}>
+                                    {(() => {
+                                        if (!item?.published_on) return '';
+                                        const date = new Date(item.published_on);
+                                        const day = date.getDate();
+                                        const month = date.toLocaleString('en-US', { month: 'short' });
+                                        return `${day} ${month}`;
+                                    })()}
+                                </Text>
+                            </View>
                         </View>
                     )}
                 </View>
@@ -713,7 +960,7 @@ const VideoItemComponent = ({
                         <Text style={styles.commentsTitle}>Comments</Text>
                         <View style={styles.commentsHeaderRight}>
                             <TouchableOpacity 
-                                onPress={() => setModalVisible(true)}
+                                onPress={openCommentModal || (() => setModalVisible(true))}
                                 style={[styles.addCommentButton, main_Style.genButtonElevation]}
                                 activeOpacity={generalActiveOpacity}
                             >
@@ -837,6 +1084,32 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
         fontWeight: generalTextFontWeight,
     },
+    locationDateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 6,
+        width: '100%',
+    },
+    locationInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        flexShrink: 1,
+    },
+    locationTextOverlay: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontWeight: generalTextFontWeight,
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+    },
+    dateTextOverlay: {
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontWeight: generalTextFontWeight,
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        marginLeft: 12,
+    },
     verticalActionButtons: {
         flexDirection: 'column',
         alignItems: 'center',
@@ -933,6 +1206,72 @@ const styles = StyleSheet.create({
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+    },
+    videoQuotaOverlay: {
+        position: 'absolute',
+        bottom: 40,
+        left: 16,
+        right: 16,
+        backgroundColor: MainSecondaryBlueColor,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: lightBannerBackgroundColor,
+        padding: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    quotaTitle: {
+        fontSize: generalTextSize,
+        fontFamily: generalTitleFont,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
+        marginBottom: 4,
+    },
+    quotaSub: {
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        color: 'rgba(255, 255, 255, 0.9)',
+        marginBottom: 10,
+    },
+    quotaActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    quotaButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 10,
+    },
+    quotaPrimary: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: MainBrownSecondaryColor,
+    },
+    quotaSecondary: {
+        backgroundColor: MainBrownSecondaryColor,
+    },
+    quotaButtonText: {
+        fontSize: generalTextSize,
+        fontFamily: generalTitleFont,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
+    },
+    quotaPrimaryText: {
+        color: MainBrownSecondaryColor,
+    },
+    quotaRemaining: {
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        color: '#fff',
     },
 });
 

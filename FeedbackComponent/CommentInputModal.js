@@ -1,9 +1,22 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback, useWindowDimensions } from 'react-native';
-import AppScreenBackgroundColor, { bannerBackgroundColor, cardBackgroundColor, genBtnBackgroundColor, generalLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { bannerBackgroundColor, cardBackgroundColor, commentTextSize, genBtnBackgroundColor, generalLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, MainBlueColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const CommentInputModal = ({ visible, onClose, onSend, placeholder, mode = "article", replyToName = "", isLoading = false }) => {
+const CommentInputModal = ({ 
+  visible, 
+  onClose, 
+  onSend, 
+  placeholder, 
+  mode = "article", 
+  replyToName = "", 
+  isLoading = false,
+  quota = null, // { dailyLimit, unlocked, used, remaining }
+  quotaLoading = false,
+  onUnlock,
+  onUpgrade,
+  userRole = ''
+}) => {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef(null);
@@ -82,7 +95,11 @@ const CommentInputModal = ({ visible, onClose, onSend, placeholder, mode = "arti
   const maxWords = 120;
 
   // determine disabled state for the send action
-  const sendDisabled = !text.trim() || isLoading || wordCount > maxWords;
+  const remainingMainComments = quota?.remaining ?? null;
+  const showQuota = quota && mode === 'article';
+  const quotaExceeded = showQuota && remainingMainComments !== null && remainingMainComments <= 0;
+
+  const sendDisabled = !text.trim() || isLoading || wordCount > maxWords || quotaExceeded;
 
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
@@ -150,6 +167,50 @@ const CommentInputModal = ({ visible, onClose, onSend, placeholder, mode = "arti
               <Ionicons name="close" size={24} color={withdrawnTitleColor} />
             </TouchableOpacity>
           </View>
+
+          {/* Quota notice */}
+          {showQuota && (
+            <View style={styles.quotaContainer}>
+              <Text style={styles.quotaText}>
+                Main comments left today: {quotaLoading ? '...' : remainingMainComments ?? '-'} of {quota?.dailyLimit ?? 2}
+              </Text>
+              {quota?.unlocked > 0 && (
+                <Text style={styles.quotaSubText}>
+                  Unlocked today: {quota.unlocked}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Limit reached actions */}
+          {quotaExceeded && (
+            <View style={styles.limitBox}>
+              <Text style={styles.limitTitle}>You have reached your free daily main comment limit.</Text>
+              <Text style={styles.limitSub}>
+                You can still post unlimited replies to main comments.
+              </Text>
+              <View style={styles.limitActions}>
+                <TouchableOpacity 
+                  style={[styles.actionButton, styles.actionPrimary]}
+                  onPress={onUnlock}
+                  disabled={quotaLoading || isLoading}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
+                  <Text style={[styles.actionButtonText, styles.actionPrimaryText]}>Watch an ad</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionButton, styles.actionSecondary]}
+                  onPress={onUpgrade}
+                  disabled={isLoading}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.actionButtonText}>Upgrade</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Input Section */}
           <View style={styles.inputSection}>
@@ -271,6 +332,77 @@ const styles = StyleSheet.create({
     fontSize: withdrawnTitleSize,
     color: withdrawnTitleColor,
     fontFamily: generalTextFont,
+  },
+  quotaContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  quotaText: {
+    fontSize: commentTextSize,
+    color: withdrawnTitleColor,
+    fontFamily: generalTextFont,
+  },
+  quotaSubText: {
+    marginTop: 2,
+    fontSize: withdrawnTitleSize,
+    color: withdrawnTitleColor,
+    fontFamily: generalTextFont,
+  },
+  limitBox: {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    marginTop: 4,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: MainSecondaryBlueColor,
+    borderWidth: 1,
+    borderColor: lightBannerBackgroundColor,
+  },
+  limitTitle: {
+    fontSize: generalTextSize,
+    fontFamily: generalTitleFont,
+    fontWeight: generalTitleFontWeight,
+    color: '#fff',
+    marginBottom: 4,
+  },
+  limitSub: {
+    fontSize: withdrawnTitleSize,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontFamily: generalTextFont,
+    marginBottom: 8,
+  },
+  limitActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  actionPrimary: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: MainBrownSecondaryColor,
+  },
+  actionSecondary: {
+    backgroundColor: MainBrownSecondaryColor,
+  },
+  actionButtonText: {
+    fontSize: generalTextSize,
+    fontFamily: generalTitleFont,
+    fontWeight: generalTitleFontWeight,
+    color: '#fff',
+  },
+  actionPrimaryText: {
+    color: MainBrownSecondaryColor,
   },
   closeButton: {
     padding: 4,

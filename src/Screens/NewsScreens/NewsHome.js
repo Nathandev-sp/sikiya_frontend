@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -15,6 +15,8 @@ import BookmarkIcon from '../../Components/BookmarkIcon';
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from '../../utils/imageUrl';
 import BannerAdComponent from '../../Components/Ads/BannerAd';
+import { Context as AuthContext } from '../../Context/AuthContext';
+import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 
 const createStyles = (height) => StyleSheet.create({
     container: {
@@ -288,6 +290,8 @@ const NewsHome = ({ route }) => {
     const [commentLoading, setCommentLoading] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
+    const [commentQuota, setCommentQuota] = useState(null);
+    const [quotaLoading, setQuotaLoading] = useState(false);
     const flatListRef = useRef(null);
     const [refreshCommentsKey, setRefreshCommentsKey] = useState(0); // Key to force re-render of comments
     const viewTrackedRef = useRef(false); // Track if view has been recorded
@@ -297,6 +301,10 @@ const NewsHome = ({ route }) => {
     const { width, height } = useWindowDimensions();
     const styles = createStyles(height);
     const navigation = useNavigation();
+    const { state: authState } = useContext(AuthContext);
+    const userRole = authState?.role || '';
+    const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
+    const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
 
     // Fetch article by ID if articleId is provided but article is not
     useEffect(() => {
@@ -328,9 +336,72 @@ const NewsHome = ({ route }) => {
     });
     const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
+    // Fetch comment quota for main comments (general users)
+    const fetchCommentQuota = useCallback(async () => {
+        try {
+            setQuotaLoading(true);
+            const res = await SikiyaAPI.get('/user/comments/quota');
+            setCommentQuota(res.data);
+        } catch (err) {
+            console.error('Error fetching comment quota:', err?.response?.data || err.message);
+            setCommentQuota(null);
+        } finally {
+            setQuotaLoading(false);
+        }
+    }, []);
+
+    const handleUnlockComment = useCallback(() => {
+        if (userRole !== 'general') return;
+        handleWatchAd();
+    }, [handleWatchAd, userRole]);
+
+    const handleUpgrade = useCallback(() => {
+        Alert.alert(
+            'Upgrade',
+            'Upgrade to unlock unlimited main comments.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'OK' }
+            ]
+        );
+    }, []);
+
+    const handleWatchAd = useCallback(async () => {
+        if (!isAdLoaded) {
+            Alert.alert('Please wait', 'Ad is still loading. Try again in a moment.');
+            return;
+        }
+
+        let earned = false;
+        try {
+            earned = await showRewardedAd();
+        } catch (error) {
+            console.error('Error showing rewarded ad:', error);
+        }
+
+        if (!earned) {
+            return;
+        }
+
+        try {
+            setQuotaLoading(true);
+            await SikiyaAPI.post('/user/comments/unlock');
+            await fetchCommentQuota();
+        } catch (err) {
+            console.error('Error unlocking comment:', err?.response?.data || err.message);
+            Alert.alert('Unlock failed', err?.response?.data?.error || 'Please try again.');
+        } finally {
+            setQuotaLoading(false);
+        }
+    }, [isAdLoaded, showRewardedAd, fetchCommentQuota]);
+
     const onSendComment = async (text) => {
         // Handle sending the comment
         if (!text || !article._id) return;
+        if (userRole === 'general' && commentQuota && (commentQuota.remaining ?? 0) <= 0) {
+            Alert.alert('Limit reached', 'You reached your free main comments limit for today.');
+            return;
+        }
 
         try {
             setCommentLoading(true); // Set loading state to true
@@ -347,12 +418,26 @@ const NewsHome = ({ route }) => {
                 //console.log('Comment sent successfully:', response.data);
                 setRefreshCommentsKey(prevKey => prevKey + 1); // Increment key to force re-render of comments
                 setModalVisible(false);
+                // Optimistically decrement quota
+                setCommentQuota(prev => prev ? {
+                    ...prev,
+                    remaining: prev.remaining !== undefined ? Math.max(0, prev.remaining - 1) : prev.remaining,
+                    used: prev.used !== undefined ? prev.used + 1 : prev.used,
+                } : prev);
+                await fetchCommentQuota();
             } else {
                 console.error('Error sending comment:', response);
             }
 
         } catch (error) {
-            console.error('Error sending comment:', error);
+            if (error?.response?.status === 403) {
+                Alert.alert(
+                    'Limit reached',
+                    error?.response?.data?.error || 'Main comment limit reached for today.'
+                );
+            } else {
+                console.error('Error sending comment:', error);
+            }
         } finally {
             // We don't set commentLoading to false here because FeedbackContainer will do it
             // after it's done refreshing the comments
@@ -671,7 +756,10 @@ const NewsHome = ({ route }) => {
                             refreshKey={refreshCommentsKey} 
                             commentLoading={commentLoading} 
                             setCommentLoading={setCommentLoading}
-                            onAddCommentPress={() => setModalVisible(true)}
+                            onAddCommentPress={async () => {
+                                setModalVisible(true);
+                                await fetchCommentQuota();
+                            }}
                         />
                         <CommentInputModal
                             visible={modalVisible}
@@ -679,6 +767,11 @@ const NewsHome = ({ route }) => {
                             onSend={onSendComment}
                             placeholder="Write your comment..."
                             isLoading={commentLoading}
+                            quota={commentQuota}
+                            quotaLoading={quotaLoading}
+                            onUnlock={handleUnlockComment}
+                            onUpgrade={handleUpgrade}
+                            userRole={userRole}
                         />
                     </View>
                 </View>

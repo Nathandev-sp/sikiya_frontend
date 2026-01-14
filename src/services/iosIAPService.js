@@ -19,7 +19,7 @@ import SikiyaAPI from '../../API/SikiyaAPI';
 
 // Product IDs - Load from environment variables
 // Format: 'com.yourcompany.app.productname'
-const PRODUCT_IDS = {
+export const PRODUCT_IDS = {
     CONTRIBUTOR_MONTHLY: process.env.EXPO_PUBLIC_APPLE_PRODUCT_ID || 'com.sikiya.contributor.monthly',
 };
 

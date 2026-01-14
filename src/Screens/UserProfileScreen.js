@@ -23,7 +23,7 @@ const UserProfileScreen = ({route}) => {
     // Get preloaded user profile data from route params
     const preloadedUserProfile = route?.params?.preloadedUserProfile;
 
-    console.log("User Profile:", userProfile);
+    //console.log("User Profile:", userProfile);
 
     const fetchUserProfile = async () => {
         try {
@@ -117,7 +117,7 @@ const UserProfileScreen = ({route}) => {
             </SafeAreaView>
         );
     }
-    console.log("User Profile:", userProfile.profile_picture);
+    //console.log("User Profile:", userProfile.profile_picture);
 
     return (
         <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
@@ -139,14 +139,6 @@ const UserProfileScreen = ({route}) => {
                         />
                     </View>
                     <View style={styles.headerButtonsContainer}>
-                        <TouchableOpacity 
-                            style={[styles.testNotificationButton, main_Style.genButtonElevation]}
-                            onPress={handleTestNotification}
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Ionicons name="notifications-outline" size={20} color={MainBrownSecondaryColor} />
-                        </TouchableOpacity>
                         <TouchableOpacity 
                             style={[styles.settingsButton, main_Style.genButtonElevation]}
                             onPress={handleSettingsPress}
