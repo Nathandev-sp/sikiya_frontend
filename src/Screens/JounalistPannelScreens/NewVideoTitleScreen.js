@@ -184,6 +184,9 @@ const NewVideoTitleScreen = ({ navigation }) => {
                 {getWordCount(videoData.videoTitle)} words (min: 8)
               </Text>
             </View>
+            <Text style={styles.labelDescription}>
+              Provide a clear and descriptive title that summarizes your video content
+            </Text>
             <TextInput
               ref={titleInputRef}
               style={[
@@ -192,7 +195,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
                 errors.videoTitle && styles.inputError
               ]}
               placeholder="Enter video title (minimum 8 words)"
-              placeholderTextColor={withdrawnTitleColor}
+              placeholderTextColor="#aaa"
               value={videoData.videoTitle}
               onChangeText={(text) => handleFormChange('videoTitle', text)}
               onFocus={() => {
@@ -276,8 +279,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   headerLogo: {
-    width: 80,
-    height: 80,
+    width: 50,
+    height: 50,
   },
   placeholder: {
     width: 40,
@@ -285,6 +288,7 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    paddingTop: 16,
   },
   screenTitle: {
     fontSize: largeTextSize,
@@ -307,31 +311,47 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
+    marginBottom: 4,
   },
   wordCount: {
     fontSize: generalSmallTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
   },
+  labelDescription: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    marginBottom: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   titleInput: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 12,
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   inputFocused: {
     borderColor: '#2BA1E6',
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     backgroundColor: '#F0F6FA',
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

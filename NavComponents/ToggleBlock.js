@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   toggleContainer: {
     height: 30,
     width: '60%',
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: '#fff',
     alignSelf: 'center',
     borderRadius: 20,
     flexDirection: 'row',
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginTop: 2,
     marginBottom: 0,
-    borderWidth: 1.5,
+    borderWidth: 0.8,
     borderColor: '#E0E0E0',
   },
   slider: {

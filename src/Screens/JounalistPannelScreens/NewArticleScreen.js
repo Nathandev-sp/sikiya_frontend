@@ -198,6 +198,9 @@ const NewArticleScreen = ({ navigation }) => {
                 {getWordCount(articleData.articleTitle)} words (min: 8)
               </Text>
             </View>
+            <Text style={styles.labelDescription}>
+              Provide a clear and concise title that summarizes your article
+            </Text>
             <TextInput
               ref={titleInputRef}
               style={[
@@ -206,7 +209,7 @@ const NewArticleScreen = ({ navigation }) => {
                 errors.articleTitle && styles.inputError
               ]}
               placeholder="Enter article title (minimum 8 words)"
-              placeholderTextColor={withdrawnTitleColor}
+              placeholderTextColor="#aaa"
               value={articleData.articleTitle}
               onChangeText={(text) => handleFormChange('articleTitle', text)}
               onFocus={() => {
@@ -225,6 +228,9 @@ const NewArticleScreen = ({ navigation }) => {
                 {getWordCount(articleData.articleHighlight)}/30 words
               </Text>
             </View>
+            <Text style={styles.labelDescription}>
+              Write a brief summary that captures the essence of your article
+            </Text>
             <TextInput
               ref={highlightInputRef}
               style={[
@@ -234,7 +240,7 @@ const NewArticleScreen = ({ navigation }) => {
                 errors.articleHighlight && styles.inputError
               ]}
               placeholder="Write a brief highlight (30 words max)"
-              placeholderTextColor={withdrawnTitleColor}
+              placeholderTextColor="#aaa"
               value={articleData.articleHighlight}
               onChangeText={(text) => {
                 const wordCount = getWordCount(text);
@@ -245,12 +251,8 @@ const NewArticleScreen = ({ navigation }) => {
                 }
               }}
               multiline
-              numberOfLines={4}
               textAlignVertical="top"
-              onFocus={() => {
-                setHighlightFocused(true);
-                scrollRef.current?.scrollTo({ y: 200, animated: true });
-              }}
+              onFocus={() => setHighlightFocused(true)}
               onBlur={() => setHighlightFocused(false)}
             />
           </View>
@@ -263,6 +265,9 @@ const NewArticleScreen = ({ navigation }) => {
                 {getWordCount(articleData.fullArticle)}/300 words
               </Text>
             </View>
+            <Text style={styles.labelDescription}>
+              Write the complete article with all details, facts, and information
+            </Text>
             <TextInput
               ref={fullArticleInputRef}
               style={[
@@ -272,7 +277,7 @@ const NewArticleScreen = ({ navigation }) => {
                 errors.fullArticle && styles.inputError
               ]}
               placeholder="Write the full article (300 words max)"
-              placeholderTextColor={withdrawnTitleColor}
+              placeholderTextColor="#aaa"
               value={articleData.fullArticle}
               onChangeText={(text) => {
                 const wordCount = getWordCount(text);
@@ -283,12 +288,8 @@ const NewArticleScreen = ({ navigation }) => {
                 }
               }}
               multiline
-              numberOfLines={10}
               textAlignVertical="top"
-              onFocus={() => {
-                setFullArticleFocused(true);
-                scrollRef.current?.scrollTo({ y: 400, animated: true });
-              }}
+              onFocus={() => setFullArticleFocused(true)}
               onBlur={() => setFullArticleFocused(false)}
             />
           </View>
@@ -368,8 +369,8 @@ const styles = StyleSheet.create({
     //backgroundColor: 'red',
   },
   headerLogo: {
-    width: 80,
-    height: 80,
+    width: 50,
+    height: 50,
 
   },
   placeholder: {
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginBottom: 4,
   },
   labelRow: {
@@ -409,24 +410,39 @@ const styles = StyleSheet.create({
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
   },
+  labelDescription: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    marginBottom: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   titleInput: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 12,
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   inputFocused: {
     borderColor: '#2BA1E6',
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     backgroundColor: '#F0F6FA',
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   textArea: {
     backgroundColor: "#FFFFFF",
@@ -435,14 +451,26 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    //backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   highlightTextArea: {
     minHeight: 100,
+    maxHeight: 200,
   },
   fullArticleTextArea: {
-    minHeight: 200,
+    minHeight: 300,
+    maxHeight: 500,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

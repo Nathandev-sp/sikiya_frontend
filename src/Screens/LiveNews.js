@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreenBackgroundColor, { 
@@ -24,7 +24,8 @@ import AppScreenBackgroundColor, {
     MainSecondaryBlueColor,
     lightBannerBackgroundColor,
     generalActiveOpacity,
-    generalLineHeight
+    generalLineHeight,
+    secCardBackgroundColor
 } from '../styles/GeneralAppStyle';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import CommentInputModal from '../../FeedbackComponent/CommentInputModal';
@@ -35,10 +36,10 @@ import { formatNumber } from '../utils/numberFormatter';
 import { Context as AuthContext } from '../Context/AuthContext';
 import { useRewardedAd } from '../Components/Ads/RewardedAd';
 import RewardedAdModal from '../Components/Ads/RewardedAdModal';
+import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 
 const LiveNews = ({ preloadedVideos, route }) => {
     const { width, height } = useWindowDimensions();
-    const insets = useSafeAreaInsets();
     const { videoId } = route?.params || {};
     const flatListRef = useRef(null);
     const navigation = useNavigation();
@@ -416,6 +417,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 videoPlayersRef={videoPlayersRef}
             onVideoQuotaExceeded={handleVideoQuotaExceeded}
             openCommentModal={openCommentModal}
+                setVideos={setVideos}
             />
         );
     };
@@ -488,14 +490,6 @@ const LiveNews = ({ preloadedVideos, route }) => {
     // Disable FlatList scrolling when comments are open or ad modal is showing
     const isScrollingEnabled = !showComments && !showAdModal && !videoLimitReached;
 
-    if (isLoading) {
-        return (
-            <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-                <MediumLoadingState />
-            </SafeAreaView>
-        );
-    }
-
     if (error) {
         return (
             <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -517,7 +511,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
     }
 
     return(
-        <SafeAreaView style={styles.safeArea} edges={['right']}>
+        <SafeAreaView style={styles.safeArea} edges={['right', 'left', 'top']}>
             <StatusBar barStyle="light-content" />
             <FlatList
                 ref={flatListRef}
@@ -585,33 +579,42 @@ const LiveNews = ({ preloadedVideos, route }) => {
 
             {/* Video quota overlay */}
             {videoLimitReached && (
-                <View style={styles.videoQuotaOverlay}>
-                    <Text style={styles.quotaTitle}>You reached your free video limit.</Text>
-                    <Text style={styles.quotaSub}>
-                        Watch an ad to unlock 10 more, or upgrade for unlimited videos.
-                    </Text>
-                    <View style={styles.quotaActions}>
-                        <TouchableOpacity 
-                            style={[styles.quotaButton, styles.quotaPrimary]}
-                            onPress={handleUnlockVideos}
-                            disabled={videoQuotaLoading}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
-                            <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>Watch an ad</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.quotaButton, styles.quotaSecondary]}
-                            onPress={handleUpgradeVideos}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                            <Text style={styles.quotaButtonText}>Upgrade</Text>
-                        </TouchableOpacity>
+                <View style={styles.videoQuotaOverlayContainer}>
+                    <View style={styles.videoQuotaOverlay}>
+                        <Text style={styles.quotaTitle}>You reached your daily free video limit.</Text>
+                        <Text style={styles.quotaSub}>
+                            Watch an ad to unlock 10 more, or upgrade for unlimited videos.
+                        </Text>
+                        <View style={styles.quotaActions}>
+                            <TouchableOpacity 
+                                style={[styles.quotaButton, styles.quotaPrimary]}
+                                onPress={handleUnlockVideos}
+                                disabled={videoQuotaLoading}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
+                                <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>Watch an ad</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.quotaButton, styles.quotaSecondary]}
+                                onPress={handleUpgradeVideos}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={styles.quotaButtonText}>Upgrade</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.quotaRemaining}>
+                            Remaining today: {videoQuotaLoading ? '...' : videoQuota?.remaining ?? 0} of {videoQuota?.dailyLimit ?? 10} (+{videoQuota?.unlocked ?? 0} unlocked)
+                        </Text>
                     </View>
-                    <Text style={styles.quotaRemaining}>
-                        Remaining today: {videoQuotaLoading ? '...' : videoQuota?.remaining ?? 0} of {videoQuota?.dailyLimit ?? 10} (+{videoQuota?.unlocked ?? 0} unlocked)
-                    </Text>
+                </View>
+            )}
+
+            {/* Initial loading overlay */}
+            {isLoading && videos.length === 0 && (
+                <View style={styles.loadingOverlay}>
+                    <BigLoaderAnim />
                 </View>
             )}
         </SafeAreaView>
@@ -635,6 +638,7 @@ const VideoItemComponent = ({
     videoPlayersRef,
     onVideoQuotaExceeded,
     openCommentModal,
+    setVideos: setVideosProp,
 }) => {
     const resolveJournalistName = (journalist) => {
         if (!journalist) return '';
@@ -800,7 +804,9 @@ const VideoItemComponent = ({
                 if (response.data.number_of_likes !== undefined) {
                     setLikeCount(response.data.number_of_likes);
                     // Keep parent list in sync
-                    setVideos(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
+                    if (setVideosProp) {
+                        setVideosProp(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
+                    }
                 }
             }
         } catch (error) {
@@ -833,9 +839,11 @@ const VideoItemComponent = ({
             // Update state from backend response
             if (response.data) {
                 setLiked(response.data.liked !== undefined ? response.data.liked : !liked);
-                if (response.data.number_of_likes !== undefined && response.data.number_of_likes !== null) {
+                    if (response.data.number_of_likes !== undefined && response.data.number_of_likes !== null) {
                     setLikeCount(response.data.number_of_likes);
-                    setVideos(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
+                        if (setVideosProp) {
+                            setVideosProp(prev => prev.map(v => v._id === item._id ? { ...v, number_of_likes: response.data.number_of_likes } : v));
+                        }
                 } else {
                     // If count not in response, refresh status
                     checkLikeStatus();
@@ -856,14 +864,16 @@ const VideoItemComponent = ({
 
     return (
         <View style={[styles.videoContainer, { height }]}>
-            <VideoView 
-                style={[styles.fullScreenVideo, { width, height }]} 
-                player={videoPlayer} 
-                allowsFullscreen={false}
-                allowsPictureInPicture={false}
-                nativeControls={false}
-                contentFit="cover"
-            />
+            <View style={[styles.videoFrame, { width: width * 0.96, height: height * 0.84 }]}>
+                <VideoView 
+                    style={styles.videoContent} 
+                    player={videoPlayer} 
+                    fullscreenOptions={{ allowsFullscreen: false }}
+                    allowsPictureInPicture={false}
+                    nativeControls={false}
+                    contentFit="cover"
+                />
+            </View>
             
             {/* Bottom Info Section */}
             <View style={styles.bottomInfoSection}>
@@ -910,7 +920,7 @@ const VideoItemComponent = ({
                         >
                             <Ionicons 
                                 name={liked ? "heart" : "heart-outline"} 
-                                size={24} 
+                                size={20} 
                                 color={liked ? "#FF3040" : iconColor} 
                             />
                         </TouchableOpacity>
@@ -926,7 +936,7 @@ const VideoItemComponent = ({
                             onPress={handleComments}
                             activeOpacity={generalActiveOpacity}
                         >
-                            <Ionicons name="chatbubble-outline" size={24} color={iconColor} />
+                            <Ionicons name="chatbubble-outline" size={20} color={iconColor} />
                         </TouchableOpacity>
                         {item?.number_of_comments > 0 && (
                             <Text style={styles.actionCount}>{formatNumber(item.number_of_comments)}</Text>
@@ -939,7 +949,7 @@ const VideoItemComponent = ({
                         onPress={handleShare}
                         activeOpacity={generalActiveOpacity}
                     >
-                        <Ionicons name="share-social-outline" size={24} color={iconColor} />
+                        <Ionicons name="share-social-outline" size={20} color={iconColor} />
                     </TouchableOpacity>
                     
                     {/* Profile Button */}
@@ -948,7 +958,7 @@ const VideoItemComponent = ({
                         onPress={handleProfile}
                         activeOpacity={generalActiveOpacity}
                     >
-                        <Ionicons name="person-outline" size={24} color={iconColor} />
+                        <Ionicons name="person-outline" size={20} color={iconColor} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -998,7 +1008,7 @@ const VideoItemComponent = ({
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#0A0908',
     },
     errorContainer: {
         flex: 1,
@@ -1042,13 +1052,26 @@ const styles = StyleSheet.create({
     videoContainer: {
         position: 'relative',
         width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    fullScreenVideo: {
+    videoFrame: {
+        borderRadius: 12,
+        overflow: 'hidden',
+        //borderWidth: 1,
+        //borderColor: 'rgba(255,255,255,0.15)',
+        marginTop: 8,
+        marginBottom: 12,
+        backgroundColor: '#000',
+    },
+    videoContent: {
+        width: '100%',
+        height: '100%',
         backgroundColor: '#000',
     },
     bottomInfoSection: {
         position: 'absolute',
-        bottom: 0,
+        bottom: 26,
         left: 0,
         right: 0,
         flexDirection: 'row',
@@ -1061,11 +1084,11 @@ const styles = StyleSheet.create({
     titleContainer: {
         flex: 1,
         marginRight: 12,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 1)',
         padding: 14,
         borderRadius: 12,
         borderWidth: 0.5,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        //borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     articleTitle: {
         fontSize: articleTitleSize,
@@ -1080,7 +1103,7 @@ const styles = StyleSheet.create({
     },
     authorName: {
         fontSize: generalSmallTextSize,
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: AppScreenBackgroundColor,
         fontFamily: generalTextFont,
         fontWeight: generalTextFontWeight,
     },
@@ -1098,13 +1121,13 @@ const styles = StyleSheet.create({
         flexShrink: 1,
     },
     locationTextOverlay: {
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: AppScreenBackgroundColor,
         fontWeight: generalTextFontWeight,
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
     },
     dateTextOverlay: {
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: AppScreenBackgroundColor,
         fontWeight: generalTextFontWeight,
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
@@ -1121,12 +1144,12 @@ const styles = StyleSheet.create({
     actionButton: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 50,
-        width: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        height: 40,
+        width: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0, 0, 0, 1)',
+        //borderWidth: 1.5,
+        //borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     actionCount: {
         fontSize: generalSmallTextSize,
@@ -1201,21 +1224,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: AppScreenBackgroundColor,
+    },
     loadingMoreText: {
         marginTop: 8,
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
     },
-    videoQuotaOverlay: {
+    videoQuotaOverlayContainer: {
         position: 'absolute',
-        bottom: 40,
-        left: 16,
-        right: 16,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+    },
+    videoQuotaOverlay: {
+        width: '100%',
+        maxWidth: 420,
         backgroundColor: MainSecondaryBlueColor,
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: lightBannerBackgroundColor,
         padding: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
@@ -1224,11 +1259,12 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     quotaTitle: {
-        fontSize: generalTextSize,
+        fontSize: articleTitleSize,
         fontFamily: generalTitleFont,
         fontWeight: generalTitleFontWeight,
+        alignSelf: 'center',
         color: '#fff',
-        marginBottom: 4,
+        marginBottom: 8,
     },
     quotaSub: {
         fontSize: generalSmallTextSize,

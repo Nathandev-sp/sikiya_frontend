@@ -35,7 +35,7 @@ const articleTitleColor = '#44484B'; //#3A3D40 #FFFFFF
  const generalTextSize = 15;
  const articleTextSize = 15.5;
  const commentTextSize = 14;
- const withdrawnTitleSize = 11.5;
+ const withdrawnTitleSize = 12.5;
  const generalSmallTextSize = 12.5;
  const XsmallTextSize = 10;
  const largeTextSize = 20;
@@ -58,8 +58,8 @@ const main_Style = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: AppScreenBackgroundColor, //#ECECEC #EEEEEE #FDFFF
-        paddingLeft: 4,
-        paddingRight: 4, 
+        paddingLeft: 0,
+        paddingRight: 0, 
     },
     secSafeArea: {
         flex: 1,
@@ -87,6 +87,13 @@ const main_Style = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 0.6,
     },
+    genContentElevation: {
+      zIndex: 8,
+      shadowColor: '#000000', // iOS shadow properties
+      shadowOffset: { width: 0, height: 0.2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 0.3
+    },
     loadingAnimation: {
         width: 40,
         height: 40,
@@ -112,21 +119,27 @@ const auth_Style = StyleSheet.create({
       marginBottom: 4,
       marginLeft: 0,
       fontFamily: generalTitleFont,
-      color: generalTitleColor,
+      color: MainBrownSecondaryColor,
   },
   authInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 0.8,
+    borderWidth: 0.2,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 10,
     backgroundColor: "#FFFFFF", // #F0F6FA #E0EDF5 #EBEBEB #F5F5F5
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   authInputContainerFocused: {
     borderColor: '#2BA1E6', // blue #51D6FF #04698F
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     backgroundColor: '#F0F6FA',  // #F0F6FA #E0EDF5
   },
   authLogo: {
@@ -142,7 +155,7 @@ const auth_Style = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontSize: commentTextSize,
     color: '#222',
     backgroundColor: 'transparent',
     borderWidth: 0,
@@ -183,11 +196,11 @@ const auth_Style = StyleSheet.create({
     padding: 12,
     paddingVertical:20,
     backgroundColor: cardBackgroundColor,  //#E4EEFF #EBF2FE #DBE2EE #D5DDEB #E9E2D8
-    borderRadius: 8,
+    borderRadius: 12,
   },
    formContainer: {
     flex: 1,
-    paddingTop: 16,
+    paddingTop: 12,
     //justifyContent: 'center',
   },
   onboardingFormContainer: {
@@ -197,7 +210,7 @@ const auth_Style = StyleSheet.create({
   },
   detailFormContainer: {
     flex: 1,
-    paddingTop: 0,
+    //paddingTop: 0,
     //justifyContent: 'center',
     backgroundColor: AppScreenBackgroundColor,
   },
@@ -206,7 +219,7 @@ const auth_Style = StyleSheet.create({
   },
   inputErrorCont: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   authIcon: {
     fontSize: 24,

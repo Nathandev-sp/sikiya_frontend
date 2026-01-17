@@ -13,22 +13,22 @@ const valueImages = [
 const values = [
   { 
     title: "Truth & Accuracy", 
-    desc: "We deliver verified facts and hold journalists accountable for accurate reporting.",
+    desc: "Hold journalists accountable.",
     img: valueImages[0]
   },
   { 
     title: "Coverage", 
-    desc: "Every story matters. We spotlight events that shape our communities.",
+    desc: "Every story matters.",
     img: valueImages[1]
   },
   { 
     title: "Open Dialogue", 
-    desc: "We welcome diverse voices and encourage meaningful, constructive conversations.",
+    desc: "Meaningful conversations.",
     img: valueImages[2]
   },
   { 
     title: "Respect", 
-    desc: "We foster a safe environment where every perspective is valued and heard.",
+    desc: "Safe, inclusive space.",
     img: valueImages[3]
   },
 ];
@@ -41,7 +41,7 @@ const SikiyaValues = () => {
 
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.62, width: '96%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
         <View style={styles.mainContainer}>
         <Text style={styles.headerText}>Our Values</Text>
         <View style={styles.valuesGrid}>
@@ -90,19 +90,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   valueImageContainer: {
-    //backgroundColor: 'red',
     width: '100%',
-    height: '40%',
-    justifyContent: 'flex-end',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   valueTextContainer: {
-    //backgroundColor: 'blue',
-    height: '60%',
-    
+    width: '100%',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   valueBox: {
     width: '48%',
-    height: '45%',
+    height: '60%',
     backgroundColor: '#F6F3EF',
     borderRadius: 8,
     paddingVertical: 14,
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
   valueImage: {
     width: 56,
     height: 56,
-    marginBottom: 12,
     alignSelf: 'center',
     resizeMode: 'contain',
   },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     fontSize: generalTitleSize - 1,
     fontWeight: '700',
     color: generalTitleColor,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'center',
     letterSpacing: 0.2,
   },
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     letterSpacing: 0.1,
     paddingHorizontal: 4,
+    marginTop: 0,
   },
 });
 

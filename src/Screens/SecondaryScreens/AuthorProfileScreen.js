@@ -91,7 +91,7 @@ const AuthorProfileScreen = ({ route }) => {
             <View style={styles.loadingContainer}>
                 <StatusBar barStyle="dark-content" />
                 <GoBackButton />
-                <ArticleLoadingState />
+                <BigLoaderAnim />
                 <Text style={styles.loadingText}>Loading user profile...</Text>
             </View>
         );
@@ -248,13 +248,14 @@ const AuthorProfileScreen = ({ route }) => {
                             <Ionicons name="share-outline" size={20} color={MainBrownSecondaryColor} />
                         </TouchableOpacity>
                     </View>
+                    </View>
 
                     {/* Full Name, Role, Affiliation and Area of Focus Section */}
                     <View style={[styles.infoSection]}>
                         <View style={styles.infoRow}>
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
-                                    <Ionicons name="person-outline" size={16} color={withdrawnTitleColor} />
+                                    <Ionicons name="person" size={16} color={MainBrownSecondaryColor} />
                                     <Text style={styles.infoTitle}>Full Name</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
@@ -263,7 +264,7 @@ const AuthorProfileScreen = ({ route }) => {
                             </View>
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
-                                    <Ionicons name="person" size={16} color={withdrawnTitleColor} />
+                                    <Ionicons name="medal" size={16} color={MainBrownSecondaryColor} />
                                     <Text style={styles.infoTitle}>Role</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
@@ -276,7 +277,7 @@ const AuthorProfileScreen = ({ route }) => {
                             {user.journalist_affiliation && (
                                 <View style={styles.infoItem}>
                                     <View style={styles.infoHeader}>
-                                        <Ionicons name="business" size={16} color={withdrawnTitleColor} />
+                                        <Ionicons name="business" size={16} color={MainBrownSecondaryColor} />
                                         <Text style={styles.infoTitle}>Affiliation</Text>
                                     </View>
                                     <Text style={styles.infoText} numberOfLines={2}>
@@ -286,7 +287,7 @@ const AuthorProfileScreen = ({ route }) => {
                             )}
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
-                                    <Ionicons name="funnel" size={16} color={withdrawnTitleColor} />
+                                    <Ionicons name="megaphone" size={16} color={MainBrownSecondaryColor} />
                                     <Text style={styles.infoTitle}>Area of Focus</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
@@ -299,14 +300,14 @@ const AuthorProfileScreen = ({ route }) => {
                     {/* Description Section */}
                     <View style={styles.descriptionSection}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="document-text" size={18} color={generalTitleColor} />
+                            <Ionicons name="document-text" size={18} color={MainBrownSecondaryColor} />
                             <Text style={styles.sectionTitle}>About</Text>
                         </View>
                         <Text style={styles.description}>
                             {user.journalist_description || user.bio || 'No description available.'}
                         </Text>
                     </View>
-                </View>
+                
 
                 {/* Recent Articles Section */}
                 {user.articles && user.articles.length > 0 && (
@@ -509,14 +510,14 @@ const styles = StyleSheet.create({
     infoTitle: {
         fontSize: generalSmallTextSize,
         fontWeight: generalTextFontWeight,
-        color: withdrawnTitleColor,
+        color: MainBrownSecondaryColor,
         marginLeft: 8,
         fontFamily: generalTitleFont,
     },
     infoText: {
         fontSize: commentTextSize,
         color: generalTextColor,
-        fontFamily: generalTitleFont,
+        fontFamily: generalTextFont,
         lineHeight: generalSmallLineHeight,
         textAlign: 'center',
     },
@@ -524,6 +525,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         paddingTop: 8,
         paddingHorizontal: 4,
+        marginHorizontal: 16,
+        padding: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -533,7 +536,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: generalTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
+        color: MainBrownSecondaryColor,
         marginLeft: 8,
         fontFamily: generalTitleFont,
     },

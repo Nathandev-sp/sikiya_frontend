@@ -26,7 +26,7 @@ const SecondaryNewsCart = ({article}) => {
 
     return(
         <TouchableOpacity activeOpacity={0.8} onPress={goToNewsHome}>
-            <View style = {[styles.container, {width: width * 0.95}]}>
+            <View style = {[styles.container, {width: width * 0.98}]}>
                 <View style = {styles.introContainer}>
                     <View style = {styles.imageContainer}>
                         <Image 
@@ -97,11 +97,11 @@ const SecondaryNewsCart = ({article}) => {
 
 const styles = StyleSheet.create({
     container: {
-        //backgroundColor: '#F8F8F8',
+        //backgroundColor: 'red',
         borderRadius: 10,
         marginVertical: 4,
         alignSelf: 'center',
-        padding: 6,
+        padding: 4,
         zIndex: 10,
         position: 'relative',
         overflow: 'hidden',
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: 160,
-        height: 110,
+        height: 120,
         borderRadius: 8,
         backgroundColor: mainBrownColor,
         justifyContent: 'center',
@@ -137,8 +137,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         //paddingRight: 32,
         minHeight: 110,
-        paddingVertical: 2,
-        //backgroundColor: 'blue',
+        paddingLeft: 0,
+        paddingRight: 4,
+        paddingTop: 6,
+        paddingBottom: 6,
     },
     categoryText: {
         fontSize: 11,
@@ -188,7 +190,7 @@ const contentstyle = StyleSheet.create({
     cardTitle: {
         fontSize: generalTextSize,
         fontWeight: generalTitleFontWeight,
-        color: articleTitleColor,
+        color: generalTextColor,
         lineHeight: generalSmallLineHeight,
         fontFamily: articleTitleFont,
     },

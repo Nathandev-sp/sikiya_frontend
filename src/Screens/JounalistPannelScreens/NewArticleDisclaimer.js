@@ -20,7 +20,8 @@ import AppScreenBackgroundColor, {
   articleTextSize,
   lightBannerBackgroundColor,
   generalActiveOpacity,
-  defaultButtonHitslop
+  defaultButtonHitslop,
+  MainSecondaryBlueColor
 } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 
@@ -68,7 +69,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         {/* Image Quality Section */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Ionicons name="image" size={28} color={MainBrownSecondaryColor} />
+            <Ionicons name="image" size={32} color={MainSecondaryBlueColor} />
           </View>
           <Text style={styles.sectionText}>Upload good images with good quality</Text>
         </View>
@@ -76,7 +77,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         {/* Accuracy Section */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Ionicons name="shield-checkmark" size={28} color={MainBrownSecondaryColor} />
+            <Ionicons name="shield-checkmark" size={32} color={MainSecondaryBlueColor} />
           </View>
           <Text style={styles.sectionText}>Upload the most accurate information to the best of your knowledge</Text>
         </View>
@@ -84,7 +85,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         {/* Review Process Section */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Ionicons name="document-text" size={28} color={MainBrownSecondaryColor} />
+            <Ionicons name="document-text" size={32} color={MainSecondaryBlueColor} />
           </View>
           <Text style={styles.sectionText}>All articles are subject to review by Sikiya's editorial team</Text>
         </View>
@@ -92,7 +93,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         {/* Proof Requirements Section */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Ionicons name="lock-closed" size={28} color={MainBrownSecondaryColor} />
+            <Ionicons name="lock-closed" size={32} color={MainSecondaryBlueColor} />
           </View>
           <Text style={styles.sectionText}>Provide proof text and/or images to support your article</Text>
         </View>
@@ -100,7 +101,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         {/* Publication Rights Section */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Ionicons name="globe" size={28} color={MainBrownSecondaryColor} />
+            <Ionicons name="globe" size={32} color={MainSecondaryBlueColor} />
           </View>
           <Text style={styles.sectionText}>You grant Sikiya the right to publish and distribute your article</Text>
         </View>
@@ -155,8 +156,8 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerLogo: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
   },
   placeholder: {
     width: 40,
@@ -177,15 +178,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: '#FFF',
     borderWidth: 1,
     borderColor: "#E0E0E0",
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-    padding: 20,
+    
+    padding: 16,
     justifyContent: 'space-around',
   },
   section: {
@@ -196,8 +193,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#F0F6FA',
+    //borderRadius: 25,
+    //backgroundColor: '#F0F6FA',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -214,7 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#FFF",
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,

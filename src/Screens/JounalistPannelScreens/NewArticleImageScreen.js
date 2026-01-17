@@ -7,6 +7,7 @@ import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Sty
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 
 const NewArticleImageScreen = ({ navigation, route }) => {
   const scrollRef = useRef(null);
@@ -325,6 +326,9 @@ const NewArticleImageScreen = ({ navigation, route }) => {
           {/* Photo Upload Section */}
           <View style={styles.photoSection}>
             <Text style={styles.label}>Photos</Text>
+            <Text style={styles.labelDescription}>
+              Upload a main photo and up to 3 additional photos to accompany your article
+            </Text>
             
             {/* Main Photo */}
             <TouchableOpacity 
@@ -388,7 +392,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
             </View>
 
             {/* Disclaimer Text */}
-            <View style={styles.disclaimerContainer}>
+            <View style={[styles.disclaimerContainer, main_Style.genContentElevation]}>
               <Text style={styles.disclaimerText}>
                 • Please ensure that every article you submit meets the highest standards of accuracy and quality{'\n'}
                 • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
@@ -398,6 +402,9 @@ const NewArticleImageScreen = ({ navigation, route }) => {
             </View>
 
             {/* Proof Photo */}
+            <Text style={styles.labelDescription}>
+              Upload a photo taken at the time and place of your reporting as proof
+            </Text>
             <TouchableOpacity 
               style={[
                 styles.proofPhotoContainer,
@@ -425,6 +432,9 @@ const NewArticleImageScreen = ({ navigation, route }) => {
             {/* Proof Text */}
             <View>
               <Text style={styles.label}>Proof of Article</Text>
+              <Text style={styles.labelDescription}>
+                Provide source information or additional context that verifies your article
+              </Text>
               <TextInput
                 style={[
                   styles.textArea, 
@@ -433,7 +443,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
                   errors.proofText && styles.inputError
                 ]}
                 placeholder="Provide proof or source information"
-                placeholderTextColor={withdrawnTitleColor}
+                placeholderTextColor="#aaa"
                 value={proofText}
                 onChangeText={(text) => {
                   setProofText(text);
@@ -488,8 +498,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   headerLogo: {
-    width: 80,
-    height: 80,
+    width: 50,
+    height: 50,
   },
   placeholder: {
     width: 40,
@@ -497,6 +507,7 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    paddingTop: 16,
   },
   screenTitle: {
     fontSize: largeTextSize,
@@ -513,8 +524,16 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginBottom: 4,
+  },
+  labelDescription: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    marginBottom: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   mainPhotoContainer: {
     width: '100%',
@@ -523,12 +542,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.6,
     borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   photoError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   mainPhoto: {
     width: '100%',
@@ -545,8 +572,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.6,
     borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   additionalPhoto: {
     width: '100%',
@@ -583,7 +618,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginLeft: 8,
   },
   disclaimerContainer: {
@@ -599,6 +634,7 @@ const styles = StyleSheet.create({
     fontFamily: generalTextFont,
     color: generalTextColor,
     lineHeight: 20,
+    marginBottom: 12,
   },
   proofPhotoContainer: {
     width: '100%',
@@ -607,8 +643,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.6,
     borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   proofPhoto: {
     width: '100%',
@@ -621,8 +665,18 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   proofTextArea: {
     minHeight: 120,

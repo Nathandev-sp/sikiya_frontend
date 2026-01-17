@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, articleTitleFont } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, articleTitleFont, generalTextFontWeight } from "../../styles/GeneralAppStyle";
 
 const journalistImage = require("../../../assets/OnboardingImages/team.png");
 const box2Image = require("../../../assets/OnboardingImages/contributorImage.png");
@@ -12,7 +12,7 @@ const UserIntro = () => {
   const { height } = useWindowDimensions();
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.62, width: '96%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
       {/* Top Container */}
       <View style={styles.topContainer}>
         <Image source={journalistImage} style={styles.journalistImage} />
@@ -31,7 +31,7 @@ const UserIntro = () => {
           <Image source={box2Image} style={styles.boxImage} />
           <View style={styles.boxTextContainer}>
             <Text style={styles.boxTitle}>Contributors</Text>
-            <Text style={styles.boxDesc}>Get timely article updates and reply to comments to share your perspective.</Text>
+            <Text style={styles.boxDesc}>All access to articles and videos with no ads.</Text>
           </View>
         </View>
         {/* General Users */}
@@ -39,7 +39,7 @@ const UserIntro = () => {
           <Image source={box3Image} style={styles.boxImage} />
           <View style={styles.boxTextContainer}>
             <Text style={styles.boxTitle}>General Users</Text>
-            <Text style={styles.boxDesc}>Access select articles and stay informed — completely free.</Text>
+            <Text style={styles.boxDesc}>Access articles and stay informed for free with adds.</Text>
           </View>
         </View>
       </View>
@@ -49,7 +49,7 @@ const UserIntro = () => {
 
 const styles = StyleSheet.create({
   topContainer: {
-    height: '35%',
+    height: '45%',
     flexDirection: 'column',
     alignItems: 'center',
     paddingHorizontal: 0,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   boxTitle: {
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize,
-    fontWeight: '700',
+    //fontWeight: generalTextFontWeight,
     color: generalTitleColor,
     marginBottom: 6,
     letterSpacing: 0.2,

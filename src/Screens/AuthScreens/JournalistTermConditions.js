@@ -87,7 +87,7 @@ const JournalistTermConditions = ({ route }) => {
           <TouchableOpacity
             onPress={() => setAgreed(!agreed)}
             style={styles.checkboxContainer}
-            hitSlop={defaultButtonHitslop}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
             activeOpacity={generalActiveOpacity}
           >
             <Ionicons

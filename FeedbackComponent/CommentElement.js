@@ -62,7 +62,7 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
     
 
     return(
-        <View style={[styles.mainCommentContainer, main_Style.genButtonElevation]}>
+        <View style={[styles.mainCommentContainer, main_Style.genContentElevation]}>
             <View style={styles.authorAndProfileRow}>
                 <Image
                     style={styles.authorProfilePic}

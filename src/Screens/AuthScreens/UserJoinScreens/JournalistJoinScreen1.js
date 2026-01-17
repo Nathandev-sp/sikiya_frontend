@@ -102,7 +102,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.2 }]}>
+            <View style={[styles.headerSection, { height: height * 0.18 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -117,6 +117,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
               </View>
 
               <View style={styles.welcomeContainer}>
+
                 <Text style={styles.welcomeSubtitle}>
                   Complete your profile to start reporting with Sikiya
                 </Text>
@@ -138,6 +139,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your first name"
+                    placeholderTextColor="#aaa"
                     value={journalistFormData.firstName}
                     onChangeText={text => handleFormChanges('firstName', text)}
                     autoCapitalize="words"
@@ -164,6 +166,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your last name"
+                    placeholderTextColor="#aaa"
                     value={journalistFormData.lastName}
                     onChangeText={text => handleFormChanges('lastName', text)}
                     autoCapitalize="words"
@@ -213,6 +216,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                       style={auth_Style.input}
                       hitSlop={defaultButtonHitslop}
                       placeholder="Phone number"
+                      placeholderTextColor="#aaa"
                       value={journalistFormData.phoneNumber}
                       onChangeText={text => {
                         // Only allow digits
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightBannerBackgroundColor,
-    borderColor: "#E0E0E0",
+    borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,
@@ -339,32 +343,23 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   companyLogo: {
-    width: '80%',
-    height: '80%',
+    width: '95%',
+    height: '95%',
     resizeMode: 'contain',
   },
   welcomeContainer: {
     alignItems: 'center',
-    paddingHorizontal: 32,
-    flex: 0.4,
+    paddingHorizontal: 24,
+    //flex: 0.4,
     justifyContent: 'center',
-    paddingTop: 8,
-  },
-  welcomeTitle: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 6,
-    fontWeight: '700',
-    color: generalTitleColor,
-    textAlign: 'center',
-    marginBottom: 8,
-    marginTop: 12,
+    paddingTop: 24,
   },
   welcomeSubtitle: {
     fontFamily: generalTextFont,
     fontSize: generalTextSize,
     color: withdrawnTitleColor,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     paddingHorizontal: 24,
   },
   continueButton: {

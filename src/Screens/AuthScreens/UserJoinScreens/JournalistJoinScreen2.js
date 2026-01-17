@@ -213,6 +213,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your media company"
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.mediaCompany}
                     onChangeText={(text) => handleFormChanges('mediaCompany', text)}
                     autoCapitalize="words"
@@ -239,6 +240,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="e.g., Politics, Sports, Technology"
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.areaOfExpertise}
                     onChangeText={(text) => handleFormChanges('areaOfExpertise', text)}
                     autoCapitalize="words"
@@ -265,6 +267,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                     style={[auth_Style.input, { height: 80, textAlignVertical: 'top', paddingTop: 8 }]}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Tell us about yourself and your experience"
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.description}
                     onChangeText={(text) => handleFormChanges('description', text)}
                     multiline

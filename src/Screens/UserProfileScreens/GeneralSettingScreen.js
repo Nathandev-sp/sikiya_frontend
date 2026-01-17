@@ -75,7 +75,7 @@ const GeneralSettingScreen = () => {
                                 value={customDisplayName}
                                 onChangeText={setCustomDisplayName}
                                 placeholder="Enter custom display name"
-                                placeholderTextColor="#999"
+                                placeholderTextColor="#aaa"
                             />
                         )}
                         <Text style={styles.helperText}>

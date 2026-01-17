@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalHeader: {
+    backgroundColor: MainBrownSecondaryColor,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -203,18 +204,18 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: articleTitleSize,
     fontWeight: "600",
-    color: generalTitleColor,
+    color: "#FFFFFF",
     fontFamily: generalTitleFont,
   },
   cancelText: {
     fontSize: generalTextSize,
-    color: "#8E8E93",
+    color: "#FFFFFF",
     fontFamily: generalTextFont,
   },
   confirmText: {
     fontSize: generalTextSize,
     fontWeight: "600",
-    color: MainBrownSecondaryColor,
+    color: "#FFFFFF",
     fontFamily: generalTitleFont,
   },
   datePicker: {

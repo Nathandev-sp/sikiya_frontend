@@ -5,13 +5,13 @@ import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, g
 const journalistImage = require("../../../assets/OnboardingImages/journalistWork.png");
 const box1Image = require("../../../assets/OnboardingImages/bad-feedback.png");
 
-const journalistSpeech = "Sikiya is open to all aspiring journalists. Our articles come from both recognized affiliates and independent reporters covering stories big and small. Join today, start reporting, and earn while informing the public."
+const journalistSpeech = "Sikiya is open to all aspiring journalists. Articles come from both trusted partners and independent reporters, covering stories of all sizes. Join today, start reporting, and earn while informing the public."
 
 const JournalistIntro = () => {
   const { height } = useWindowDimensions();
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.62, width: '96%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
       {/* Top Container */}
       <View style={styles.topContainer}>
         <Image source={journalistImage} style={styles.journalistImage} />
@@ -30,7 +30,7 @@ const JournalistIntro = () => {
           <Image source={box1Image} style={styles.boxImage} />
           <View style={styles.boxTextContainer}>
             <Text style={styles.boxTitle}>Trust Score</Text>
-            <Text style={styles.boxDesc}>Journalists earn a trust score based on accuracy — higher scores mean greater credibility.</Text>
+            <Text style={styles.boxDesc}>Journalists earn a trust score based on how accurate they are. Higher scores mean more credibility.</Text>
           </View>
         </View>
       </View>
@@ -40,7 +40,7 @@ const JournalistIntro = () => {
 
 const styles = StyleSheet.create({
   topContainer: {
-    height: '50%',
+    height: '70%',
     flexDirection: 'column',
     alignItems: 'center',
     paddingHorizontal: 0,

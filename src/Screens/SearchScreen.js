@@ -23,6 +23,7 @@ import PeopleDisplay from '../Components/PeopleDisplay';
 import SecondaryNewsCart from '../Components/SecondaryNewscart';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
+import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 
 const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles }) => {
     const insets = useSafeAreaInsets();
@@ -388,18 +389,18 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                                 ref={searchInputRef}
                                 style={styles.searchInput}
                                 placeholder="Search here..."
-                                placeholderTextColor={withdrawnTitleColor}
+                                placeholderTextColor="#aaa"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
-                                returnKeyType="search"
-                                onSubmitEditing={handleSearch}
+                                returnKeyType="done"
+                                onSubmitEditing={() => Keyboard.dismiss()}
                                 onFocus={() => {
                                     setIsSearchFocused(true);
                                 }}
                                 onBlur={() => {
                                     setIsSearchFocused(false);
                                 }}
-                                blurOnSubmit={false}
+                                blurOnSubmit={true}
                                 autoCorrect={false}
                                 autoCapitalize="none"
                                 editable={!isSearching}
@@ -446,7 +447,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             
             {(loading || isSearching) ? (
                 <View style={styles.loadingContainer}>
-                    <MediumLoadingState />
+                    <BigLoaderAnim />
                 </View>
             ) : error ? (
                 <View style={styles.errorContainer}>
@@ -516,17 +517,17 @@ const styles = StyleSheet.create({
         paddingBottom: 0,
         width: '100%',
         alignSelf: 'center',
-        borderBottomWidth: 0.4,
+        borderBottomWidth: 0.6,
         borderBottomColor: '#E0E0E0',
     },
     searchBarContainer: {
         paddingHorizontal: 8,
-        paddingTop: 2,
-        paddingBottom: 8,
+        paddingTop: 0,
+        paddingBottom: 4,
     },
     toggleBlockContainer: {
         paddingHorizontal: 8,
-        paddingBottom: 8,
+        paddingBottom: 4,
     },
     searchRow: {
         flexDirection: 'row',
@@ -537,11 +538,11 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: secCardBackgroundColor,
+        backgroundColor: '#fff',
         borderRadius: 8,
         paddingHorizontal: 14,
         paddingVertical: 8,
-        borderWidth: 1.5,
+        borderWidth: 0.8,
         borderColor: '#E0E0E0',
        
     },

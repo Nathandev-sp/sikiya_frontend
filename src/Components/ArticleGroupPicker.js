@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal, FlatList, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { auth_Style, authScrreenBackgroundColor, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, MainBrownSecondaryColor, withdrawnTitleColor, articleTextSize } from "../styles/GeneralAppStyle";
+import { auth_Style, authScrreenBackgroundColor, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, MainBrownSecondaryColor, withdrawnTitleColor, articleTextSize, generalActiveOpacity } from "../styles/GeneralAppStyle";
 
 const ARTICLE_GROUPS = ['Politics', 'Economy', 'Social', 'Tech', 'Sports', 'Business', 'Entertainment', 'Culture', 'World'];
 
@@ -60,7 +60,7 @@ const ArticleGroupPicker = ({
           <View style={[styles.modalContent, { height: height * 0.5 }]}>
             {/* Header */}
             <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+              <TouchableOpacity onPress={handleCancel} style={styles.headerButton} hitslop={{top: 10, bottom: 10, left: 10, right: 10}} activeOpacity={generalActiveOpacity}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <Text style={styles.modalTitle}>{label}</Text>
@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: MainBrownSecondaryColor,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#D1D1D6",
   },
@@ -134,13 +135,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: generalTitleColor,
+    color: "#FFFFFF",
     fontFamily: generalTitleFont,
     textAlign: "center",
   },
   cancelText: {
     fontSize: 15,
-    color: withdrawnTitleColor,
+    color: "#FFFFFF",
     fontFamily: generalTextFont,
   },
   listContent: {

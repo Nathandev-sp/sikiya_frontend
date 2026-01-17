@@ -1,15 +1,15 @@
 import React, {useState} from 'react';
-import { View, Image, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { useNavigation } from '@react-navigation/native';
-import AppScreenBackgroundColor, { articleTitleFont, articleTitleFontWeight, articleTitleSize, cardBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, mainborderColor, mainBrownColor, mainTitleColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleFont, articleTitleFontWeight, articleTitleSize, cardBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, main_Style, mainborderColor, mainBrownColor, mainTitleColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
 import TextSlicer from '../Helpers/TextSlicer';
 import DateConverter from '../Helpers/DateConverter';
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
 const FashNewsItem = ({article}) => {
-
+  const {width, height} = useWindowDimensions()
   const navigation = useNavigation()
   //console.log('Article in FlashNewsItem:', article);
 
@@ -21,8 +21,8 @@ const FashNewsItem = ({article}) => {
   //console.log('Article in FlashNewsItem:', article);
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity activeOpacity={0.7} onPress={HandlePressFlashNewsItem} style={styles.touchableContainer}>
+    <View style={[styles.container, {width: width * 0.94, height: height * 0.3}]}>
+      <TouchableOpacity activeOpacity={0.7} onPress={HandlePressFlashNewsItem} style={[styles.touchableContainer, main_Style.genButtonElevation]}>
           <Image
             style={styles.image}
             defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')}
@@ -33,17 +33,19 @@ const FashNewsItem = ({article}) => {
             
             {/* Content Overlay */}
             <View style={styles.contentOverlay}>
-              <Text style={styles.title}>{TextSlicer(article.article_title, 70)}</Text>
-              <View style={styles.metaInfo}>
-                <View style={styles.locationRow}>
-                  <Ionicons name="location" size={12} color="#fff" />
-                  <Text style={styles.locationText}>
-                    {article?.location || "Bukavu, RDC"}
+              <View style={styles.contentOverlayInner}>
+                <Text style={styles.title}>{TextSlicer(article.article_title, 70)}</Text>
+                <View style={styles.metaInfo}>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={12} color="#fff" />
+                    <Text style={styles.locationText}>
+                      {article?.location || "Bukavu, RDC"}
+                    </Text>
+                  </View>
+                  <Text style={styles.dateText}>
+                    {DateConverter(article.published_on)}
                   </Text>
                 </View>
-                <Text style={styles.dateText}>
-                  {DateConverter(article.published_on)}
-                </Text>
               </View>
             </View>
 
@@ -55,25 +57,26 @@ const FashNewsItem = ({article}) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginLeft: 16,
-    marginRight: 6,
+    marginLeft: 8,
+    marginRight: 8,
     alignContent: 'center',
     justifyContent: 'center',
     zIndex: 10,
     borderRadius: 12,
-    width: 360,
-    height: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
+    marginTop: 8,
+    marginBottom: 2,
+
+    
   },
   touchableContainer: {
     width: '100%',
     height: '100%',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   image: {
     width: '100%',
@@ -87,7 +90,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0)',
     borderRadius: 12,
     zIndex: 1,
   },
@@ -99,6 +102,12 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 12,
     zIndex: 2,
+  },
+  contentOverlayInner: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   title: {
     fontSize: articleTitleSize,

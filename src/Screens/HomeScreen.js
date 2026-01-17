@@ -1,10 +1,10 @@
 import React, {useRef, useState, useEffect, useCallback, useMemo} from 'react';
-import {View, StyleSheet, Text, ScrollView, TouchableOpacity, Animated, useWindowDimensions, ActivityIndicator, StatusBar} from 'react-native';
+import {View, StyleSheet, Text, ScrollView, TouchableOpacity, Animated, useWindowDimensions, ActivityIndicator, StatusBar, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import NewsCategory from '../Components/NewsCategory';
 import HighLight from '../Components/Highlights';
-import AppScreenBackgroundColor, { generalActiveOpacity, generalTextColor, generalTextFont, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor } from '../styles/GeneralAppStyle';
 import NewsAPI from '../../API/NewsAPI';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
@@ -19,12 +19,23 @@ import BannerAdComponent from '../Components/Ads/BannerAd';
 const StableHighlightsWrapper = React.memo(({ preloadedHeadlines, headerHeight }) => {
     return (
         <Animated.View style={{ height: headerHeight }}>
-            <HighLight preloadedHeadlines={preloadedHeadlines} />
+            <HighLight preloadedHeadlines={preloadedHeadlines} hideLogo />
         </Animated.View>
     );
 }, () => true); // Always return true = never rerender
 
 StableHighlightsWrapper.displayName = 'StableHighlightsWrapper';
+
+// Static logo component to keep it mounted at the top
+const StaticLogo = React.memo(() => (
+    <View style={styles.logoStaticContainer}>
+        <Image 
+            style={styles.logoStatic}
+            source={require("../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png")}
+        />
+    </View>
+), () => true);
+StaticLogo.displayName = 'StaticLogo';
 
 const HomeScreen = ({route}) => {
 
@@ -275,8 +286,8 @@ const HomeScreen = ({route}) => {
     //------------------------------------------
 
     const HomeHeaderHeight = scrollY.interpolate({
-        inputRange: [20, 200],
-        outputRange: [320, 0],
+        inputRange: [0, 200],
+        outputRange: [306, 0],
         extrapolate: 'clamp',
     });
 
@@ -510,7 +521,7 @@ const HomeScreen = ({route}) => {
     const renderListHeader = useCallback(() => (
         <>
             {/* Category Selection Buttons */}
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: 8 }}>
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false}
@@ -521,30 +532,32 @@ const HomeScreen = ({route}) => {
                             key={index}
                             style={[
                                 styles.categoryButton,
-                                selectedCategory === cat.name && styles.selectedCategoryButton
+                                selectedCategory === cat.name && styles.selectedCategoryButton,
                             ]}
                             onPress={() => handleCategoryPress(cat.name)}
                             activeOpacity={generalActiveOpacity}
                         >
                             <View style={[
-                                styles.categoryIconContainer,main_Style.genButtonElevation,
+                                styles.categoryIconContainer, main_Style.genContentElevation, selectedCategory !== cat.name && { borderColor: cat.color },
                                 selectedCategory === cat.name && styles.selectedCategoryIconContainer,
                                 selectedCategory === cat.name && { 
                                     backgroundColor: cat.color
                                 }
                             ]}>
-                            <Ionicons 
-                                name={cat.icon} 
-                                size={26} 
-                                color={selectedCategory === cat.name ? '#fff' : cat.color} 
-                            />
+                                <Ionicons 
+                                    name={cat.icon} 
+                                    size={22} 
+                                    color={selectedCategory === cat.name ? '#fff' : cat.color} 
+                                />
+                                <Text style={[
+                                    styles.categoryText,
+                                    { color: selectedCategory === cat.name ? '#fff' : cat.color },
+                                    selectedCategory === cat.name && styles.selectedCategoryText
+                                ]}>
+                                    {cat.name}
+                                </Text>
                             </View>
-                            <Text style={[
-                                styles.categoryText,
-                                selectedCategory === cat.name && [styles.selectedCategoryText, { color: cat.color }]
-                            ]}>
-                                {cat.name}
-                            </Text>
+                            
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -553,7 +566,7 @@ const HomeScreen = ({route}) => {
             {/* Filtering loader - only shows in bottom half */}
             {filteringCategory && (
                 <View style={styles.filteringLoader}>
-                    <ActivityIndicator size="small" color={MainSecondaryBlueColor} />
+                    <BigLoaderAnim />
                 </View>
             )}
         </>
@@ -574,14 +587,17 @@ const HomeScreen = ({route}) => {
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle={"dark-content"} />
+            {/* Logo stays mounted at top */}
+            <StaticLogo />
+            <BannerAdComponent position="top" />
+
             {/* Highlights at top, completely stable and not tied to category changes */}
             <StableHighlightsWrapper 
                 preloadedHeadlines={stablePreloadedHeadlines.current} 
                 headerHeight={HomeHeaderHeight}
             />
             {/* Banner directly under the logo/flash news */}
-            <BannerAdComponent position="top" />
-            {refreshing && <MediumLoadingState />}
+            
             <Animated.FlatList
                 data={getCategoryArticles()}
                 renderItem={renderArticleItem}
@@ -606,40 +622,64 @@ const HomeScreen = ({route}) => {
 };
 
 const styles = StyleSheet.create({
+    logoStaticContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 16,
+        marginTop: 4,
+        marginBottom: 4,
+        paddingVertical: 0,
+        //backgroundColor: 'red',
+    },
+    logoStatic: {
+        width: 160,
+        height: 50,
+        resizeMode: 'contain',
+        opacity: 0.9,
+    },
     categoriesContainer: {
         paddingHorizontal: 12,
-        paddingVertical: 8,
-        paddingBottom: 12,
+        paddingVertical: 4,
+        paddingBottom: 6,
     },
     categoryButton: {
-        width: 90,
         alignItems: 'center',
-        marginHorizontal: 0,
-        paddingVertical: 8,
+        justifyContent: 'center',
+        marginHorizontal: 4,
+        paddingVertical: 0,
+        paddingBottom: 12,
         paddingHorizontal: 4,
-       
+        flexShrink: 0,
+        
     },
     selectedCategoryButton: {
         backgroundColor: 'transparent',
     },
     categoryIconContainer: {
-        width: 64,
-        height: 50,
-        borderRadius: 12,
+        width: 120,
+        height: 40,
+        borderRadius: 2,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 0,
         backgroundColor: secCardBackgroundColor,
+        flexDirection: 'row',
+        paddingHorizontal: 8,
+        gap: 8,
+        borderWidth: 0.8,
+        borderColor: 'transparent',
+        borderRadius: 12,
     },
     selectedCategoryIconContainer: {
         opacity: 1,
     },
     categoryText: {
-        fontSize: 12,
+        fontSize: commentTextSize,
         color: generalTextColor,
-        fontFamily: generalTextFont,
+        fontFamily: articleTitleFont,
         textAlign: 'center',
-        fontWeight: '500',
+        fontWeight: '700',
     },
     selectedCategoryText: {
         fontWeight: '600',

@@ -322,6 +322,9 @@ const NewShortVideoScreen = ({ navigation, route }) => {
           {/* Video Upload Section */}
           <View style={styles.videoSection}>
             <Text style={styles.label}>Video</Text>
+            <Text style={styles.labelDescription}>
+              Upload a video that is relevant to your article (maximum 1 minute)
+            </Text>
             
             {/* Video Container */}
             <TouchableOpacity 
@@ -365,7 +368,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             </View>
 
             {/* Disclaimer Text */}
-            <View style={styles.disclaimerContainer}>
+            <View style={[styles.disclaimerContainer, main_Style.genContentElevation]}>
               <Text style={styles.disclaimerText}>
                 • Please ensure that every video you submit meets the highest standards of accuracy and quality{'\n'}
                 • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
@@ -375,6 +378,9 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             </View>
 
             {/* Proof Photo */}
+            <Text style={styles.labelDescription}>
+              Upload a photo taken at the time and place of your reporting as proof
+            </Text>
             <TouchableOpacity 
               style={[
                 styles.proofPhotoContainer,
@@ -402,6 +408,9 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             {/* Proof Text */}
             <View>
               <Text style={styles.label}>Proof of Video</Text>
+              <Text style={styles.labelDescription}>
+                Provide source information or additional context that verifies your video
+              </Text>
               <TextInput
                 style={[
                   styles.textArea, 
@@ -410,7 +419,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
                   errors.proofText && styles.inputError
                 ]}
                 placeholder="Provide proof or source information"
-                placeholderTextColor={withdrawnTitleColor}
+                placeholderTextColor="#aaa"
                 value={proofText}
                 onChangeText={(text) => {
                   setProofText(text);
@@ -464,8 +473,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   headerLogo: {
-    width: 80,
-    height: 80,
+    width: 50,
+    height: 50,
   },
   placeholder: {
     width: 40,
@@ -473,6 +482,7 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    paddingTop: 16,
   },
   screenTitle: {
     fontSize: 20,
@@ -489,8 +499,16 @@ const styles = StyleSheet.create({
     fontSize: generalTitleSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginBottom: 4,
+  },
+  labelDescription: {
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    marginBottom: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   labelRow: {
     flexDirection: 'row',
@@ -515,16 +533,16 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: '#2BA1E6',
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     backgroundColor: '#F0F6FA',
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   photoError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 0.8,
   },
   videoSection: {
     paddingHorizontal: 16,
@@ -538,6 +556,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ccc',
+    borderWidth: 0.6,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   videoPreview: {
     flex: 1,
@@ -594,11 +622,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     padding: 12,
-    fontSize: articleTextSize,
+    fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
+    borderWidth: 0.2,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   horizontalRule: {
     height: 1,
@@ -629,8 +667,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 0.6,
     borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    //Adding some content
+    zIndex: 8,
+    shadowColor: '#000000', // iOS shadow properties
+    shadowOffset: { width: 0, height: 0.2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0.3
   },
   proofPhoto: {
     width: '100%',

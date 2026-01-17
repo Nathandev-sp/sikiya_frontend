@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Image, useWindowDimensions } from "react-native";
 import LottieView from 'lottie-react-native';
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, bannerBackgroundColor, MainBrownSecondaryColor, auth_Style } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, bannerBackgroundColor, MainBrownSecondaryColor, auth_Style, articleTitleFont, articleTextSize } from "../../styles/GeneralAppStyle";
 
-const Intro_message = "Welcome to Sikiya!!! A platform is dedicated to dialogues on the political, economic, social, and cultural dimensions shaping the continent."
+const Intro_message = "A News platform that inspire conversations on the political, economic, social, and cultural dimensions shaping the continent."
 
 const values = [
   { title: "Community", desc: "We connect people across Africa to share and grow together." },
@@ -27,7 +27,7 @@ const SikiyaIntro = () => {
 
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.62, width: '96%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.50, width: '94%'}, auth_Style.authElevation]}>
       <View style={styles.mainContainer}>
         <View style={styles.ImageGridContainer}>
           <LottieView
@@ -41,17 +41,6 @@ const SikiyaIntro = () => {
           <Text style={styles.introParagraph}>
             {Intro_message}
           </Text>
-          <Text style={styles.introMissionParagraph}>
-            Our mission:
-          </Text>
-          <View style={styles.missionBulletsContainer}>
-            {missionBullets.map((item, idx) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bulletPoint}>{'\u2022'}</Text>
-                <Text style={styles.bulletText}>{item}</Text>
-              </View>
-            ))}
-          </View>
         </View>
       </View>
     </View>
@@ -66,14 +55,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ImageGridContainer: {
-    width: '100%',
-    height: '50%',
+    width: '95%',
+    height: '70%',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
     marginTop: 0,
     backgroundColor: '#F6F3EF',
-    borderRadius: 4,
+    borderRadius: 12,
     padding: 2,
   },
   gridImage: {
@@ -110,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   introParagraph: {
-    fontFamily: generalTextFont,
+    fontFamily: generalTitleFont,
     fontSize: generalTextSize,
     color: generalTextColor,
     textAlign: 'left',

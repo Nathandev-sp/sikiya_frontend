@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import FollowButton from '../Components/FollowButton';
-import { articleTitleColor, articleTitleFont, cardBackgroundColor, genBtnBackgroundColor, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainBrownColor, secCardBackgroundColor, withdrawnTitleColor, MainBrownSecondaryColor } from "../styles/GeneralAppStyle";
+import { articleTitleColor, articleTitleFont, cardBackgroundColor, genBtnBackgroundColor, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainBrownColor, secCardBackgroundColor, withdrawnTitleColor, MainBrownSecondaryColor, articleTextSize } from "../styles/GeneralAppStyle";
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../utils/imageUrl';
 import SikiyaAPI from '../../API/SikiyaAPI';
@@ -105,18 +105,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         zIndex: 10,
         overflow: 'hidden',
-        //borderWidth: 1.5,
-        //borderColor: '#E8E8E8',
-        // iOS Shadow
-        //shadowColor: '#000',
-        //shadowOffset: {
-        //    width: 0,
-        //    height: 2,
-        //},
-        //shadowOpacity: 0.1,
-        //shadowRadius: 4,
-        // Android Elevation
-        //elevation: 3,
     },
     mainRow: {
         flexDirection: 'row',
@@ -152,9 +140,9 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
     },
     name: {
-        fontSize: generalTextSize,
+        fontSize: articleTextSize,
         fontWeight: generalTitleFontWeight,
-        color: articleTitleColor,
+        color: generalTextColor,
         fontFamily: articleTitleFont,
         alignSelf: 'flex-start',
     },

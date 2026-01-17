@@ -12,6 +12,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const { state, clearErrorMessage } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
+  const [emailError, setEmailError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const scrollRef = useRef(null);
@@ -19,9 +20,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleSendResetLink = async () => {
     if (!email || !email.includes('@')) {
+      setEmailError(true);
       Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
+    setEmailError(false);
 
     setLoading(true);
     try {
@@ -80,7 +83,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             </View>
 
             {/* Form Section */}
-            <View style={[auth_Style.formContainer, {marginTop: 20}]}>
+            <View style={[auth_Style.formContainer]}>
               <Text style={styles.instructionText}>
                 Please enter your email address and we will send you a link to reset your password.
               </Text>
@@ -90,15 +93,20 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 <Text style={auth_Style.authLabel}>Email</Text>
                 <View style={[
                   auth_Style.authInputContainer,
-                  emailFocused && auth_Style.authInputContainerFocused
+                  emailFocused && auth_Style.authInputContainerFocused,
+                  emailError && auth_Style.inputErrorCont
                 ]}>
                   <Ionicons name="mail-outline" style={auth_Style.authLogo}/>
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your email"
+                    placeholderTextColor="#aaa"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (emailError) setEmailError(false);
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     onFocus={() => setEmailFocused(true)}
@@ -155,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightBannerBackgroundColor,
-    borderColor: "#E0E0E0",
+    borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,
@@ -174,6 +182,7 @@ const styles = StyleSheet.create({
     flex: 0.3,
     justifyContent: 'center',
     paddingTop: 8,
+    //backgroundColor: 'red',
   },
   welcomeTitle: {
     fontFamily: generalTitleFont,
@@ -195,7 +204,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     width: 200,
-    marginTop: 50,
+    marginTop: 20,
   },
   backToLoginContainer: {
     alignItems: 'center',

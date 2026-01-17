@@ -9,6 +9,7 @@ import AppScreenBackgroundColor, {
     generalTextFont, 
     generalTextSize, 
     generalTitleFontWeight, 
+    main_Style, 
     mainBrownColor, 
     withdrawnTitleColor, 
     withdrawnTitleSize 
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginVertical: 6,
         alignSelf: 'center',
-        padding: 6,
+        padding: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,

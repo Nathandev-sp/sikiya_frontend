@@ -95,8 +95,9 @@ const CommentInputModal = ({
   const maxWords = 120;
 
   // determine disabled state for the send action
+  const isGeneralUser = userRole === 'general';
   const remainingMainComments = quota?.remaining ?? null;
-  const showQuota = quota && mode === 'article';
+  const showQuota = isGeneralUser && quota && mode === 'article';
   const quotaExceeded = showQuota && remainingMainComments !== null && remainingMainComments <= 0;
 
   const sendDisabled = !text.trim() || isLoading || wordCount > maxWords || quotaExceeded;
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomSheet: {
-    backgroundColor: AppScreenBackgroundColor,
+    backgroundColor: secCardBackgroundColor,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     borderBottomLeftRadius: 16,
@@ -313,10 +314,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    borderBottomWidth: 0.2,
+    borderBottomColor: 'gray',
   },
   headerLeft: {
     flex: 1,
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     marginHorizontal: -16,
     paddingHorizontal: 16,
-    backgroundColor: AppScreenBackgroundColor,
+    backgroundColor: secCardBackgroundColor,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
@@ -427,7 +428,7 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 60,
     maxHeight: 180,
-    borderColor: '#E0E0E0',
+    borderColor: 'gray',
     borderWidth: 0.8,
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -436,12 +437,12 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF',
     lineHeight: generalLineHeight,
   },
   inputFocused: {
-    borderColor: '#B3E5FC',
-    borderWidth: 1.6,
+    borderColor: MainBrownSecondaryColor,
+    borderWidth: 1.2,
     backgroundColor: '#FFFFFF',
   },
   wordCountContainer: {

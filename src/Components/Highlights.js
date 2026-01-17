@@ -1,16 +1,28 @@
-import React,{useEffect, useState, useMemo, useRef} from 'react';
+import React,{useEffect, useState, useMemo, useRef, useCallback} from 'react';
 import { View, Image, StyleSheet, Dimensions, Text, FlatList } from 'react-native';
 import FlashNewsItem from './FlashNewsItem';
 import samples from '../../SampleContent/samples';
 import NewsAPI from '../../API/NewsAPI';
-import { bannerBackgroundColor, cardBackgroundColor, mainTitleColor } from '../styles/GeneralAppStyle';
+import { bannerBackgroundColor, cardBackgroundColor, main_Style, MainBrownSecondaryColor, mainTitleColor, secCardBackgroundColor } from '../styles/GeneralAppStyle';
 import SikiyaAPI from '../../API/SikiyaAPI';
 
-const HighLight = React.memo(({preloadedHeadlines}) => {
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const ITEM_HORIZONTAL_MARGIN = 8.5 + 8.5; // left + right margin from FlashNewsItem styles
+const ITEM_WIDTH = SCREEN_WIDTH * 0.94 + ITEM_HORIZONTAL_MARGIN;
+
+const HighLight = React.memo(({preloadedHeadlines, hideLogo = false}) => {
 
    // Making the API Request ------------------ /top-headlines
       const [flashNews, setFlashNews] = useState([]);
+      const [currentIndex, setCurrentIndex] = useState(0);
       const initializedRef = useRef(false);
+      const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+      const onViewableItemsChanged = useRef(({ viewableItems }) => {
+        if (viewableItems && viewableItems.length > 0) {
+          const idx = viewableItems[0].index ?? 0;
+          setCurrentIndex(idx);
+        }
+      }).current;
   
       useEffect(() => {
         // Only initialize once - never refetch
@@ -41,20 +53,23 @@ const HighLight = React.memo(({preloadedHeadlines}) => {
     //console.log('Fetched flash news:', flashNews);
 
   return (
-    <View style={styles.container}>
-        <View style={styles.logoContainer}>
-            <Image 
-                style={styles.logo}
-                source={require("../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png")}
-            />
-        </View>
+    <View style={[styles.container, main_Style.genButtonElevation]}>
+        {!hideLogo && (
+          <View style={styles.logoContainer}>
+              <Image 
+                  style={styles.logo}
+                  source={require("../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png")}
+              />
+          </View>
+        )}
         <View style={styles.stories}>
             <FlatList 
                 horizontal= {true}
                 showsHorizontalScrollIndicator = {false}
                 nestedScrollEnabled={true}
                 pagingEnabled={true}
-                snapToInterval={322}
+                snapToInterval={ITEM_WIDTH}
+                snapToAlignment="center"
                 decelerationRate='fast'
                 data = {flashNews}
                 keyExtractor={(flashNew) => flashNew._id}
@@ -64,42 +79,41 @@ const HighLight = React.memo(({preloadedHeadlines}) => {
                     );
 
                 }}            
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                contentContainerStyle={styles.storiesContent}
             />
+            
         </View>
     </View>
   );
 }, (prevProps, nextProps) => {
-    // Custom comparison: only rerender if preloadedHeadlines actually changes
-    // Compare by reference and length to avoid unnecessary rerenders
+    // Custom comparison: rerender only if headlines or hideLogo changes
+    if (prevProps.hideLogo !== nextProps.hideLogo) return false;
+
     const prevHeadlines = prevProps.preloadedHeadlines;
     const nextHeadlines = nextProps.preloadedHeadlines;
     
-    // If both are undefined/null, don't rerender
     if (!prevHeadlines && !nextHeadlines) return true;
-    
-    // If one is undefined and other isn't, rerender
     if (!prevHeadlines || !nextHeadlines) return false;
-    
-    // If arrays have different lengths, rerender
     if (prevHeadlines.length !== nextHeadlines.length) return false;
-    
-    // If same reference, don't rerender
     if (prevHeadlines === nextHeadlines) return true;
     
-    // Compare IDs to see if content actually changed
     const prevIds = prevHeadlines.map(h => h._id || h.article_id).sort().join(',');
     const nextIds = nextHeadlines.map(h => h._id || h.article_id).sort().join(',');
     
-    return prevIds === nextIds; // Return true if same (don't rerender), false if different (rerender)
+    return prevIds === nextIds;
 });
 
 HighLight.displayName = 'HighLight';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    marginBottom: 8,
+    marginBottom: 0,
     paddingTop: 0,
+    //backgroundColor: 'green',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   logoContainer: {
     flexDirection: 'row',
@@ -119,8 +133,15 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   stories: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     marginTop: 2,
+    gap: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    paddingBottom: 16,
+  },
+  storiesContent: {
+    paddingHorizontal: 6,
   },
   storyContainer: {
     backgroundColor: '#FFF',
@@ -135,6 +156,27 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginHorizontal: 10,
     padding: 10,
+  },
+  sliderContainer: {
+    position: 'absolute',
+    bottom: 2,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+  },
+  sliderDot: {
+    width: 14,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  sliderDotActive: {
+    width: 28,
+    backgroundColor: MainBrownSecondaryColor,
   },
 });
 

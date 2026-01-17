@@ -29,8 +29,8 @@ const styles = StyleSheet.create({
   },
   companyLogo: {
     marginTop: 10,
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
   },
   welcomeContainer: {

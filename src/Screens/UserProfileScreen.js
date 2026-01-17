@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         padding: 16,
         paddingTop: 24,
-        borderRadius: 16,
+        borderRadius: 12,
         borderWidth: 0.5,
         borderColor: '#E0E0E0',
     },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     profileImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 40.5,
+        borderRadius: 45,
         overflow: 'hidden',
     },
     userName: {

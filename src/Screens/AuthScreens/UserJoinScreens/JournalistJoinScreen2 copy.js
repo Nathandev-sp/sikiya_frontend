@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, Switch, Alert, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, secCardBackgroundColor } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, secCardBackgroundColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import GoBackButton from "../../../../NavComponents/GoBackButton";
 import * as ImagePicker from 'expo-image-picker';
@@ -187,7 +187,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.25 }]}>
+            <View style={[styles.headerSection, { height: height * 0.2 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -210,46 +210,54 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
 
             <View style={auth_Style.detailFormContainer}>
               {/* Profile Photo and Public Nickname Row */}
-              <View style={styles.profileRow}>
-                <TouchableOpacity 
-                  style={styles.profilePhotoSection}
-                  onPress={pickImage}
-                  activeOpacity={0.7}
-                  disabled={uploadingImage}
-                >
-                  <View style={[
-                    styles.profilePhotoCircle,
-                    error.profileImage && styles.profilePhotoError,
-                    { justifyContent: 'center', alignItems: 'center' }
-                  ]}>
-                    {uploadingImage ? (
-                      <SmallLoadingState />
-                    ) : profileImageUrl ? (
-                      <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
-                    ) : (
-                      <Image source={require('../../../../assets/functionalImages/ProfilePic.png')} style={styles.profileImage} />
-                    )}
-                  </View>
-                  <Text style={[styles.profilePhotoText, error.profileImage && { color: '#d32f2f' }]}>
-                    {profileImageUrl ? "Change Photo" : (uploadingImage ? "Uploading..." : "Add Photo *")}
-                  </Text>
-                </TouchableOpacity>
-                <View style={styles.nicknameSection}>
-                  <Text style={auth_Style.authLabel}>Public Nickname</Text>
-                  <View style={[
-                    auth_Style.authInputContainer,
-                    error.nickname && auth_Style.inputErrorCont
-                  ]}>
-                    <Ionicons name="at-outline" style={auth_Style.authLogo}/>
-                    <TextInput
-                      ref={nicknameInputRef}
-                      style={auth_Style.input}
-                      hitSlop={defaultButtonHitslop}
-                      placeholder="Enter your nickname"
-                      value={journalistInfo2.nickname || ''}
-                      onChangeText={(text) => handleFormChanges('nickname', text)}
-                      autoCapitalize="none"
-                    />
+              <View style={[styles.profileRow, main_Style.genButtonElevation]}>
+                <Text style={styles.profilePreviewText}>
+                  This is how users will see you in the app
+                </Text>
+                <View style={styles.profileRowContent}>
+                  <TouchableOpacity 
+                    style={styles.profilePhotoSection}
+                    onPress={pickImage}
+                    activeOpacity={0.7}
+                    disabled={uploadingImage}
+                  >
+                    <View style={[styles.profileImageWrapper, uploadingImage && styles.profileImageLoading]}>
+                      {uploadingImage ? (
+                        <SmallLoadingState />
+                      ) : profileImageUrl ? (
+                        <Image source={{ uri: profileImageUrl }} style={[
+                          styles.profileImage,
+                          error.profileImage && styles.profileImageError
+                        ]} />
+                      ) : (
+                        <Image source={require('../../../../assets/functionalImages/ProfilePic.png')} style={[
+                          styles.profileImage,
+                          error.profileImage && styles.profileImageError
+                        ]} />
+                      )}
+                    </View>
+                    <View style={styles.cameraIconOverlay}>
+                      <Ionicons name="camera" size={20} color="#fff" />
+                    </View>
+                    
+                  </TouchableOpacity>
+                  <View style={styles.nicknameSection}>
+                    <Text style={auth_Style.authLabel}>Public Nickname</Text>
+                    <View style={[
+                      auth_Style.authInputContainer,
+                      error.nickname && auth_Style.inputErrorCont
+                    ]}>
+                      <Ionicons name="at-outline" style={auth_Style.authLogo}/>
+                      <TextInput
+                        style={auth_Style.input}
+                        hitSlop={defaultButtonHitslop}
+                        placeholder="Enter your nickname"
+                        placeholderTextColor="#aaa"
+                        value={journalistInfo2.nickname || ''}
+                        onChangeText={(text) => handleFormChanges('nickname', text)}
+                        autoCapitalize="none"
+                      />
+                    </View>
                   </View>
                 </View>
               </View>
@@ -279,10 +287,10 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="business-outline" style={auth_Style.authLogo}/>
                   <TextInput
-                    ref={mediaCompanyInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder={journalistInfo2.affiliated ? "Enter your media company" : "Independent Journalist"}
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.affiliated ? journalistInfo2.mediaCompany : "Independent Journalist"}
                     onChangeText={(text) => handleFormChanges('mediaCompany', text)}
                     autoCapitalize="words"
@@ -306,10 +314,10 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="bulb-outline" style={auth_Style.authLogo}/>
                   <TextInput
-                    ref={areaOfExpertiseInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="e.g., Politics, Sports, Technology"
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.areaOfExpertise}
                     onChangeText={(text) => handleFormChanges('areaOfExpertise', text)}
                     autoCapitalize="words"
@@ -333,10 +341,10 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="document-text-outline" style={[auth_Style.authLogo, { alignSelf: 'flex-start', marginTop: 8 }]}/>
                   <TextInput
-                    ref={descriptionInputRef}
                     style={[auth_Style.input, { height: 80, textAlignVertical: 'top', paddingTop: 8 }]}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Tell us about yourself and your experience"
+                    placeholderTextColor="#aaa"
                     value={journalistInfo2.description}
                     onChangeText={(text) => handleFormChanges('description', text)}
                     multiline
@@ -380,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightBannerBackgroundColor,
-    borderColor: "#E0E0E0",
+    borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,
@@ -437,34 +445,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   profileRow: {
+    backgroundColor: secCardBackgroundColor,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    marginBottom: 16,
+    
+  },
+  profilePreviewText: {
+    fontFamily: generalTextFont,
+    fontSize: generalTextSize,
+    color: withdrawnTitleColor,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  profileRowContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
   },
   profilePhotoSection: {
     alignItems: 'center',
     marginRight: 16,
+    position: 'relative',
   },
-  profilePhotoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: secCardBackgroundColor,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 6,
+  profileImageWrapper: {
     overflow: 'hidden',
+    marginBottom: 6,
   },
-  profilePhotoError: {
-    borderWidth: 2,
+  profileImageLoading: {
+    borderColor: '#ccc',
+  },
+  profileImageError: {
     borderColor: '#d32f2f',
+    borderwidth: 2,
   },
   profileImage: {
     width: 70,
     height: 70,
     borderRadius: 35,
+    padding: 2.5,
+    borderWidth: 1.5,
+    borderColor: MainSecondaryBlueColor,
+    backgroundColor: AppScreenBackgroundColor,
+  },
+  cameraIconOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: MainSecondaryBlueColor,
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   profilePhotoText: {
     fontFamily: generalTextFont,

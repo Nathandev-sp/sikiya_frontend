@@ -83,6 +83,7 @@ const LoginScreen = ({navigation}) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your email"
+                    placeholderTextColor="#aaa"
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -104,6 +105,7 @@ const LoginScreen = ({navigation}) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Password"
+                    placeholderTextColor="#aaa"
                     value={password}
                     onChangeText={setPassword}
                     autoCapitalize="none"
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightBannerBackgroundColor,
-    borderColor: "#E0E0E0",
+    borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,

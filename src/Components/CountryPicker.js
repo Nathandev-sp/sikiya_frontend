@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: MainBrownSecondaryColor,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#D1D1D6",
   },
@@ -162,13 +163,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: articleTitleSize,
     fontWeight: "600",
-    color: generalTitleColor,
+    color: "#FFFFFF",
     fontFamily: generalTitleFont,
     textAlign: "center",
   },
   cancelText: {
     fontSize: generalTextSize,
-    color: withdrawnTitleColor,
+    color: "#FFFFFF",
     fontFamily: generalTextFont,
   },
   listContent: {

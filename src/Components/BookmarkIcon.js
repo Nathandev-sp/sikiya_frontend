@@ -3,8 +3,9 @@ import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import SmallLoadingState from './LoadingComps/SmallLoadingState';
+import { withdrawnTitleColor } from '../styles/GeneralAppStyle';
 
-const BookmarkIcon = ({ articleId, size = 24, savedStatus, position = 'bottom', centered = false, iconColorOverride = null }) => {
+const BookmarkIcon = ({ articleId, size = 22, savedStatus, position = 'bottom', centered = false, iconColorOverride = null }) => {
     const [bookmarked, setBookmarked] = useState(savedStatus);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -37,7 +38,7 @@ const BookmarkIcon = ({ articleId, size = 24, savedStatus, position = 'bottom', 
     };
 
     const iconName = bookmarked ? 'bookmark' : 'bookmark-outline';
-    const iconColor = iconColorOverride !== null ? iconColorOverride : (bookmarked ? '#FF5B5B' : '#B8B8B8');
+    const iconColor = iconColorOverride !== null ? iconColorOverride : (bookmarked ? '#FF5B5B' : withdrawnTitleColor);
 
     if (isLoading) {
         return (

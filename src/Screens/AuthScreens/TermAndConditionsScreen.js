@@ -80,7 +80,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
           <TouchableOpacity
             onPress={() => setAgreed(!agreed)}
             style={styles.checkboxContainer}
-            hitSlop={defaultButtonHitslop}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
             activeOpacity={generalActiveOpacity}
           >
             <Ionicons
@@ -96,7 +96,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
 
         {/* Continue Button */}
         <TouchableOpacity
-          hitSlop={defaultButtonHitslop}
+          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
           activeOpacity={generalActiveOpacity}
           style={[
             auth_Style.authButtonStyle,
@@ -123,7 +123,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   termsContainer: {
     flex: 1,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 16,
     borderRadius: 12,

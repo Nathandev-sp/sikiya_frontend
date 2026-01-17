@@ -60,6 +60,7 @@ const PremiumUserJoinScreen = ({ navigation }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your profession"
+                    placeholderTextColor="#aaa"
                     value={profession}
                     onChangeText={setProfession}
                     autoCapitalize="words"
@@ -83,6 +84,7 @@ const PremiumUserJoinScreen = ({ navigation }) => {
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Enter your area of expertise"
+                    placeholderTextColor="#aaa"
                     value={expertise}
                     onChangeText={setExpertise}
                     autoCapitalize="words"
@@ -106,6 +108,7 @@ const PremiumUserJoinScreen = ({ navigation }) => {
                     style={[auth_Style.input, { height: 80, textAlignVertical: 'top' }]}
                     hitSlop={defaultButtonHitslop}
                     placeholder="Tell us about yourself"
+                    placeholderTextColor="#aaa"
                     value={description}
                     onChangeText={setDescription}
                     multiline

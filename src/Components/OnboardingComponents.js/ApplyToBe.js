@@ -6,8 +6,8 @@ import {useNavigation} from "@react-navigation/native";
 const journalistImage = require("../../../assets/OnboardingImages/journalistWork.png");
 const userImage = require("../../../assets/OnboardingImages/team.png");
 
-const journalistSpeech = "Report the truth and spark meaningful conversations. Anyone can apply — start your journalism journey today."
-const UserSpeech = "Enjoy trusted content that keeps you informed. Engage with articles, comment, and join the conversation."
+const journalistSpeech = "Report the truth. Start your journalism journey."
+const UserSpeech = "Read trusted news. Engage in real conversations."
 
 const ApplyToBe = () => {
   const { height } = useWindowDimensions();
@@ -22,12 +22,12 @@ const ApplyToBe = () => {
   }
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.62, width: '96%', justifyContent: "space-around"}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%', justifyContent: "space-around"}, auth_Style.authElevation]}>
       {/* Top Container - Image Left */}
       <TouchableOpacity style={[styles.ButtonContainer, styles.imageLeftContainer, {backgroundColor: "#F6F3EF"}, main_Style.genButtonElevation]} activeOpacity={generalActiveOpacity} onPress={handleUserPress}>
         <Image source={userImage} style={styles.largeImage} />
         <View style={styles.textContainer}>
-          <Text style={styles.headline}>Join as a User</Text>
+          <Text style={styles.headline}>JOIN AS A USER</Text>
           <Text style={styles.description}>
                 {UserSpeech}
           </Text>
@@ -37,7 +37,7 @@ const ApplyToBe = () => {
       {/* Bottom Container - Image Right */}
       <TouchableOpacity style={[styles.ButtonContainer, styles.imageRightContainer, {backgroundColor: '#F6F3EF'}, main_Style.genButtonElevation]} activeOpacity={generalActiveOpacity} onPress={handleJournalistPress}>
         <View style={styles.textContainer}>
-          <Text style={styles.headline}>Apply to be a Journalist</Text>
+          <Text style={styles.headline}>APPLY TO BE A JOURNALIST</Text>
           <Text style={styles.description}>
                 {journalistSpeech}
           </Text>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 2,
+    fontSize: generalTitleSize ,
     fontWeight: '700',
     color: generalTitleColor,
     marginBottom: 10,

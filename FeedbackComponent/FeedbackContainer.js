@@ -5,7 +5,7 @@ import SikiyaAPI from '../API/SikiyaAPI';
 import mongoose from 'mongoose';
 import BigLoaderAnim from '../src/Components/LoadingComps/BigLoaderAnim';
 import { Ionicons } from '@expo/vector-icons';
-import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitleSize, generalTitleFontWeight, generalTitleFont, generalTitleColor, main_Style, genBtnBackgroundColor } from '../src/styles/GeneralAppStyle';
+import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitleSize, generalTitleFontWeight, generalTitleFont, generalTitleColor, main_Style, genBtnBackgroundColor, commentTextSize, generalTextSize } from '../src/styles/GeneralAppStyle';
 
 
 const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, hideHeader = false }) => {
@@ -59,7 +59,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             {!hideHeader && (
                 <View style={styles.commentsHeader}>
                     <View style={styles.commentsHeaderLeft}>
-                        <Ionicons name="chatbox-ellipses-outline" size={24} color={MainBrownSecondaryColor} />
+                        <Ionicons name="chatbox-ellipses-outline" size={20} color={MainBrownSecondaryColor} />
                         <Text style={styles.commentsCountText}>{formattedCount} Comments</Text>
                     </View>
                     {onAddCommentPress && (
@@ -68,7 +68,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
                             onPress={onAddCommentPress}
                             activeOpacity={0.7}
                         >
-                            <Ionicons name="add" size={24} color={MainBrownSecondaryColor} />
+                            <Ionicons name="chatbubbles" size={20} color={MainBrownSecondaryColor} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     commentsCountText: {
-        fontSize: generalTitleSize,
+        fontSize: generalTextSize,
         fontWeight: generalTitleFontWeight,
         color: generalTitleColor,
         fontFamily: generalTitleFont,

@@ -2,7 +2,7 @@ import React, { useState, useRef, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop } from "../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop, commentTextSize } from "../../styles/GeneralAppStyle";
 import {Context as AuthContext} from '../../Context/AuthContext';
 import { set } from "mongoose";
 import sleep from "../../Helpers/Sleep";
@@ -32,6 +32,7 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
 
   const handleResend = async () => {
     setLoading(true);
+    setCode(""); // Clear the code input
     try {
       // Call resendVerificationCode from AuthContext
       await resendVerificationCode();
@@ -87,20 +88,29 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
                 Please check your inbox and enter the verification code.
               </Text>
 
-              <TextInput
-                style={[
-                  styles.input,
-                  codeFocused && styles.inputFocused
-                ]}
-                placeholder="000000"
-                keyboardType="number-pad"
-                maxLength={6}
-                value={code}
-                onChangeText={setCode}
-                autoCapitalize="none"
-                onFocus={() => setCodeFocused(true)}
-                onBlur={() => setCodeFocused(false)}
-              />
+              <View style={auth_Style.authInputBundle}> 
+                <Text style={auth_Style.authLabel}>Verification Code</Text>
+                <View style={[
+                  auth_Style.authInputContainer,
+                  codeFocused && auth_Style.authInputContainerFocused,
+                  error && auth_Style.inputErrorCont
+                ]}>
+                  <Ionicons name="keypad-outline" style={auth_Style.authLogo}/>
+                  <TextInput
+                    style={auth_Style.input}
+                    hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    placeholder="000000"
+                    placeholderTextColor="#aaa"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    value={code}
+                    onChangeText={setCode}
+                    autoCapitalize="none"
+                    onFocus={() => setCodeFocused(true)}
+                    onBlur={() => setCodeFocused(false)}
+                  />
+                </View>
+              </View>
 
               {state.errorMessage ? <Text style={styles.error}>{state.errorMessage}</Text> : null}
 
@@ -152,12 +162,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 10,
+    //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightBannerBackgroundColor,
-    borderColor: "#E0E0E0",
+    borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,
@@ -173,9 +184,9 @@ const styles = StyleSheet.create({
   welcomeContainer: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    flex: 0.3,
+    //flex: 0.3,
     justifyContent: 'center',
-    paddingTop: 12,
+    paddingTop: 16,
   },
   welcomeTitle: {
     fontFamily: generalTitleFont,
@@ -183,14 +194,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: generalTitleColor,
     textAlign: 'center',
-    marginBottom: 16,
-    marginTop: 20,
+    marginBottom: 2,
+    marginTop: 16,
   },
   emailText: {
     fontFamily: generalTextFont,
     fontSize: generalTextSize,
     color: withdrawnTitleColor,
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
     paddingHorizontal: 24,
     lineHeight: 20,
@@ -208,24 +219,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 24,
   },
-  input: {
-    width: "80%",
-    borderWidth: 1,
-    borderColor: withdrawnTitleColor,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    letterSpacing: 8,
-    textAlign: "center",
-    marginBottom: 16,
-    backgroundColor: AppScreenBackgroundColor,
-    fontFamily: generalTextFont,
-    alignSelf: 'center',
-  },
-  inputFocused: {
-    borderColor: MainBrownSecondaryColor,
-    backgroundColor: '#fff',
-  },
   confirmButton: {
     width: 200,
     alignSelf: 'center',
@@ -238,7 +231,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: "#2BA1E6",
-    fontSize: 12,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     marginVertical: 8,
     textAlign: "center",

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import DateConverter from '../../Helpers/DateConverter';
 import StarRating from '../../Components/StarRating';
@@ -39,7 +39,7 @@ const createStyles = (height) => StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.35)',
+        backgroundColor: 'rgba(0,0,0,0.32)',
         zIndex: 1,
     },
     topBar: {
@@ -127,7 +127,7 @@ const createStyles = (height) => StyleSheet.create({
         fontFamily: articleTitleFont,
         lineHeight: 26,
         marginBottom: 6,
-        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowColor: 'rgba(0,0,0,0.8)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -136,7 +136,7 @@ const createStyles = (height) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginTop: 0,
-        marginBottom: 8,
+        marginBottom: 16,
         width: '100%',
     },
     locationInfo: {
@@ -149,14 +149,20 @@ const createStyles = (height) => StyleSheet.create({
         fontWeight: generalTextFontWeight,
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
-        opacity: 0.8,
+        opacity: 1,
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
     dateTextOverlay: {
         color: '#fff',
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
-        opacity: 0.8,
+        opacity: 1,
         fontWeight: generalTextFontWeight,
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
     },
     contentSection: {
         backgroundColor: AppScreenBackgroundColor,
@@ -174,10 +180,10 @@ const createStyles = (height) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 0,
+        marginBottom: 10,
         paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
+        borderBottomWidth: 0.2,
+        borderBottomColor: withdrawnTitleColor,
     },
     sourceInfo: {
         flexDirection: 'row',
@@ -185,9 +191,9 @@ const createStyles = (height) => StyleSheet.create({
         flex: 1,
     },
     sourceLogo: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         backgroundColor: MainSecondaryBlueColor,
         marginRight: 12,
     },
@@ -207,13 +213,13 @@ const createStyles = (height) => StyleSheet.create({
         marginBottom: 4,
     },
     sourceName: {
-        fontSize: generalTitleSize,
+        fontSize: commentTextSize,
         fontWeight: generalTitleFontWeight,
         color: generalTextColor,
         fontFamily: generalTitleFont,
     },
     authorName: {
-        fontSize: generalTitleSize,
+        fontSize: withdrawnTitleSize,
         fontWeight: generalTextFontWeight,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
@@ -222,13 +228,13 @@ const createStyles = (height) => StyleSheet.create({
         backgroundColor: lightBannerBackgroundColor,
         borderRadius: 12,
         padding: 12,
-        marginTop: 20,
+        marginTop: 10,
         marginBottom: 20,
         borderLeftWidth: 4,
         borderLeftColor: MainSecondaryBlueColor,
     },
     highlightLabel: {
-        fontSize: generalTitleSize,
+        fontSize: commentTextSize,
         fontWeight: generalTitleFontWeight,
         color: MainSecondaryBlueColor,
         fontFamily: generalTitleFont,
@@ -250,7 +256,7 @@ const createStyles = (height) => StyleSheet.create({
     fullContentLabel: {
         fontSize: generalTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTextColor,
+        color: MainBrownSecondaryColor,
         fontFamily: generalTitleFont,
         marginBottom: 12,
     },
@@ -268,10 +274,11 @@ const createStyles = (height) => StyleSheet.create({
         alignSelf: 'center',
     },
     horizontalRule: {
-        height: 1,
-        backgroundColor: '#F0F0F0',
-        width: '100%',
+        height: 0.4,
+        backgroundColor: withdrawnTitleColor,
+        //width: '100%',
         marginVertical: 16,
+        marginHorizontal: 12,
     },
     loadingContainer: {
         flex: 1,
@@ -618,7 +625,7 @@ const NewsHome = ({ route }) => {
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             activeOpacity={generalActiveOpacity}
                         >
-                            <Ionicons name="arrow-back" size={24} color={MainBrownSecondaryColor} />
+                            <Ionicons name="arrow-back" size={24} color={withdrawnTitleColor} />
                         </TouchableOpacity>
                         <View style={styles.topBarRight}>
                             <View style={styles.bookmarkButtonWrapper}>
@@ -629,7 +636,7 @@ const NewsHome = ({ route }) => {
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 activeOpacity={generalActiveOpacity}
                             >
-                                <Ionicons name="share-outline" size={24} color={generalTextColor} />
+                                <Ionicons name="share-outline" size={24} color={withdrawnTitleColor} />
                             </TouchableOpacity>
                         </View>
                     </SafeAreaView>
@@ -737,7 +744,7 @@ const NewsHome = ({ route }) => {
                     {/* Article Highlight (Summary/Major Idea) */}
                     <BannerAdComponent position="bottom" />
                     
-                    <View style={styles.highlightSection}>
+                    <View style={[styles.highlightSection, main_Style.genButtonElevation]}>
                         <Text style={styles.highlightLabel}>Highlights</Text>
                         <Text style={styles.highlightText}>{article.article_highlight}</Text>
                     </View>

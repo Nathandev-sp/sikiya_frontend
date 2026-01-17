@@ -32,14 +32,14 @@ const styles = StyleSheet.create({
     lottieContainer: {
         justifyContent: "center",
         alignItems: "center",
-        height: 36,
-        width: 36,
+        height: 32,
+        width: 32,
         //backgroundColor: bannerBackgroundColor,
         borderRadius: 0
     },
     lottieAnimation: {
-        width: 36,
-        height: 36
+        width: 32,
+        height: 32
     },
 
 });

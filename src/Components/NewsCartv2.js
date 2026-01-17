@@ -23,7 +23,7 @@ const NewsCartv2 = ({article}) => {
 
     return(
         <TouchableOpacity activeOpacity={0.8} onPress={goToNewsHome}>
-            <View style = {[styles.container, {width: width * 0.95, height: height * 0.16}]}>
+            <View style = {[styles.container, {width: width * 0.98, height: height * 0.16}]}>
                 <View style = {styles.introContainer}>
                     {/* Image Container - Left Side */}
                     <View style = {styles.imageContainer}>
@@ -92,11 +92,12 @@ const styles = StyleSheet.create({
     container: {
         //backgroundColor: 'red',
         borderRadius: 12,
-        marginVertical: 2,
+        marginVertical: 4,
         alignSelf: 'center',
-        padding: 6,
+        padding: 4,
         zIndex: 10,
         overflow: 'hidden',
+        //backgroundColor: "red"
         //borderWidth: 1.5,
         //borderColor: '#E8E8E8',
         // iOS Shadow
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '45%',
-        height: '100%',
+        height: '97.5%',
         borderRadius: 8,
         backgroundColor: mainBrownColor,
         justifyContent: 'center',
@@ -125,6 +126,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginRight: 12,
         position: 'relative',
+
     },
     imageOverlay: {
         position: 'absolute',
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: 'rgba(0,0,0,0)',
         borderRadius: 8,
         zIndex: 1,
     },
@@ -201,7 +203,7 @@ const contentstyle = StyleSheet.create({
         marginTop: 0,
         fontSize: generalTextSize,
         //fontWeight: '700',
-        color: articleTitleColor,
+        color: generalTextColor,
         lineHeight: generalSmallLineHeight,
         fontFamily: articleTitleFont,
     },

@@ -22,6 +22,7 @@ import AppScreenBackgroundColor, {
   generalTitleSize
 } from '../styles/GeneralAppStyle';
 import { StatusBar } from 'expo-status-bar';
+import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
 
 const JounalistPannelScreen = ({ navigation }) => {
   const [submissions, setSubmissions] = useState([]);
@@ -172,8 +173,7 @@ const JounalistPannelScreen = ({ navigation }) => {
         <View style={styles.statsContainer}>
           <View style={styles.statsRow}>
             {/* Total Articles Published */}
-            <View style={styles.statCard}>
-              <View style={[styles.statCardBar, { backgroundColor: '#7C3AED' }]} />
+            <View style={styles.statCardPurple}>
               <Text style={styles.statCardTitle}>Total Articles</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.total_articles_published}
@@ -181,8 +181,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             </View>
             
             {/* Monthly Readers */}
-            <View style={styles.statCard}>
-              <View style={[styles.statCardBar, { backgroundColor: '#2563EB' }]} />
+            <View style={styles.statCardBlue}>
               <Text style={styles.statCardTitle}>Monthly Readers</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.monthly_readers.toLocaleString()}
@@ -192,8 +191,7 @@ const JounalistPannelScreen = ({ navigation }) => {
           
           <View style={styles.statsRow}>
             {/* Engagement Score */}
-            <View style={styles.statCard}>
-              <View style={[styles.statCardBar, { backgroundColor: '#10B981' }]} />
+            <View style={styles.statCardGreen}>
               <Text style={styles.statCardTitle}>Engagement</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : `${stats.engagement_score}%`}
@@ -201,8 +199,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             </View>
             
             {/* User Impact */}
-            <View style={styles.statCard}>
-              <View style={[styles.statCardBar, { backgroundColor: '#F59E0B' }]} />
+            <View style={styles.statCardOrange}>
               <Text style={styles.statCardTitle}>Impact Tier</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.user_impact}
@@ -241,7 +238,7 @@ const JounalistPannelScreen = ({ navigation }) => {
           
           {loadingSubmissions ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
+              <MediumLoadingState />
               <Text style={styles.loadingText}>Loading submissions...</Text>
             </View>
           ) : submissionsError ? (
@@ -312,7 +309,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 8,
@@ -325,24 +321,69 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  statCardBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
+  statCardPurple: {
+    flex: 1,
+    backgroundColor: '#7C3AED',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 8,
+    minHeight: 100,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  statCardMenu: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    padding: 4,
+  statCardBlue: {
+    flex: 1,
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 8,
+    minHeight: 100,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statCardGreen: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 8,
+    minHeight: 100,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statCardOrange: {
+    flex: 1,
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 8,
+    minHeight: 100,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statCardTitle: {
     fontSize: generalSmallTextSize,
-    color: withdrawnTitleColor,
+    color: '#fff',
     fontFamily: generalTitleFont,
     marginBottom: 12,
     marginTop: 4,
@@ -350,7 +391,7 @@ const styles = StyleSheet.create({
   statCardValue: {
     fontSize: xlargeTextSize,
     fontWeight: generalTitleFontWeight,
-    color: generalTitleColor,
+    color: '#fff',
     fontFamily: generalTitleFont,
   },
   buttonsContainer: {

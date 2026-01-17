@@ -15,18 +15,6 @@ try {
     BannerAdComponent = null;
 }
 
-/**
- * Banner Ad Component
- * 
- * Displays a banner ad at the bottom of the screen.
- * Only shows ads for users with role 'general'.
- * 
- * NOTE: This requires react-native-google-mobile-ads to be installed
- * and a development build (doesn't work in Expo Go).
- * 
- * Usage:
- * <BannerAd position="bottom" />
- */
 const BannerAd = ({ 
     position = 'bottom', // 'top' or 'bottom'
     style,
@@ -65,7 +53,7 @@ const BannerAd = ({
 
     return (
         <View style={[styles.container, position === 'top' && styles.topContainer, style]}>
-            <Text style={styles.adLabel}></Text>
+            <Text style={styles.adLabel}>Advertisement</Text>
             <BannerAdComponent
                 unitId={adUnit}
                 size={BannerAdSize.FULL_BANNER}
@@ -86,7 +74,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     topContainer: {
-        marginTop: Platform.OS === 'ios' ? 20 : 20,
+        marginTop: Platform.OS === 'ios' ? 6 : 6,
     },
     adLabel: {
         fontSize: 12,

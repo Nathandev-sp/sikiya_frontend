@@ -68,6 +68,7 @@ const OnboardingScreen = ({ navigation }) => {
           <Animated.View
             style={{
               width: '100%',
+              marginTop: 25,
               flex: 1,
               transform: [{ translateX: slideAnim }],
             }}
