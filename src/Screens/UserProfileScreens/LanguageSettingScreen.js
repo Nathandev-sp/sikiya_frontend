@@ -1,60 +1,116 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, StatusBar} from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleTextSize, cardBackgroundColor, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleFont, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useRoute } from '@react-navigation/native';
+import { useLanguage } from '../../Context/LanguageContext';
+import { Context as AuthContext } from '../../Context/AuthContext';
+import SikiyaAPI from '../../../API/SikiyaAPI';
 
 const LanguageSettingScreen = () => {
-    const [currentLanguage, setCurrentLanguage] = useState('english'); // Current active language
-    const [selectedLanguage, setSelectedLanguage] = useState('english'); // Selected language for change
+    const { state } = useContext(AuthContext);
+    const { appLanguage, contentLanguage, changeLanguagePreferences, t } = useLanguage();
+    
+    const [selectedAppLanguage, setSelectedAppLanguage] = useState(appLanguage);
+    const [selectedContentLanguage, setSelectedContentLanguage] = useState(contentLanguage);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const languages = [
+    const appLanguages = [
         {
-            id: 'english',
+            id: 'en',
             name: 'English',
             nativeName: 'English',
             icon: '🇬🇧',
         },
         {
-            id: 'french',
+            id: 'fr',
             name: 'French',
             nativeName: 'Français',
             icon: '🇫🇷',
         }
     ];
 
-    const handleLanguageChange = () => {
-        const selectedLang = languages.find(lang => lang.id === selectedLanguage);
-        
-        Alert.alert(
-            'Change Language',
-            `Are you sure you want to change the language to ${selectedLang?.name}? The app will restart to apply changes.`,
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Yes',
-                    onPress: () => {
-                        // TODO: Save language preference to AsyncStorage or API
-                        // await AsyncStorage.setItem('userLanguage', selectedLanguage);
-                        
-                        // Update current language
-                        setCurrentLanguage(selectedLanguage);
-                        
-                        Alert.alert(
-                            'Language Changed',
-                            'Please restart the app to apply language changes.',
-                            [{ text: 'OK' }]
-                        );
+    const contentLanguages = [
+        {
+            id: 'english',
+            name: t('language.englishOnly'),
+            description: 'See only English articles and videos',
+        },
+        {
+            id: 'french',
+            name: t('language.frenchOnly'),
+            description: 'See only French articles and videos',
+        },
+        {
+            id: 'both',
+            name: t('language.bothLanguages'),
+            description: 'See articles and videos in all languages',
+        }
+    ];
+
+    // Sync state with context when context changes
+    useEffect(() => {
+        setSelectedAppLanguage(appLanguage);
+        setSelectedContentLanguage(contentLanguage);
+    }, [appLanguage, contentLanguage]);
+
+    const hasChanges = () => {
+        return selectedAppLanguage !== appLanguage || selectedContentLanguage !== contentLanguage;
+    };
+
+    const handleSaveChanges = async () => {
+        if (!hasChanges()) {
+            Alert.alert(t('common.error'), 'No changes to save');
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+            // Update local context and AsyncStorage
+            const localResult = await changeLanguagePreferences(selectedAppLanguage, selectedContentLanguage);
+            
+            if (!localResult.success) {
+                throw new Error(localResult.error || 'Failed to update local preferences');
+            }
+
+            // Update on backend
+            try {
+                await SikiyaAPI.put(
+                    '/user/language-preferences',
+                    {
+                        appLanguage: selectedAppLanguage,
+                        contentLanguage: selectedContentLanguage,
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${state.token}`,
+                        },
                     }
-                }
-            ]
-        );
+                );
+            } catch (apiError) {
+                console.error('Error updating language preferences on backend:', apiError);
+                // Don't throw - local changes are already saved
+            }
+
+            Alert.alert(
+                t('common.success'),
+                t('language.languageChanged'),
+                [{ text: t('common.ok') }]
+            );
+        } catch (error) {
+            console.error('Error saving language preferences:', error);
+            Alert.alert(
+                t('common.error'),
+                error.message || 'Failed to save language preferences',
+                [{ text: t('common.ok') }]
+            );
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -69,21 +125,25 @@ const LanguageSettingScreen = () => {
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
                     <Ionicons name="language-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Language</Text>
+                    <Text style={settingsStyles.headerTitle}>{t('language.appLanguage')}</Text>
                 </View>
 
+                {/* App Language Section */}
                 <View style={[styles.formContainer, main_Style.genButtonElevation]}>
-                    <Text style={styles.sectionTitle}>Select Your Language</Text>
+                    <Text style={styles.sectionTitle}>{t('language.selectAppLanguage')}</Text>
+                    <Text style={styles.sectionDescription}>{t('language.appLanguageDescription')}</Text>
                     
-                    {/* Language Options */}
-                    {languages.map((language) => (
+                    <VerticalSpacer height={12} />
+                    
+                    {/* App Language Options */}
+                    {appLanguages.map((language) => (
                         <TouchableOpacity
                             key={language.id}
                             style={[
                                 styles.languageCard,
-                                selectedLanguage === language.id && styles.selectedLanguageCard
+                                selectedAppLanguage === language.id && styles.selectedLanguageCard
                             ]}
-                            onPress={() => setSelectedLanguage(language.id)}
+                            onPress={() => setSelectedAppLanguage(language.id)}
                             activeOpacity={generalActiveOpacity}
                         >
                             <View style={styles.languageIconContainer}>
@@ -93,16 +153,16 @@ const LanguageSettingScreen = () => {
                             <View style={styles.languageTextContainer}>
                                 <View style={styles.languageNameRow}>
                                     <Text style={styles.languageName}>{language.name}</Text>
-                                    {currentLanguage === language.id && (
+                                    {appLanguage === language.id && (
                                         <View style={styles.currentBadge}>
-                                            <Text style={styles.currentBadgeText}>Current</Text>
+                                            <Text style={styles.currentBadgeText}>{t('common.current') || 'Current'}</Text>
                                         </View>
                                     )}
                                 </View>
                                 <Text style={styles.languageNativeName}>{language.nativeName}</Text>
                             </View>
 
-                            {selectedLanguage === language.id && (
+                            {selectedAppLanguage === language.id && (
                                 <View style={styles.checkmarkContainer}>
                                     <Ionicons 
                                         name="checkmark-circle" 
@@ -113,30 +173,78 @@ const LanguageSettingScreen = () => {
                             )}
                         </TouchableOpacity>
                     ))}
+                </View>
 
-                    <VerticalSpacer height={20} />
+                <VerticalSpacer height={20} />
 
-                    {/* Change Language Button */}
+                {/* Content Language Section */}
+                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
+                    <Text style={styles.sectionTitle}>{t('language.selectContentLanguage')}</Text>
+                    <Text style={styles.sectionDescription}>{t('language.contentLanguageDescription')}</Text>
+                    
+                    <VerticalSpacer height={12} />
+                    
+                    {/* Content Language Options */}
+                    {contentLanguages.map((language) => (
+                        <TouchableOpacity
+                            key={language.id}
+                            style={[
+                                styles.contentLanguageCard,
+                                selectedContentLanguage === language.id && styles.selectedLanguageCard
+                            ]}
+                            onPress={() => setSelectedContentLanguage(language.id)}
+                            activeOpacity={generalActiveOpacity}
+                        >
+                            <View style={styles.contentLanguageTextContainer}>
+                                <View style={styles.languageNameRow}>
+                                    <Text style={styles.languageName}>{language.name}</Text>
+                                    {contentLanguage === language.id && (
+                                        <View style={styles.currentBadge}>
+                                            <Text style={styles.currentBadgeText}>{t('common.current') || 'Current'}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <Text style={styles.contentLanguageDescription}>{language.description}</Text>
+                            </View>
+
+                            {selectedContentLanguage === language.id && (
+                                <View style={styles.checkmarkContainer}>
+                                    <Ionicons 
+                                        name="checkmark-circle" 
+                                        size={20} 
+                                        color={'#007AA3'} 
+                                    />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <VerticalSpacer height={20} />
+
+                {/* Save Changes Button */}
+                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
                     <TouchableOpacity 
                         style={[
                             styles.changeButton, 
                             main_Style.genButtonElevation,
-                            selectedLanguage === currentLanguage && styles.disabledButton
+                            (!hasChanges() || isSaving) && styles.disabledButton
                         ]} 
-                        onPress={handleLanguageChange}
+                        onPress={handleSaveChanges}
                         activeOpacity={generalActiveOpacity}
-                        disabled={selectedLanguage === currentLanguage}
+                        disabled={!hasChanges() || isSaving}
                     >
-                        <Ionicons name="refresh-outline" size={20} color="#fff" style={{marginRight: 8}} />
-                        <Text style={styles.changeButtonText}>
-                            {selectedLanguage === currentLanguage ? 'Already Using This Language' : 'Change Language & Restart'}
-                        </Text>
+                        {isSaving ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                            <>
+                                <Ionicons name="save-outline" size={20} color="#fff" style={{marginRight: 8}} />
+                                <Text style={styles.changeButtonText}>
+                                    {!hasChanges() ? t('common.noChanges') || 'No Changes' : t('common.save')}
+                                </Text>
+                            </>
+                        )}
                     </TouchableOpacity>
-
-                    <Text style={styles.warningText}>
-                        <Ionicons name="warning-outline" size={14} color={withdrawnTitleColor} /> 
-                        {' '}The app will need to be restarted to apply language changes
-                    </Text>
                 </View>
 
                 <VerticalSpacer height={30} />
@@ -160,8 +268,14 @@ const styles = StyleSheet.create({
         fontSize: articleTextSize,
         fontWeight: generalTextFontWeight,
         color: withdrawnTitleColor,
-        marginBottom: 12,
+        marginBottom: 4,
         fontFamily: generalTitleFont,
+    },
+    sectionDescription: {
+        fontSize: commentTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        lineHeight: 18,
     },
     languageCard: {
         flexDirection: 'row',
@@ -227,6 +341,25 @@ const styles = StyleSheet.create({
     checkmarkContainer: {
         marginLeft: 8,
     },
+    contentLanguageCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        marginBottom: 8,
+        backgroundColor: '#fff',
+    },
+    contentLanguageTextContainer: {
+        flex: 1,
+    },
+    contentLanguageDescription: {
+        fontSize: 11,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        marginTop: 4,
+    },
     changeButton: {
         backgroundColor: MainBrownSecondaryColor,
         paddingVertical: 12,
@@ -244,14 +377,6 @@ const styles = StyleSheet.create({
         fontSize: generalTextSize,
         fontWeight: generalTextFontWeight,
         fontFamily: generalTitleFont,
-    },
-    warningText: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        marginTop: 12,
-        textAlign: 'center',
-        fontFamily: generalTextFont,
-        lineHeight: 16,
     },
 });
 

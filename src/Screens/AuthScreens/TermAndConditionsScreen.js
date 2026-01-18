@@ -8,6 +8,7 @@ import SikiyaAPI from "../../../API/SikiyaAPI";
 import LottieLoad from "../../Helpers/LottieLoad";
 import sleep from "../../Helpers/Sleep";
 import { Context as AuthContext } from "../../Context/AuthContext";
+import { useLanguage } from "../../Context/LanguageContext";
 
 // Import terms and conditions
 import { termsAndConditions as termsData } from "../../../assets/PDFs/UserT&C";
@@ -17,6 +18,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const { state, updateRole } = useContext(AuthContext);
+  const { appLanguage, contentLanguage } = useLanguage();
 
   const createUserProfile = async () => {
     if (!agreed) return;
@@ -34,7 +36,9 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
         signed_agreement: true,
         displayName: `${userInfo.firstName} ${userInfo.lastName}`,
         phone_country_code: userInfo.phoneCountryCode?.code || userInfo.phoneCountryCode,
-        phone_number: userInfo.phoneNumber
+        phone_number: userInfo.phoneNumber,
+        appLanguage: appLanguage, // Include app language from context
+        contentLanguage: contentLanguage // Include content language from context
       };
       
       const response = await SikiyaAPI.post('/signup/user', payload);

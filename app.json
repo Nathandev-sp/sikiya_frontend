@@ -8,9 +8,9 @@
     "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/Sikiya_logo/Sikiya_Logo_New.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#F0F0F0"
+      "image": "./assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#66462C"
     },
     "ios": {
       "supportsTablet": false,

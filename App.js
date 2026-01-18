@@ -76,6 +76,7 @@ import CriticalErrorScreen from './src/Screens/ErrorScreens/CriticalErrorScreen'
 // context imports ----------------------------------
 import { Provider as AuthProvider } from './src/Context/AuthContext'; // Auth context provider
 import { Context as AuthContext } from './src/Context/AuthContext'; // Auth context
+import { LanguageProvider } from './src/Context/LanguageContext'; // Language context provider
 import sleep from './src/Helpers/Sleep';
 import SikiyaAPI from './API/SikiyaAPI';
 import { 
@@ -787,8 +788,10 @@ export default function App() {
  
   return (
     <AuthProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
-      <AppContent />
+      <LanguageProvider>
+        <StatusBar barStyle="dark-content" backgroundColor="white" />
+        <AppContent />
+      </LanguageProvider>
     </AuthProvider>
   );
  

@@ -8,6 +8,7 @@ import GoBackButton from "../../../NavComponents/GoBackButton";
 import LottieLoad from "../../Helpers/LottieLoad";
 import SikiyaAPI from "../../../API/SikiyaAPI";
 import { useNavigation } from "@react-navigation/native";
+import { useLanguage } from "../../Context/LanguageContext";
 
 // Import terms and conditions
 import { termsAndConditions as termsData } from "../../../assets/PDFs/UserT&C";
@@ -19,6 +20,7 @@ const JournalistTermConditions = ({ route }) => {
   const { journalistInfo, journalistInfo2, profileImageKey } = route.params;
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { appLanguage, contentLanguage } = useLanguage();
 
   const createJournalistProfile = async () => {
     if (!agreed) return;
@@ -40,7 +42,9 @@ const JournalistTermConditions = ({ route }) => {
         area_of_expertise: journalistInfo2.areaOfExpertise,
         profile_picture: profileImageKey,
         phone_country_code: journalistInfo.phoneCountryCode?.code || journalistInfo.phoneCountryCode,
-        phone_number: journalistInfo.phoneNumber
+        phone_number: journalistInfo.phoneNumber,
+        appLanguage: appLanguage, // Include app language from context
+        contentLanguage: contentLanguage // Include content language from context
       };
 
       const response = await SikiyaAPI.post('/signup/journalist', payload);
