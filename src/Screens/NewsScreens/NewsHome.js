@@ -127,7 +127,7 @@ const createStyles = (height) => StyleSheet.create({
         fontFamily: articleTitleFont,
         lineHeight: 26,
         marginBottom: 6,
-        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowColor: 'rgba(0,0,0,1)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -150,7 +150,7 @@ const createStyles = (height) => StyleSheet.create({
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
         opacity: 1,
-        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowColor: 'rgba(0,0,0,1)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -160,7 +160,7 @@ const createStyles = (height) => StyleSheet.create({
         fontFamily: generalTextFont,
         opacity: 1,
         fontWeight: generalTextFontWeight,
-        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowColor: 'rgba(0,0,0,1)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -312,6 +312,10 @@ const NewsHome = ({ route }) => {
     const userRole = authState?.role || '';
     const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
     const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
+    
+    // Cooldown timer for ads
+    const [adCooldownSeconds, setAdCooldownSeconds] = useState(0);
+    const adCooldownTimerRef = useRef(null);
 
     // Fetch article by ID if articleId is provided but article is not
     useEffect(() => {
@@ -359,23 +363,36 @@ const NewsHome = ({ route }) => {
 
     const handleUnlockComment = useCallback(() => {
         if (userRole !== 'general') return;
+        
+        // Check cooldown
+        if (adCooldownSeconds > 0) {
+            Alert.alert(
+                'Please Wait',
+                `You just watched an ad! The next ad will be ready in ${adCooldownSeconds} seconds.\n\nThis cooldown ensures the next ad has time to load properly.`,
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+        
         handleWatchAd();
-    }, [handleWatchAd, userRole]);
+    }, [handleWatchAd, userRole, adCooldownSeconds]);
 
     const handleUpgrade = useCallback(() => {
-        Alert.alert(
-            'Upgrade',
-            'Upgrade to unlock unlimited main comments.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'OK' }
-            ]
-        );
-    }, []);
+        navigation.navigate('UserProfileGroup', {
+            screen: 'SubscriptionSettings',
+            params: {
+                screen: 'MembershipSettings'
+            }
+        });
+    }, [navigation]);
 
     const handleWatchAd = useCallback(async () => {
         if (!isAdLoaded) {
-            Alert.alert('Please wait', 'Ad is still loading. Try again in a moment.');
+            Alert.alert(
+                'Ad Still Loading', 
+                'Rewarded ads can take 30-60 seconds to fully load and be ready to show.\n\nPlease wait a bit longer and try again in 15-20 seconds.',
+                [{ text: 'OK' }]
+            );
             return;
         }
 
@@ -394,6 +411,9 @@ const NewsHome = ({ route }) => {
             setQuotaLoading(true);
             await SikiyaAPI.post('/user/comments/unlock');
             await fetchCommentQuota();
+            
+            // Start cooldown timer (60 seconds)
+            startAdCooldown(60);
         } catch (err) {
             console.error('Error unlocking comment:', err?.response?.data || err.message);
             Alert.alert('Unlock failed', err?.response?.data?.error || 'Please try again.');
@@ -401,6 +421,30 @@ const NewsHome = ({ route }) => {
             setQuotaLoading(false);
         }
     }, [isAdLoaded, showRewardedAd, fetchCommentQuota]);
+    
+    // Start ad cooldown timer
+    const startAdCooldown = useCallback((seconds) => {
+        // Clear any existing timer
+        if (adCooldownTimerRef.current) {
+            clearInterval(adCooldownTimerRef.current);
+        }
+        
+        setAdCooldownSeconds(seconds);
+        console.log(`⏱️  Ad cooldown started: ${seconds} seconds`);
+        
+        adCooldownTimerRef.current = setInterval(() => {
+            setAdCooldownSeconds(prev => {
+                const newValue = prev - 1;
+                if (newValue <= 0) {
+                    clearInterval(adCooldownTimerRef.current);
+                    adCooldownTimerRef.current = null;
+                    console.log('✅ Ad cooldown finished - next ad should be ready!');
+                    return 0;
+                }
+                return newValue;
+            });
+        }, 1000);
+    }, []);
 
     const onSendComment = async (text) => {
         // Handle sending the comment
@@ -431,6 +475,11 @@ const NewsHome = ({ route }) => {
                     remaining: prev.remaining !== undefined ? Math.max(0, prev.remaining - 1) : prev.remaining,
                     used: prev.used !== undefined ? prev.used + 1 : prev.used,
                 } : prev);
+                // Optimistically increment article comment count
+                setArticle(prev => ({
+                    ...prev,
+                    number_of_comments: (prev.number_of_comments || 0) + 1
+                }));
                 await fetchCommentQuota();
             } else {
                 console.error('Error sending comment:', response);
@@ -576,8 +625,8 @@ const NewsHome = ({ route }) => {
     const categoryColor = categoryColors[article.category] || MainSecondaryBlueColor;
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar barStyle="dark-content" />
             
             <ScrollView
                 style={styles.scrollViewContainer}
@@ -599,7 +648,7 @@ const NewsHome = ({ route }) => {
                         showsHorizontalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <Image
-                                style={[styles.headerImage, { width, height: height * 0.5 }]}
+                                style={[styles.headerImage, { width, height: height * 0.48 }]}
                                 defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
                                 source={{ uri: getImageUrl(item) }}
                                 resizeMode="cover"
@@ -618,7 +667,7 @@ const NewsHome = ({ route }) => {
                     <View style={[styles.imageOverlay, { height: height * 0.5 }]} pointerEvents="none" />
 
                     {/* Top Bar with Back, Bookmark, Menu */}
-                    <SafeAreaView style={styles.topBar} edges={['top']}>
+                    <View style={styles.topBar}>
                         <TouchableOpacity
                             onPress={() => navigation.goBack()}
                             style={[styles.topBarButton, main_Style.genButtonElevation]}
@@ -639,7 +688,7 @@ const NewsHome = ({ route }) => {
                                 <Ionicons name="share-outline" size={24} color={withdrawnTitleColor} />
                             </TouchableOpacity>
                         </View>
-                    </SafeAreaView>
+                    </View>
 
                     {/* Category Tag */}
                     {article.category && (
@@ -767,6 +816,7 @@ const NewsHome = ({ route }) => {
                                 setModalVisible(true);
                                 await fetchCommentQuota();
                             }}
+                            totalCommentCount={article.number_of_comments || 0}
                         />
                         <CommentInputModal
                             visible={modalVisible}
@@ -784,7 +834,7 @@ const NewsHome = ({ route }) => {
                 </View>
             </ScrollView>
             
-        </View>
+        </SafeAreaView>
     );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Platform, Alert, StatusBar} from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Platform, Alert, StatusBar, Linking} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { cardBackgroundColor, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalSmallTextSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { cardBackgroundColor, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalSmallTextSize, articleTitleSize, commentTextSize } from '../../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -9,8 +9,6 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import {Context as AuthContext} from '../../Context/AuthContext';
 import { useContext } from 'react';
 import SikiyaAPI from '../../../API/SikiyaAPI';
-import paymentService from '../../services/paymentServiceExpoGo';
-import * as WebBrowser from 'expo-web-browser';
 
 
 const MembershipSettingScreen = () => {
@@ -29,59 +27,105 @@ const MembershipSettingScreen = () => {
     console.log('[MembershipScreen] User role from state:', currentUserRole);
     console.log('[MembershipScreen] Full state:', state);
 
-    const membershipPackages = [
-        {
-            id: 1,
-            name: 'General User',
-            price: 'Free',
-            period: '',
-            roleKey: 'general',
-            icon: 'reader-outline',
-            image: require('../../../assets/OnboardingImages/user.png'),
-            color: '#026C7C',
-            features: [
-                'Read all articles',
-                'Reply to comments only',
-                '5 videos per day (no ads)',
-                'Unlock more videos by watching 3 ads',
-                'Profile shows "Not a premium user" message',
-                'Ads in the app',
-            ],
-            drawbacks: [
-                'Cannot post new comments',
-                'Limited video viewing',
-                'Profile not visible to others',
-                'Ads throughout the app',
-            ]
-        },
-        {
-            id: 2,
-            name: 'Contributor',
-            price: '$4.00',
-            period: '/month',
-            roleKey: 'contributor',
-            icon: 'diamond-outline',
-            image: require('../../../assets/OnboardingImages/contributorImage.png'),
-            color: '#49A078',
-            features: [
-                'Full access to all articles',
-                'Post and reply to comments',
-                'Unlimited video watching',
-                'Ad-free experience',
-                'Full author profile visible',
-                'No viewing restrictions',
-            ],
-            benefits: [
-                'No ads',
-                'Unlimited content access',
-                'Full engagement features',
-                'Professional profile visibility',
-            ]
-        }
-    ];
+    // Contributor tier details
+    const contributorPlan = {
+        id: 1,
+        name: 'Sikiya Contributor',
+        price: '4.99 USD',
+        period: '/month',
+        roleKey: 'contributor',
+        tagline: 'Full Access to Premium Features',
+        image: require('../../../assets/OnboardingImages/contributorImage.png'),
+        color: '#49A078',
+        features: [
+            {
+                icon: 'infinite-outline',
+                title: 'Unlimited Video Access',
+                description: 'Watch unlimited videos with no daily restrictions'
+            },
+            {
+                icon: 'close-circle-outline',
+                title: 'Ad-Free Experience',
+                description: 'Enjoy content without interruptions or advertisements'
+            },
+            {
+                icon: 'chatbubble-ellipses-outline',
+                title: 'Full Comment Access',
+                description: 'Post new comments and engage fully with the community'
+            },
+            {
+                icon: 'person-outline',
+                title: 'Visible Profile',
+                description: 'Your profile is visible to other users and contributors'
+            },
+            {
+                icon: 'checkmark-circle-outline',
+                title: 'No Restrictions',
+                description: 'Use all features without any limitations'
+            }
+        ]
+    };
 
-    const handleMembershipSelect = (index) => {
-        setSelectedMembership(index);
+    // Open platform-specific subscription management
+    const handleManageSubscription = async () => {
+        if (Platform.OS === 'ios') {
+            try {
+                const iosIAP = require('../../services/iosIAPService').default;
+                await iosIAP.initializeIAP();
+                
+                // Open iOS Settings for subscription management
+                Alert.alert(
+                    'Manage Subscription',
+                    'To manage your subscription, you\'ll be directed to your iOS Settings.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                            text: 'Open Settings',
+                            onPress: async () => {
+                                try {
+                                    await Linking.openURL('app-settings:');
+                                } catch (err) {
+                                    Alert.alert(
+                                        'Settings',
+                                        'To manage your subscription:\n\n1. Open Settings app\n2. Tap your name at the top\n3. Tap Subscriptions\n4. Select Sikiya'
+                                    );
+                                }
+                            }
+                        }
+                    ]
+                );
+            } catch (error) {
+                console.error('Error opening settings:', error);
+                Alert.alert('Error', 'Could not open subscription settings.');
+            }
+        } else if (Platform.OS === 'android') {
+            try {
+                const androidIAP = require('../../services/androidIAPService').default;
+                await androidIAP.initializeIAP();
+                
+                // Open Google Play subscription management
+                Alert.alert(
+                    'Manage Subscription',
+                    'To manage your subscription, you\'ll be directed to Google Play.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                            text: 'Open Google Play',
+                            onPress: async () => {
+                                try {
+                                    await Linking.openURL('https://play.google.com/store/account/subscriptions');
+                                } catch (err) {
+                                    Alert.alert('Error', 'Could not open Google Play subscriptions.');
+                                }
+                            }
+                        }
+                    ]
+                );
+            } catch (error) {
+                console.error('Error opening Play Store:', error);
+                Alert.alert('Error', 'Could not open subscription settings.');
+            }
+        }
     };
 
     // Restore purchases handler
@@ -127,50 +171,19 @@ const MembershipSettingScreen = () => {
         }
     };
 
-    // Subscription handler - handles both upgrade and downgrade
-    const handleSubscribe = async (packageData) => {
-        // Don't allow subscribing to current plan
-        const planIndex = membershipPackages.findIndex(p => p.id === packageData.id);
-        if (planIndex === currentPlanIndex) {
-            Alert.alert('Already Subscribed', 'You are already on this plan.');
+    // Subscription handler - upgrade to contributor
+    const handleSubscribe = async () => {
+        // Check if already subscribed
+        if (currentUserRole === 'contributor') {
+            Alert.alert('Already Subscribed', 'You already have an active Contributor subscription.');
             return;
         }
 
-        setProcessingPackageId(packageData.id);
+        setProcessingPackageId(contributorPlan.id);
         setIsSubscribing(true);
 
         try {
-            // If downgrading to free, update directly
-            if (packageData.roleKey === 'general') {
-                try {
-                    const response = await SikiyaAPI.post('/subscription/cancel');
-                    if (response.data.success) {
-                        Alert.alert(
-                            'Subscription Cancelled',
-                            'You have been downgraded to the free tier. Your subscription will remain active until the end of your billing period.',
-                            [
-                                {
-                                    text: 'OK',
-                                    onPress: () => {
-                                        // Refresh user data to update role
-                                        // You may want to refresh AuthContext here
-                                        navigation.goBack();
-                                    }
-                                }
-                            ]
-                        );
-                    }
-                } catch (error) {
-                    console.error('Error cancelling subscription:', error);
-                    Alert.alert('Error', 'Failed to cancel subscription. Please try again.');
-                } finally {
-                    setProcessingPackageId(null);
-                    setIsSubscribing(false);
-                }
-                return;
-            }
-
-            // If upgrading to premium, use platform-specific IAP
+            // Use platform-specific IAP
             if (Platform.OS === 'ios') {
                 // iOS: Use Apple In-App Purchase
                 try {
@@ -252,35 +265,14 @@ const MembershipSettingScreen = () => {
                 }
                 return;
             } else {
-                // Web/Other: Use Stripe checkout (existing flow)
-                try {
-                    // Create subscription checkout session
-                    const response = await SikiyaAPI.post('/subscription/create-checkout', {
-                        planId: packageData.roleKey,
-                        amount: 400, // $4.00 in cents
-                        currency: 'usd',
-                        returnUrl: 'sikiya://subscription-success'
-                    });
-                    
-                    const sessionUrl = response.data.sessionUrl || response.data.checkoutUrl;
-                    
-                    if (sessionUrl && sessionUrl.startsWith('http')) {
-                        await WebBrowser.openBrowserAsync(sessionUrl, {
-                            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-                        });
-                        
-                        // After returning, check subscription status
-                        Alert.alert('Success', 'Subscription completed! Your plan will be activated shortly.');
-                    } else {
-                        throw new Error('Invalid session URL');
-                    }
-                } catch (error) {
-                    console.error('Subscription error:', error);
-                    Alert.alert('Error', 'Failed to start subscription. Please try again.');
-                } finally {
-                    setProcessingPackageId(null);
-                    setIsSubscribing(false);
-                }
+                // Unsupported platform
+                Alert.alert(
+                    'Not Available',
+                    'Subscriptions are only available on iOS and Android devices.',
+                    [{ text: 'OK' }]
+                );
+                setProcessingPackageId(null);
+                setIsSubscribing(false);
             }
         } catch (error) {
             console.error('Subscription failed:', error);
@@ -290,98 +282,76 @@ const MembershipSettingScreen = () => {
         }
     };
 
-    // Get current plan index based on user's role from AuthContext
-    const getCurrentPlanIndex = React.useCallback(() => {
-        // Journalists have premium access (show special screen)
-        if (currentUserRole === 'journalist') {
-            return -1;
-        }
-        
-        // Map user roles to plan indices
-        const roleMapping = {
-            'general': 0,      // Free tier - index 0
-            'contributor': 1,  // Premium tier ($4/month) - index 1
-        };
-        
-        // Get plan index based on current role
-        const planIndex = roleMapping[currentUserRole];
-        
-        // Debug log
-        console.log('[MembershipScreen] getCurrentPlanIndex - Role:', currentUserRole, 'Plan Index:', planIndex);
-        
-        // Return the plan index, defaulting to 0 (free tier) if role not recognized
-        return planIndex !== undefined ? planIndex : 0;
-    }, [currentUserRole]);
-
-    // Calculate current plan index based on user's role
-    const currentPlanIndex = getCurrentPlanIndex();
-    
-    // Initialize selected membership to current plan (unless journalist)
-    const [selectedMembership, setSelectedMembership] = useState(
-        currentPlanIndex === -1 ? 0 : currentPlanIndex
-    );
-    
-    // Update selected membership when role changes
-    useEffect(() => {
-        const newPlanIndex = getCurrentPlanIndex();
-        if (newPlanIndex !== -1) {
-            setSelectedMembership(newPlanIndex);
-        }
-        console.log('[MembershipScreen] Role changed, updated selected membership to:', newPlanIndex);
-    }, [currentUserRole, getCurrentPlanIndex]);
+    // Check if user is contributor
+    const isContributor = currentUserRole === 'contributor';
 
     // Journalist Premium Access Screen
     if (isJournalist) {
         return (
             <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
+                <StatusBar barStyle={"dark-content"} />
                 <View style={{position: 'absolute', top: 10, left: 10, zIndex: 10}}>
                     <GoBackButton />
                 </View>
                 
-                <ScrollView 
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.journalistContainer}
-                >
-                    <View style={styles.journalistContent}>
-                        <View style={styles.premiumBadge}>
-                            <Ionicons name="shield-checkmark" size={80} color={MainSecondaryBlueColor} />
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    {/* Header Section */}
+                    <View style={settingsStyles.headerSection}>
+                        <Ionicons name="shield-checkmark" style={settingsStyles.headerIcon} />
+                        <Text style={settingsStyles.headerTitle}>Journalist Access</Text>
+                    </View>
+
+                    {/* Hero Card - Journalist Version */}
+                    <View style={[styles.heroCard, styles.journalistHeroCard, main_Style.genButtonElevation]}>
+                        <View style={styles.journalistBadgeContainer}>
+                            <Ionicons name="shield-checkmark" size={50} color="#fff" />
                         </View>
+                        <View style={styles.heroContent}>
+                            <Text style={styles.heroTitle}>Verified Journalist</Text>
+                            <Text style={styles.heroTagline}>Premium Access Included</Text>
+                            <View style={styles.journalistPriceTag}>
+                                <Text style={styles.journalistPriceText}>Complimentary</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <VerticalSpacer height={20} />
+
+                    {/* Features Section */}
+                    <View style={[styles.featuresContainer, main_Style.genButtonElevation]}>
+                        <Text style={styles.sectionTitle}>Premium Features Included</Text>
                         
-                        <Text style={styles.journalistTitle}>Premium Access</Text>
-                        <Text style={styles.journalistSubtitle}>
-                            As a verified journalist, you have full access to all Sikiya features
-                        </Text>
+                        {contributorPlan.features.map((feature, idx) => (
+                            <View key={idx} style={styles.featureRow}>
+                                <View style={[styles.featureIconContainer, styles.journalistFeatureIcon]}>
+                                    <Ionicons 
+                                        name={feature.icon} 
+                                        size={24} 
+                                        color={MainSecondaryBlueColor} 
+                                    />
+                                </View>
+                                <View style={styles.featureTextContainer}>
+                                    <Text style={styles.featureTitle}>{feature.title}</Text>
+                                    <Text style={styles.featureDescription}>{feature.description}</Text>
+                                </View>
+                            </View>
+                        ))}
+                    </View>
 
-                        <View style={styles.premiumFeaturesContainer}>
-                            <View style={styles.premiumFeatureRow}>
-                                <Ionicons name="checkmark-circle" size={24} color="#49A078" />
-                                <Text style={styles.premiumFeatureText}>Unlimited article publishing</Text>
-                            </View>
-                            <View style={styles.premiumFeatureRow}>
-                                <Ionicons name="checkmark-circle" size={24} color="#49A078" />
-                                <Text style={styles.premiumFeatureText}>Priority content visibility</Text>
-                            </View>
-                            <View style={styles.premiumFeatureRow}>
-                                <Ionicons name="checkmark-circle" size={24} color="#49A078" />
-                                <Text style={styles.premiumFeatureText}>Advanced analytics dashboard</Text>
-                            </View>
-                            <View style={styles.premiumFeatureRow}>
-                                <Ionicons name="checkmark-circle" size={24} color="#49A078" />
-                                <Text style={styles.premiumFeatureText}>Direct engagement with readers</Text>
-                            </View>
-                            <View style={styles.premiumFeatureRow}>
-                                <Ionicons name="checkmark-circle" size={24} color="#49A078" />
-                                <Text style={styles.premiumFeatureText}>Ad-free experience</Text>
-                            </View>
-                        </View>
+                    <VerticalSpacer height={20} />
 
-                        <View style={styles.journalistInfoBox}>
-                            <Ionicons name="information-circle-outline" size={20} color={MainSecondaryBlueColor} />
-                            <Text style={styles.journalistInfoText}>
+                    {/* Journalist Status Card */}
+                    <View style={styles.actionContainer}>
+                        <View style={[styles.journalistStatusCard]}>
+                            <Ionicons name="shield-checkmark" size={22} color={MainSecondaryBlueColor} />
+                            <Text style={styles.journalistStatusTitle}>Verified Account</Text>
+                            <Text style={styles.journalistStatusDescription}>
                                 Your journalist account includes all premium features at no additional cost
                             </Text>
                         </View>
                     </View>
+
+                    <VerticalSpacer height={30} />
                 </ScrollView>
             </SafeAreaView>
         );
@@ -397,195 +367,115 @@ const MembershipSettingScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
-                    <Ionicons name="card-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Membership</Text>
+                    <Ionicons name="diamond-outline" style={settingsStyles.headerIcon} />
+                    <Text style={settingsStyles.headerTitle}>Sikiya Contributor</Text>
                 </View>
 
-                {/* Debug Info - Shows current role (remove in production) */}
-                {__DEV__ && (
-                    <View style={styles.debugContainer}>
-                        <Text style={styles.debugText}>Current User Role: {state.role || 'not set'}</Text>
-                        <Text style={styles.debugText}>Current Plan Index: {currentPlanIndex}</Text>
-                        <Text style={styles.debugText}>Selected Membership: {selectedMembership}</Text>
+                {/* Hero Card with Image */}
+                <View style={[styles.heroCard, main_Style.genButtonElevation]}>
+                    <Image 
+                        source={contributorPlan.image} 
+                        style={styles.heroImage} 
+                    />
+                    <View style={styles.heroContent}>
+                        <Text style={styles.heroTitle}>{contributorPlan.name}</Text>
+                        <Text style={styles.heroTagline}>{contributorPlan.tagline}</Text>
+                        <View style={styles.heroPriceContainer}>
+                            <Text style={styles.heroPrice}>{contributorPlan.price}</Text>
+                            <Text style={styles.heroPeriod}>{contributorPlan.period}</Text>
+                        </View>
                     </View>
-                )}
-
-                {/* Membership Cards */}
-                <View style={styles.membershipCardsContainer}>
-                    {membershipPackages.map((pkg, index) => {
-                        const isCurrentPlan = currentPlanIndex === index;
-                        const isSelected = selectedMembership === index;
-                        const isProcessing = processingPackageId === pkg.id;
-                        
-                        return (
-                            <TouchableOpacity
-                                key={pkg.id}
-                                style={[
-                                    styles.membershipCard,
-                                    isSelected && styles.selectedMembershipCard,
-                                    main_Style.genButtonElevation
-                                ]}
-                                onPress={() => handleMembershipSelect(index)}
-                                activeOpacity={generalActiveOpacity}
-                            >
-                                {/* Bulb Icon */}
-                                <View style={styles.bulbContainer}>
-                                    <Ionicons 
-                                        name={isSelected ? "bulb" : "bulb-outline"} 
-                                        size={24} 
-                                        color={isSelected ? pkg.color : withdrawnTitleColor} 
-                                    />
-                                </View>
-
-                                {/* Current Plan Badge */}
-                                {isCurrentPlan && (
-                                    <View style={styles.currentPlanBadge}>
-                                        <Ionicons name="checkmark-circle" size={12} color="#fff" />
-                                        <Text style={styles.currentPlanText}>CURRENT</Text>
-                                    </View>
-                                )}
-
-                                <View style={styles.cardHeader}>
-                                    <Image source={pkg.image} style={styles.packageImage} />
-                                    <Text style={[styles.packageName, { color: pkg.color }]}>
-                                        {pkg.name}
-                                    </Text>
-                                    <View style={styles.priceContainer}>
-                                        <Text style={styles.price}>{pkg.price}</Text>
-                                        {pkg.period && <Text style={styles.period}>{pkg.period}</Text>}
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-
-                {/* Plan Benefits & Subscribe Section */}
-                <View style={styles.benefitsContainer}>
-                    <Text style={styles.benefitsTitle}>
-                        {membershipPackages[selectedMembership].name} Features
-                    </Text>
-                    
-                    {membershipPackages[selectedMembership].features.map((feature, idx) => (
-                        <View key={idx} style={styles.benefitRow}>
-                            <Ionicons 
-                                name={selectedMembership === 1 ? "checkmark-circle" : "checkmark-circle-outline"} 
-                                size={20} 
-                                color={selectedMembership === 1 ? "#49A078" : "#026C7C"} 
-                            />
-                            <Text style={styles.benefitText}>{feature}</Text>
-                        </View>
-                    ))}
-                    
-                    {/* Show drawbacks when viewing free tier and user is premium */}
-                    {selectedMembership === 0 && currentPlanIndex === 1 && membershipPackages[0].drawbacks && (
-                        <>
-                            <View style={styles.divider} />
-                            <Text style={styles.drawbacksTitle}>What you'll lose:</Text>
-                            {membershipPackages[0].drawbacks.map((drawback, idx) => (
-                                <View key={idx} style={styles.drawbackRow}>
-                                    <Ionicons name="close-circle" size={20} color="#DC2626" />
-                                    <Text style={styles.drawbackText}>{drawback}</Text>
-                                </View>
-                            ))}
-                        </>
-                    )}
-                    
-                    {/* Show benefits when viewing premium tier and user is free */}
-                    {selectedMembership === 1 && currentPlanIndex === 0 && membershipPackages[1].benefits && (
-                        <>
-                            <View style={styles.divider} />
-                            <Text style={styles.benefitsSubtitle}>Premium Benefits:</Text>
-                            {membershipPackages[1].benefits.map((benefit, idx) => (
-                                <View key={idx} style={styles.benefitRow}>
-                                    <Ionicons name="star" size={20} color="#FFD700" />
-                                    <Text style={[styles.benefitText, styles.premiumBenefitText]}>{benefit}</Text>
-                                </View>
-                            ))}
-                        </>
-                    )}
-                    
-                    {selectedMembership === currentPlanIndex ? (
-                        <View style={styles.currentPlanIndicator}>
-                            <Ionicons name="checkmark-circle" size={20} color="#49A078" />
-                            <Text style={{fontSize: generalTextSize, fontFamily: generalTextFont, color: generalTextColor}}>You're currently on this plan</Text>
-                        </View>
-                    ) : selectedMembership === 1 ? (
-                        <TouchableOpacity
-                            style={[styles.subscribeButton, main_Style.genButtonElevation]}
-                            onPress={() => handleSubscribe(membershipPackages[selectedMembership])}
-                            activeOpacity={generalActiveOpacity}
-                            disabled={isSubscribing && processingPackageId === membershipPackages[selectedMembership].id}
-                        >
-                            {isSubscribing && processingPackageId === membershipPackages[selectedMembership].id ? (
-                                <View style={styles.loadingContainer}>
-                                    <ActivityIndicator size="small" color="#fff" />
-                                    <Text style={styles.loadingText}>Processing...</Text>
-                                </View>
-                            ) : (
-                                <>
-                                    <View style={styles.buttonIconContainer}>
-                                        <Ionicons name="diamond" size={22} color="#fff" />
-                                    </View>
-                                    <View style={styles.buttonTextContainer}>
-                                        <Text style={styles.subscribeButtonTitle}>Upgrade to Contributor</Text>
-                                        <Text style={styles.subscribeButtonPrice}>
-                                            {membershipPackages[selectedMembership].price}{membershipPackages[selectedMembership].period}
-                                        </Text>
-                                    </View>
-                                    <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={[styles.downgradeButton, main_Style.genButtonElevation]}
-                            onPress={() => {
-                                Alert.alert(
-                                    'Downgrade to Free',
-                                    'Are you sure you want to downgrade to the free tier? You will lose access to premium features.',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        { 
-                                            text: 'Downgrade', 
-                                            style: 'destructive',
-                                            onPress: () => handleSubscribe(membershipPackages[selectedMembership])
-                                        }
-                                    ]
-                                );
-                            }}
-                            activeOpacity={generalActiveOpacity}
-                            disabled={isSubscribing && processingPackageId === membershipPackages[selectedMembership].id}
-                        >
-                            {isSubscribing && processingPackageId === membershipPackages[selectedMembership].id ? (
-                                <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
-                            ) : (
-                                <>
-                                    <Ionicons name="arrow-down-circle-outline" size={20} color={MainBrownSecondaryColor} style={{ marginRight: 8 }} />
-                                    <Text style={styles.downgradeButtonText}>
-                                        Downgrade to Free
-                                    </Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    )}
-                </View>
-
-                {/* Manage Payment Method Button */}
-                <View style={styles.paymentMethodContainer}>
-                    <TouchableOpacity
-                        style={[styles.managePaymentButton, main_Style.genButtonElevation]}
-                        activeOpacity={generalActiveOpacity}
-                        onPress={() => {
-                            navigation.navigate('PaymentMethodSettings');
-                        }}
-                    >
-                        <Ionicons name="card-outline" size={18} color={MainBrownSecondaryColor} />
-                        <Text style={styles.managePaymentText}>Manage Payment Method</Text>
-                    </TouchableOpacity>
                 </View>
 
                 <VerticalSpacer height={20} />
+
+                {/* Features Section */}
+                <View style={[styles.featuresContainer, main_Style.genButtonElevation]}>
+                    <Text style={styles.sectionTitle}>Premium Features Included</Text>
+                    
+                    {contributorPlan.features.map((feature, idx) => (
+                        <View key={idx} style={styles.featureRow}>
+                            <View style={styles.featureIconContainer}>
+                                <Ionicons 
+                                    name={feature.icon} 
+                                    size={24} 
+                                    color={contributorPlan.color} 
+                                />
+                            </View>
+                            <View style={styles.featureTextContainer}>
+                                <Text style={styles.featureTitle}>{feature.title}</Text>
+                                <Text style={styles.featureDescription}>{feature.description}</Text>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+
+                <VerticalSpacer height={20} />
+
+                {/* Action Button - Either Upgrade or Manage */}
+                {!isContributor ? (
+                    // Free user - Show upgrade button
+                    <View style={styles.actionContainer}>
+                        <TouchableOpacity
+                            style={[styles.upgradeButton, main_Style.genButtonElevation]}
+                            onPress={handleSubscribe}
+                            activeOpacity={generalActiveOpacity}
+                            disabled={isSubscribing}
+                        >
+                            {isSubscribing ? (
+                                <View style={styles.loadingContainer}>
+                                    <ActivityIndicator size="small" color="#49A078" />
+                                    <Text style={styles.upgradeButtonText}>Processing...</Text>
+                                </View>
+                            ) : (
+                                <>
+                                    <View style={styles.upgradeIconContainer}>
+                                        <Ionicons name="diamond" size={24} color="#fff" />
+                                    </View>
+                                    <View style={styles.upgradeTextContainer}>
+                                        <Text style={styles.upgradeButtonTitle}>Upgrade to Contributor</Text>
+                                        <Text style={styles.upgradeButtonSubtitle}>
+                                            Unlock all features for {contributorPlan.price}{contributorPlan.period}
+                                        </Text>
+                                    </View>
+                                    <Ionicons name="arrow-forward" size={22} color="#49A078" />
+                                </>
+                            )}
+                        </TouchableOpacity>
+                        
+                        <Text style={styles.upgradeHelper}>
+                            Secure payment processed through {Platform.OS === 'ios' ? 'Apple' : 'Google Play'}
+                        </Text>
+                    </View>
+                ) : (
+                    // Contributor - Show manage button
+                    <View style={styles.actionContainer}>
+                        <View style={[styles.activeSubscriptionCard, main_Style.genButtonElevation]}>
+                            <Ionicons name="checkmark-circle" size={24} color={contributorPlan.color} />
+                            <Text style={styles.activeTitle}>You're a Contributor!</Text>
+                            <Text style={styles.activeDescription}>
+                                Enjoying all premium features with full access to Sikiya
+                            </Text>
+                        </View>
+                        
+                        <VerticalSpacer height={16} />
+                        
+                        <TouchableOpacity
+                            style={[styles.manageButton, main_Style.genButtonElevation]}
+                            onPress={handleManageSubscription}
+                            activeOpacity={generalActiveOpacity}
+                        >
+                            <Ionicons name="settings-outline" size={20} color={withdrawnTitleColor} />
+                            <Text style={styles.manageButtonText}>Manage Subscription</Text>
+                        </TouchableOpacity>
+                        
+                        <Text style={styles.manageHelper}>
+                            Manage your subscription through {Platform.OS === 'ios' ? 'Apple Settings' : 'Google Play'}
+                        </Text>
+                    </View>
+                )}
+
+                <VerticalSpacer height={4} />
                 
                 {/* Restore Purchases Button (iOS/Android only) */}
                 {(Platform.OS === 'ios' || Platform.OS === 'android') && (
@@ -614,358 +504,255 @@ const MembershipSettingScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
-    packageImage: {
-        width: 50,
-        height: 50,
-    },
-    membershipCardsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        marginTop: 20,
-        gap: 12,
-    },
-    membershipCard: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        position: 'relative',
-        borderWidth: 2,
-        borderColor: 'transparent',
-    },
-    selectedMembershipCard: {
-        borderColor: MainSecondaryBlueColor,
-    },
-    bulbContainer: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-    },
-    grayedOutBenefit: {
-        opacity: 0.5,
-    },
-    grayedOutBenefitText: {
-        color: withdrawnTitleColor,
-    },
-    popularBadge: {
-        position: 'absolute',
-        top: -10,
-        right: 20,
-        backgroundColor: cardBackgroundColor,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-        zIndex: 1,
-    },
-    popularText: {
-        color: MainBrownSecondaryColor,
-        fontSize: 10,
-        fontWeight: 'bold',
-        fontFamily: generalTextFont,
-    },
-    currentPlanBadge: {
-        position: 'absolute',
-        top: 8,
-        left: 8,
-        backgroundColor: MainSecondaryBlueColor,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        zIndex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    currentPlanText: {
-        color: '#fff',
-        fontSize: 9,
-        fontWeight: 'bold',
-        fontFamily: generalTextFont,
-    },
-    cardHeader: {
-        alignItems: 'center',
-        marginTop: 8,
-    },
-    packageName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 10,
-        fontFamily: generalTitleFont,
-    },
-    priceContainer: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        marginTop: 8,
-    },
-    price: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: generalTextColor,
-        fontFamily: generalTitleFont,
-    },
-    period: {
-        fontSize: 12,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        marginLeft: 2,
-    },
-    benefitsContainer: {
-        backgroundColor: '#fff',
+    // Hero Card Styles
+    heroCard: {
+        backgroundColor: MainBrownSecondaryColor,
+        borderRadius: 16,
+        padding: 8,
         marginHorizontal: 16,
         marginTop: 20,
-        padding: 20,
-        borderRadius: 12,
-        ...main_Style.genButtonElevation,
+        overflow: 'hidden',
     },
-    benefitsTitle: {
-        fontSize: 18,
+    heroImage: {
+        width: '100%',
+        height: 80,
+        resizeMode: 'contain',
+    },
+    heroContent: {
+        padding: 16,
+        alignItems: 'center',
+    },
+    heroTitle: {
+        fontSize: articleTitleSize+3,
+        fontWeight: 'bold',
+        color: '#fff',
+        fontFamily: generalTitleFont,
+        marginBottom: 4,
+    },
+    heroTagline: {
+        fontSize: commentTextSize,
+        color: '#fff',
+        fontFamily: generalTextFont,
+        marginBottom: 12,
+    },
+    heroPriceContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+    },
+    heroPrice: {
+        fontSize: articleTitleSize+8,
+        fontWeight: 'bold',
+        color: '#fff',
+        fontFamily: generalTitleFont,
+    },
+    heroPeriod: {
+        fontSize: commentTextSize,
+        color: '#fff',
+        fontFamily: generalTextFont,
+        marginLeft: 4,
+    },
+    // Features Section
+    featuresContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginHorizontal: 16,
+        padding: 20,
+    },
+    sectionTitle: {
+        fontSize: articleTitleSize,
         fontWeight: 'bold',
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 16,
-        textAlign: 'center',
+        marginBottom: 20,
     },
-    benefitRow: {
+    featureRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
+        alignItems: 'flex-start',
+        marginBottom: 20,
     },
-    benefitText: {
-        fontSize: 14,
-        color: generalTextColor,
-        marginLeft: 12,
-        fontFamily: generalTextFont,
-        flex: 1,
-    },
-    subscribeButton: {
-        backgroundColor: '#49A078',
-        paddingVertical: 18,
-        paddingHorizontal: 20,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 24,
-        flexDirection: 'row',
-        minHeight: 64,
-        borderWidth: 2,
-        borderColor: '#3d8a5f',
-    },
-    buttonIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    featureIconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        //backgroundColor: '#E8F5E9',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
     },
-    buttonTextContainer: {
+    featureTextContainer: {
         flex: 1,
-        alignItems: 'flex-start',
     },
-    subscribeButtonTitle: {
-        color: '#fff',
-        fontSize: generalTextSize + 1,
-        fontWeight: '700',
+    featureTitle: {
+        fontSize: commentTextSize,
+        fontWeight: '600',
+        color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 2,
+        marginBottom: 4,
     },
-    subscribeButtonPrice: {
-        color: 'rgba(255, 255, 255, 0.9)',
-        fontSize: generalTextSize - 1,
-        fontWeight: '500',
+    featureDescription: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        lineHeight: 18,
+    },
+    // Action Container
+    actionContainer: {
+        marginHorizontal: 16,
+    },
+    // Upgrade Button (for free users)
+    upgradeButton: {
+        backgroundColor: '#E8F5E9',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderWidth: 1,
+        borderColor: '#3d8a5f',
+    },
+    upgradeIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#49A078',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    upgradeTextContainer: {
+        flex: 1,
+        marginLeft: 16,
+    },
+    upgradeButtonTitle: {
+        fontSize: articleTitleSize,
+        fontWeight: 'bold',
+        color: '#49A078',
+        fontFamily: generalTitleFont,
+        marginBottom: 4,
+    },
+    upgradeButtonSubtitle: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
         fontFamily: generalTextFont,
     },
-    subscribeButtonText: {
-        color: '#fff',
-        fontSize: generalTextSize,
-        fontWeight: '700',
+    upgradeButtonText: {
+        fontSize: commentTextSize,
+        fontWeight: '600',
+        color: '#49A078',
         fontFamily: generalTitleFont,
+        marginLeft: 10,
     },
+    upgradeHelper: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        textAlign: 'center',
+        marginTop: 12,
+    },
+    // Active Subscription Card (for contributors)
+    activeSubscriptionCard: {
+        backgroundColor: '#E8F5E9',
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#49A078',
+    },
+    activeTitle: {
+        fontSize: articleTitleSize+3,
+        fontWeight: 'bold',
+        color: '#49A078',
+        fontFamily: generalTitleFont,
+        marginTop: 12,
+        marginBottom: 8,
+    },
+    activeDescription: {
+        fontSize: 14,
+        color: generalTextColor,
+        fontFamily: generalTextFont,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    // Manage Button (for contributors)
+    manageButton: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    manageButtonText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: withdrawnTitleColor,
+        fontFamily: generalTitleFont,
+        marginLeft: 8,
+    },
+    manageHelper: {
+        fontSize: 12,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        textAlign: 'center',
+        marginTop: 12,
+    },
+    // Loading States
     loadingContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
     },
-    loadingText: {
-        color: '#fff',
-        fontSize: generalTextSize,
-        fontFamily: generalTextFont,
-        marginLeft: 8,
+    // Journalist Premium Screen Styles
+    journalistHeroCard: {
+        backgroundColor: MainSecondaryBlueColor,
     },
-    currentPlanIndicator: {
-        flexDirection: 'row',
+    journalistBadgeContainer: {
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 24,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        backgroundColor: '#E8F5E9',
-        borderRadius: 12,
-        gap: 10,
-        borderWidth: 2,
-        borderColor: '#49A078',
+        paddingTop: 20,
+        paddingBottom: 10,
     },
-    paymentMethodContainer: {
-        marginHorizontal: 16,
-        marginTop: 20,
+    journalistPriceTag: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginTop: 8,
     },
-    managePaymentButton: {
-        backgroundColor: '#fff',
-        paddingVertical: 14,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        borderWidth: 1,
-        borderColor: MainBrownSecondaryColor,
-    },
-    managePaymentText: {
-        color: MainBrownSecondaryColor,
-        fontSize: 15,
+    journalistPriceText: {
+        fontSize: commentTextSize,
         fontWeight: '600',
+        color: '#fff',
         fontFamily: generalTitleFont,
     },
-    // Journalist Premium Screen Styles
-    journalistContainer: {
-        flexGrow: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 20,
+    journalistFeatureIcon: {
+        backgroundColor: 'rgba(2, 108, 124, 0.1)',
     },
-    journalistContent: {
+    journalistStatusCard: {
+        backgroundColor: 'rgba(2, 108, 124, 0.1)',
+        borderRadius: 12,
+        padding: 16,
         alignItems: 'center',
-        paddingVertical: 40,
+        borderWidth: 2,
+        borderColor: MainSecondaryBlueColor,
     },
-    premiumBadge: {
-        marginBottom: 24,
-    },
-    journalistTitle: {
-        fontSize: 28,
+    journalistStatusTitle: {
+        fontSize: articleTitleSize+3,
         fontWeight: 'bold',
         color: MainSecondaryBlueColor,
         fontFamily: generalTitleFont,
-        marginBottom: 12,
+        marginTop: 12,
+        marginBottom: 8,
     },
-    journalistSubtitle: {
-        fontSize: 16,
+    journalistStatusDescription: {
+        fontSize: commentTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
         textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 24,
-    },
-    premiumFeaturesContainer: {
-        width: '100%',
-        marginBottom: 32,
-    },
-    premiumFeatureRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingHorizontal: 20,
-    },
-    premiumFeatureText: {
-        fontSize: 15,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
-        marginLeft: 12,
-    },
-    journalistInfoBox: {
-        flexDirection: 'row',
-        backgroundColor: secCardBackgroundColor,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        gap: 12,
-    },
-    journalistInfoText: {
-        flex: 1,
-        fontSize: 13,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
         lineHeight: 20,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#e0e0e0',
-        marginVertical: 16,
-    },
-    drawbacksTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#DC2626',
-        fontFamily: generalTitleFont,
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    drawbacksSubtitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: generalTextColor,
-        fontFamily: generalTitleFont,
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    benefitsSubtitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#49A078',
-        fontFamily: generalTitleFont,
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    drawbackRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    drawbackText: {
-        fontSize: 14,
-        color: '#DC2626',
-        marginLeft: 12,
-        fontFamily: generalTextFont,
-        flex: 1,
-    },
-    premiumBenefitText: {
-        color: '#49A078',
-        fontWeight: '600',
-    },
-    downgradeButton: {
-        backgroundColor: '#fff',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 24,
-        flexDirection: 'row',
-        borderWidth: 2,
-        borderColor: MainBrownSecondaryColor,
-    },
-    downgradeButtonText: {
-        color: MainBrownSecondaryColor,
-        fontSize: 17,
-        fontWeight: '700',
-        fontFamily: generalTitleFont,
-    },
-    debugContainer: {
-        backgroundColor: '#fff3cd',
-        padding: 12,
-        marginHorizontal: 16,
-        marginTop: 10,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ffc107',
-    },
-    debugText: {
-        fontSize: 12,
-        color: '#856404',
-        fontFamily: generalTextFont,
-        marginBottom: 4,
     },
     restoreContainer: {
         marginHorizontal: 16,

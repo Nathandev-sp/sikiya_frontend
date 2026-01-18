@@ -85,6 +85,17 @@ const CommentInputModal = ({
     }
   };
 
+  const handleUpgrade = () => {
+    // Close modal first, then navigate
+    handleClose();
+    // Call onUpgrade after a short delay to ensure modal closes smoothly
+    setTimeout(() => {
+      if (onUpgrade) {
+        onUpgrade();
+      }
+    }, 300);
+  };
+
   // Count words in text
   const countWords = (text) => {
     if (!text.trim()) return 0;
@@ -97,7 +108,7 @@ const CommentInputModal = ({
   // determine disabled state for the send action
   const isGeneralUser = userRole === 'general';
   const remainingMainComments = quota?.remaining ?? null;
-  const showQuota = isGeneralUser && quota && mode === 'article';
+  const showQuota = isGeneralUser && quota && (mode === 'article' || mode === 'video');
   const quotaExceeded = showQuota && remainingMainComments !== null && remainingMainComments <= 0;
 
   const sendDisabled = !text.trim() || isLoading || wordCount > maxWords || quotaExceeded;
@@ -175,24 +186,20 @@ const CommentInputModal = ({
               <Text style={styles.quotaText}>
                 Main comments left today: {quotaLoading ? '...' : remainingMainComments ?? '-'} of {quota?.dailyLimit ?? 2}
               </Text>
-              {quota?.unlocked > 0 && (
-                <Text style={styles.quotaSubText}>
-                  Unlocked today: {quota.unlocked}
-                </Text>
-              )}
+              
             </View>
           )}
 
           {/* Limit reached actions */}
           {quotaExceeded && (
-            <View style={styles.limitBox}>
-              <Text style={styles.limitTitle}>You have reached your free daily main comment limit.</Text>
+            <View style={[styles.limitBox, main_Style.genContentElevation]}>
+              <Text style={styles.limitTitle}>You’ve reached your daily limit for main comments.</Text>
               <Text style={styles.limitSub}>
                 You can still post unlimited replies to main comments.
               </Text>
               <View style={styles.limitActions}>
                 <TouchableOpacity 
-                  style={[styles.actionButton, styles.actionPrimary]}
+                  style={[styles.actionButton, styles.actionPrimary, main_Style.genButtonElevation]}
                   onPress={onUnlock}
                   disabled={quotaLoading || isLoading}
                   activeOpacity={0.8}
@@ -201,8 +208,8 @@ const CommentInputModal = ({
                   <Text style={[styles.actionButtonText, styles.actionPrimaryText]}>Watch an ad</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.actionButton, styles.actionSecondary]}
-                  onPress={onUpgrade}
+                  style={[styles.actionButton, styles.actionSecondary, main_Style.genButtonElevation]}
+                  onPress={handleUpgrade}
                   disabled={isLoading}
                   activeOpacity={0.8}
                 >
@@ -336,13 +343,14 @@ const styles = StyleSheet.create({
   },
   quotaContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 4,
     marginTop: 2,
-    marginBottom: 6,
+    marginBottom: 12,
+    //backgroundColor: 'red',
   },
   quotaText: {
     fontSize: commentTextSize,
-    color: withdrawnTitleColor,
+    color: MainSecondaryBlueColor,
     fontFamily: generalTextFont,
   },
   quotaSubText: {
@@ -353,26 +361,27 @@ const styles = StyleSheet.create({
   },
   limitBox: {
     marginHorizontal: 12,
-    marginBottom: 12,
-    marginTop: 4,
+    marginBottom: 16,
+    marginTop: 0,
     padding: 12,
     borderRadius: 10,
     backgroundColor: MainSecondaryBlueColor,
-    borderWidth: 1,
-    borderColor: lightBannerBackgroundColor,
+    //borderWidth: 1,
+    //borderColor: lightBannerBackgroundColor,
   },
   limitTitle: {
     fontSize: generalTextSize,
     fontFamily: generalTitleFont,
     fontWeight: generalTitleFontWeight,
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   limitSub: {
     fontSize: withdrawnTitleSize,
     color: 'rgba(255, 255, 255, 0.9)',
     fontFamily: generalTextFont,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   limitActions: {
     flexDirection: 'row',
@@ -390,8 +399,8 @@ const styles = StyleSheet.create({
   },
   actionPrimary: {
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: MainBrownSecondaryColor,
+    //borderWidth: 1,
+    //borderColor: MainBrownSecondaryColor,
   },
   actionSecondary: {
     backgroundColor: MainBrownSecondaryColor,

@@ -56,8 +56,8 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
         try {
             // Use videoId if provided, otherwise use articleId
             const payload = videoId ? {
-                comment_video_id: videoId,
                 comment_content: replyText,
+                mainComment: false,
                 reply_to_comment_id: mainComment._id
             } : {
                 comment_article_id: articleId,

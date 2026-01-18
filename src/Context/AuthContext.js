@@ -298,6 +298,15 @@ const clearState = (dispatch) => async () => {
 // clear token -------------------------------------
 const signout = (dispatch) => async () => {
   try {
+    // Remove push token from backend before logging out
+    try {
+      await SikiyaAPI.delete('/user/push-token');
+      console.log('Push token removed from backend');
+    } catch (err) {
+      console.log('Error removing push token from backend:', err);
+      // Don't block logout if this fails
+    }
+    
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('role');
     await AsyncStorage.removeItem('verifiedEmail');

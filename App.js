@@ -17,6 +17,7 @@ import { useEffect, useState, useRef, useContext } from 'react'; // React import
 // News screens imports ----------------------------
 import NewsHome from "./src/Screens/NewsScreens/NewsHome"; // News home screen
 import NewsCategoryScreen from './src/Screens/NewsScreens/NewsCategoryScreen';
+import NotificationCenterScreen from './src/Screens/NotificationCenterScreen'; // Notification center
 // --------------------------------------------------
 
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -81,6 +82,16 @@ import {
   initializePushNotifications, 
   setupNotificationListeners 
 } from './src/services/notificationService';
+// --------------------------------------------------
+
+// AdMob initialization ----------------------------------
+let GoogleMobileAds;
+try {
+  GoogleMobileAds = require('react-native-google-mobile-ads').default;
+} catch (error) {
+  console.warn('react-native-google-mobile-ads not available:', error.message);
+  GoogleMobileAds = null;
+}
 // --------------------------------------------------
 
 
@@ -174,7 +185,9 @@ function HomeStack({preloadedHomeArticles, preloadedHeadlines}) {
       <Stack.Screen name="HomeScreen" component={HomeScreen} options={{headerShown: false}} initialParams={{preloadedHomeArticles, preloadedHeadlines}}/>
       <Stack.Screen name="NewsHome" component={NewsHome} options={{headerShown: false}} />
       <Stack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <Stack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
       <Stack.Screen name="NewsCategory" component={NewsCategoryScreen} options={{headerShown: false}} />
+      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
 
     </Stack.Navigator>
   );
@@ -194,6 +207,8 @@ function LiveNewsStackNav({preloadedVideos}) {
     >
       <LiveNewsStack.Screen name="LiveNews" component={LiveNews} options={{headerShown: false}} initialParams={{preloadedVideos}} />
       <LiveNewsStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <LiveNewsStack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <LiveNewsStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
     </LiveNewsStack.Navigator>
   );
 }
@@ -212,7 +227,9 @@ function SearchStackNav({preloadedSearchJournalist, preloadedSearchArticles}) {
     >
       <SearchStack.Screen name="SearchScreen" component={SearchScreenHello} options={{headerShown: false}} initialParams={{preloadedSearchJournalist, preloadedSearchArticles}} />
       <SearchStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <SearchStack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
       <SearchStack.Screen name="NewsHome" component={NewsHome} options={{headerShown: false}} />
+      <SearchStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
     </SearchStack.Navigator>
   );
 }
@@ -250,6 +267,7 @@ function JournalistPanelStackNav() {
       <JournalistPanelStack.Screen name="NewVideoDisclaimer" component={NewVideoDisclaimerScreen} options={{headerShown: false}} />
       <JournalistPanelStack.Screen name="NewVideoTitle" component={NewVideoTitleScreen} options={{headerShown: false}} />
       <JournalistPanelStack.Screen name="NewVideo" component={NewShortVideoScreen} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
     </JournalistPanelStack.Navigator>
   )
 }
@@ -276,6 +294,7 @@ function UserProfileStackNav({preloadedUserProfile}) {
       <UserProfileStack.Screen name="CommentSettings" component={CommentHistorySettingScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="LanguageSettings" component={LanguageSettingScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} options={{headerShown: false}} />
+      <UserProfileStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="HelpSupportSettings" component={HelpSupportSettingScreen} options={{headerShown: false}} />
     </UserProfileStack.Navigator>
   )
@@ -415,6 +434,16 @@ const AppContent = () => {
             await initializePushNotifications();
           } catch (err) {
             console.log('Push notification initialization failed (non-critical):', err.message || err);
+          }
+        }
+        
+        // Initialize AdMob
+        if (GoogleMobileAds) {
+          try {
+            await GoogleMobileAds().initialize();
+            console.log('AdMob initialized successfully');
+          } catch (err) {
+            console.log('AdMob initialization failed (non-critical):', err.message || err);
           }
         }
         

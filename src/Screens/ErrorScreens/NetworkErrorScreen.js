@@ -23,7 +23,7 @@ const NetworkErrorScreen = ({ onRetry }) => {
                 <View style={styles.imageContainer}>
                     <Ionicons 
                         name="cloud-offline-outline" 
-                        size={120} 
+                        size={90} 
                         color={MainBrownSecondaryColor} 
                     />
                     {/* Placeholder for user's image */}
@@ -52,6 +52,15 @@ const NetworkErrorScreen = ({ onRetry }) => {
                     <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Sikiya Logo positioned at the top */}
+            <View style={styles.logoContainer}>
+                <Image
+                    source={require('../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png')}
+                    style={styles.logo}
+                    resizeMode="contain"
+                />
+            </View>
         </SafeAreaView>
     );
 };
@@ -60,6 +69,18 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: AppScreenBackgroundColor,
+    },
+    logoContainer: {
+        position: 'absolute',
+        top: 50,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    logo: {
+        width: 120,
+        height: 120,
     },
     content: {
         flex: 1,
@@ -71,8 +92,9 @@ const styles = StyleSheet.create({
         marginBottom: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        width: 200,
-        height: 200,
+        //width: 160,
+        //height: 160,
+        //backgroundColor: 'red',
     },
     errorImage: {
         width: '100%',
@@ -118,4 +140,5 @@ const styles = StyleSheet.create({
 });
 
 export default NetworkErrorScreen;
+
 

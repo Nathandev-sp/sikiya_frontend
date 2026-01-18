@@ -309,7 +309,6 @@ const ProfileSettingScreen = () => {
                                     key={`${profileImageKey}-${profileImageVersion}`}
                                     source={{ 
                                         uri: `${getImageUrl(profileImageKey)}?v=${profileImageVersion}`,
-                                        cache: 'reload'
                                     }}
                                     style={styles.profileImage}
                                     onError={(error) => {

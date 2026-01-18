@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, ScrollView, StatusBar, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { generalTextColor, generalTextFont, generalTitleFont, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalTextSize, generalSmallTextSize } from '../../styles/GeneralAppStyle';
+import { generalTextColor, generalTextFont, generalTitleFont, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalTextSize, generalSmallTextSize, commentTextSize } from '../../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import CommentElement from '../../../FeedbackComponent/CommentElement';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 
 const CommentHistorySettingScreen = () => {
     const [comments, setComments] = useState([]);
@@ -103,7 +104,7 @@ const CommentHistorySettingScreen = () => {
                     <GoBackButton />
                 </View>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
+                    <BigLoaderAnim />
                     <Text style={styles.loadingText}>Loading your comments...</Text>
                 </View>
             </SafeAreaView>
@@ -132,9 +133,6 @@ const CommentHistorySettingScreen = () => {
                 <View style={settingsStyles.headerSection}>
                     <Ionicons name="time-outline" style={settingsStyles.headerIcon} />
                     <Text style={settingsStyles.headerTitle}>Comment History</Text>
-                    <Text style={styles.headerDescription}>
-                        Manage your replies. Only secondary comments (replies) can be deleted.
-                    </Text>
                 </View>
 
                 {comments.length === 0 ? (
@@ -204,14 +202,14 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: 10,
-        fontSize: generalTextSize,
+        fontSize: commentTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
     },
     headerDescription: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
-        marginTop: 8,
+        marginTop: 16,
         textAlign: 'center',
         paddingHorizontal: 20,
         fontFamily: generalTextFont,

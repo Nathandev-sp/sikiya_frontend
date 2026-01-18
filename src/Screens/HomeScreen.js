@@ -2,9 +2,10 @@ import React, {useRef, useState, useEffect, useCallback, useMemo} from 'react';
 import {View, StyleSheet, Text, ScrollView, TouchableOpacity, Animated, useWindowDimensions, ActivityIndicator, StatusBar, Image} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import NewsCategory from '../Components/NewsCategory';
 import HighLight from '../Components/Highlights';
-import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
 import NewsAPI from '../../API/NewsAPI';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
@@ -26,22 +27,47 @@ const StableHighlightsWrapper = React.memo(({ preloadedHeadlines, headerHeight }
 
 StableHighlightsWrapper.displayName = 'StableHighlightsWrapper';
 
-// Static logo component to keep it mounted at the top
-const StaticLogo = React.memo(() => (
+// Static logo component with notification bell
+const StaticLogo = React.memo(({ onNotificationPress, unreadCount }) => (
     <View style={styles.logoStaticContainer}>
+        {/* Invisible placeholder on left for centering */}
+        <View style={styles.notificationPlaceholder} />
+        
+        {/* Centered logo */}
         <Image 
             style={styles.logoStatic}
             source={require("../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png")}
         />
+        
+        {/* Notification bell on right */}
+        <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={onNotificationPress}
+            activeOpacity={generalActiveOpacity}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+            <Ionicons name="notifications-outline" size={26} color={withdrawnTitleColor} />
+            {unreadCount > 0 && (
+                <View style={styles.notificationBadge}>
+                    <Text style={styles.notificationBadgeText}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
+                </View>
+            )}
+        </TouchableOpacity>
     </View>
-), () => true);
+));
 StaticLogo.displayName = 'StaticLogo';
 
 const HomeScreen = ({route}) => {
+    const navigation = useNavigation();
 
     // Import the preloaded data
     const preloadedHomeArticles = route?.params?.preloadedHomeArticles;
     const preloadedHeadlines = route?.params?.preloadedHeadlines;
+    
+    // Notification state
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
     // Making the API Request ------------------ /top-headlines
     // Cache articles per category to prevent disappearing during transitions
@@ -118,13 +144,41 @@ const HomeScreen = ({route}) => {
             fetchTopHeadlines('Explore', true);
         }
         
+        // Fetch unread notification count
+        fetchUnreadNotificationCount();
+        
+        // Set up interval to refresh unread count every 30 seconds
+        const notificationInterval = setInterval(() => {
+            fetchUnreadNotificationCount();
+        }, 30000);
+        
         // Cleanup timeout on unmount
         return () => {
             if (loaderTimeoutRef.current) {
                 clearTimeout(loaderTimeoutRef.current);
             }
+            clearInterval(notificationInterval);
         };
     }, [preloadedHomeArticles]);
+    
+    // Fetch unread notification count
+    const fetchUnreadNotificationCount = async () => {
+        try {
+            const response = await SikiyaAPI.get('/notifications/unread-count');
+            if (response.data.success) {
+                setUnreadNotificationCount(response.data.unreadCount || 0);
+            }
+        } catch (error) {
+            // Silently fail - likely auth issue or backend not ready
+            // Don't log error to avoid console spam
+            setUnreadNotificationCount(0);
+        }
+    };
+    
+    // Handle notification bell press
+    const handleNotificationPress = () => {
+        navigation.navigate('NotificationCenter');
+    };
 
     const fetchTopHeadlines = async (category = null, isInitial = false) => {
         try {
@@ -587,8 +641,11 @@ const HomeScreen = ({route}) => {
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle={"dark-content"} />
-            {/* Logo stays mounted at top */}
-            <StaticLogo />
+            {/* Logo stays mounted at top with notification bell */}
+            <StaticLogo 
+                onNotificationPress={handleNotificationPress} 
+                unreadCount={unreadNotificationCount}
+            />
             <BannerAdComponent position="top" />
 
             {/* Highlights at top, completely stable and not tied to category changes */}
@@ -625,18 +682,51 @@ const styles = StyleSheet.create({
     logoStaticContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         marginHorizontal: 16,
         marginTop: 4,
         marginBottom: 4,
         paddingVertical: 0,
-        //backgroundColor: 'red',
+    },
+    notificationPlaceholder: {
+        width: 40, // Same width as notification button for centering
     },
     logoStatic: {
         width: 160,
         height: 50,
         resizeMode: 'contain',
         opacity: 0.9,
+        position: 'absolute',
+        left: '50%',
+        marginLeft: -80, // Half of width (160/2) to center
+    },
+    notificationButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    notificationBadge: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        backgroundColor: '#FF4444',
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: AppScreenBackgroundColor,
+    },
+    notificationBadgeText: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 'bold',
+        fontFamily: articleTitleFont,
     },
     categoriesContainer: {
         paddingHorizontal: 12,

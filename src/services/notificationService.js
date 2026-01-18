@@ -275,11 +275,24 @@ export const clearBadgeCount = async () => {
  */
 export const unregisterDevice = async () => {
   try {
+    // Get current token before removing
+    const pushToken = await AsyncStorage.getItem(EXPO_PUSH_TOKEN_KEY);
+    
     // Remove token from storage
     await AsyncStorage.removeItem(EXPO_PUSH_TOKEN_KEY);
     
-    // Optionally notify backend to remove token
-    // await SikiyaAPI.delete('/user/push-token');
+    // Notify backend to remove this specific token
+    if (pushToken) {
+      try {
+        await SikiyaAPI.delete('/user/push-token', {
+          data: { pushToken } // Send token to identify which device to remove
+        });
+        console.log('Push token removed from backend');
+      } catch (error) {
+        console.error('Error removing push token from backend:', error);
+        // Don't throw - local cleanup is still successful
+      }
+    }
     
     console.log('Device unregistered from push notifications');
   } catch (error) {

@@ -19,6 +19,7 @@ const UserProfileScreen = ({route}) => {
     const [refreshing, setRefreshing] = useState(false);
     const [imageVersion, setImageVersion] = useState(Date.now()); // Cache-busting version
     const isFirstMount = useRef(true);
+    const previousProfilePicture = useRef(null); // Track previous profile picture URL
 
     // Get preloaded user profile data from route params
     const preloadedUserProfile = route?.params?.preloadedUserProfile;
@@ -46,9 +47,15 @@ const UserProfileScreen = ({route}) => {
         setRefreshing(true);
         try {
             const response = await SikiyaAPI.get('/user/profile/');
+            const newProfilePicture = response.data.profile_picture;
+            
+            // Only update image version if profile picture actually changed
+            if (newProfilePicture !== previousProfilePicture.current) {
+                setImageVersion(Date.now());
+                previousProfilePicture.current = newProfilePicture;
+            }
+            
             setUserProfile(response.data);
-            // Update image version to force refresh
-            setImageVersion(Date.now());
         } catch (error) {
             console.error('Error fetching user profile:', error.message);
         } finally {
@@ -79,9 +86,14 @@ const UserProfileScreen = ({route}) => {
                 const refreshProfile = async () => {
                     try {
                         const response = await SikiyaAPI.get('/user/profile/');
-                        setUserProfile(response.data);
-                        // Update image version to force refresh
+                        const newProfilePicture = response.data.profile_picture;
+                        
+                        // Always force image refresh when returning to screen
+                        // (in case same URL but different image content, e.g., after profile pic update)
                         setImageVersion(Date.now());
+                        previousProfilePicture.current = newProfilePicture;
+                        
+                        setUserProfile(response.data);
                     } catch (error) {
                         console.error('Error fetching user profile:', error.message);
                     }
@@ -161,7 +173,6 @@ const UserProfileScreen = ({route}) => {
                                     userProfile?.profile_picture 
                                         ? { 
                                             uri: `${getImageUrl(userProfile.profile_picture)}?v=${imageVersion}`,
-                                            cache: 'reload'
                                           }
                                         : require('../../assets/functionalImages/ProfilePic.png')
                                 } 
