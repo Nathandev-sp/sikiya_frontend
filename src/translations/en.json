@@ -547,7 +547,7 @@
     "profile": "Profile",
     "membership": "Membership",
     "membershipDescription": "Manage your subscription",
-    "comment History": "Comment History",
+    "commentHistory": "Comment History",
     "commentHistoryDescription": "Manage the response to a comment",
     "language": "Language",
     "languageDescription": "Change app language",
@@ -570,6 +570,12 @@
     "haveBeenSikiyaVerified": "You have been verified as a trusted member of the Sikiya community.",
     "sendUsID": "Send us a piece of legal ID with the first name and last name matching your account at the following email ",
     "getVerifiedWithin": "We should get you verified within 3 business days."
+  },
+  "trial": {
+    "title": "Sikiya Premium Free Trial",
+    "message": "Please enjoy a free Sikiya Premium 7 days trial period. Hope you enjoy the conversations!",
+    "dayRemaining": "day remaining",
+    "daysRemaining": "days remaining"
   },
   "membershipSettings": {
     "planName": "Sikiya Contributor",

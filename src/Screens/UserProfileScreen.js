@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback, useRef} from 'react';
+import React, {useState, useEffect, useCallback, useRef, useContext} from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight } from '../styles/GeneralAppStyle';
@@ -12,15 +12,21 @@ import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
 import { getImageUrl } from '../utils/imageUrl';
 import i18n from '../utils/i18n';
+import { Context as AuthContext } from '../Context/AuthContext';
 
 const UserProfileScreen = ({route}) => {
     const navigation = useNavigation();
+    const { state: authState, fetchTrialStatus } = useContext(AuthContext);
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [imageVersion, setImageVersion] = useState(Date.now()); // Cache-busting version
     const isFirstMount = useRef(true);
     const previousProfilePicture = useRef(null); // Track previous profile picture URL
+    const [trialInfo, setTrialInfo] = useState({
+        isOnTrial: false,
+        daysRemaining: 0
+    });
 
     // Get preloaded user profile data from route params
     const preloadedUserProfile = route?.params?.preloadedUserProfile;
@@ -36,6 +42,15 @@ const UserProfileScreen = ({route}) => {
             } else {
                 console.log("Using preloaded user profile");
                 setUserProfile(preloadedUserProfile);
+            }
+            
+            // Fetch trial status
+            const trialStatus = await fetchTrialStatus();
+            if (trialStatus) {
+                setTrialInfo({
+                    isOnTrial: trialStatus.isOnTrial,
+                    daysRemaining: trialStatus.daysRemaining
+                });
             }
         } catch (error) {
             console.error('Error fetching user profile:', error.message);
@@ -57,6 +72,15 @@ const UserProfileScreen = ({route}) => {
             }
             
             setUserProfile(response.data);
+            
+            // Refresh trial status
+            const trialStatus = await fetchTrialStatus();
+            if (trialStatus) {
+                setTrialInfo({
+                    isOnTrial: trialStatus.isOnTrial,
+                    daysRemaining: trialStatus.daysRemaining
+                });
+            }
         } catch (error) {
             console.error('Error fetching user profile:', error.message);
         } finally {
@@ -95,6 +119,15 @@ const UserProfileScreen = ({route}) => {
                         previousProfilePicture.current = newProfilePicture;
                         
                         setUserProfile(response.data);
+                        
+                        // Refresh trial status
+                        const trialStatus = await fetchTrialStatus();
+                        if (trialStatus) {
+                            setTrialInfo({
+                                isOnTrial: trialStatus.isOnTrial,
+                                daysRemaining: trialStatus.daysRemaining
+                            });
+                        }
                     } catch (error) {
                         console.error('Error fetching user profile:', error.message);
                     }
@@ -184,10 +217,19 @@ const UserProfileScreen = ({route}) => {
                         
                         {/* Right side: Name and Stats */}
                         <View style={styles.profileInfoContainer}>
-                            {/* Name */}
-                            <Text style={styles.userName}>
-                                {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
-                            </Text>
+                            {/* Name with Contributor Badge */}
+                            <View style={styles.nameContainer}>
+                                <Text style={styles.userName} numberOfLines={1}>
+                                    {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
+                                </Text>
+                                {authState.role === 'contributor' && (
+                                    <Image 
+                                        source={require('../../assets/OnboardingImages/contributorImage.png')}
+                                        style={styles.contributorBadgeImage}
+                                        resizeMode="contain"
+                                    />
+                                )}
+                            </View>
 
                             {/* Impact and Engagement Stats Card */}
                             <View style={styles.statsCard}>
@@ -227,6 +269,24 @@ const UserProfileScreen = ({route}) => {
                         </TouchableOpacity>
                     </View>
                 </View>
+
+                {/* Free Trial Banner */}
+                {trialInfo.isOnTrial && trialInfo.daysRemaining > 0 && (
+                    <View style={[styles.trialBanner, main_Style.genButtonElevation]}>
+                        <View style={styles.trialIconContainer}>
+                            <Ionicons name="gift" size={32} color={MainSecondaryBlueColor} />
+                        </View>
+                        <View style={styles.trialTextContainer}>
+                            <Text style={styles.trialTitle}>{i18n.t('trial.title')}</Text>
+                            <Text style={styles.trialMessage}>
+                                {i18n.t('trial.message')}
+                            </Text>
+                            <Text style={styles.trialDaysRemaining}>
+                                {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? i18n.t('trial.dayRemaining') : i18n.t('trial.daysRemaining')}
+                            </Text>
+                        </View>
+                    </View>
+                )}
 
                 {/* Saved Articles Section */}
                 <View style={styles.savedSection}>
@@ -334,6 +394,13 @@ const styles = StyleSheet.create({
         marginLeft: 16,
         justifyContent: 'flex-start',
     },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 0,
+    },
     statsCard: {
         marginTop: 4,
     },
@@ -370,6 +437,12 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         marginBottom: 0,
         marginLeft: 4,
+        flex: 1,
+    },
+    contributorBadgeImage: {
+        width: 24,
+        height: 24,
+        marginLeft: 8,
     },
     statsContainer: {
         flexDirection: 'row',
@@ -430,6 +503,49 @@ const styles = StyleSheet.create({
         height: 50,
         backgroundColor: '#E0E0E0',
         marginHorizontal: 16,
+    },
+    trialBanner: {
+        backgroundColor: '#E3F2FD', // Light blue background
+        marginHorizontal: 12,
+        marginBottom: 12,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: MainSecondaryBlueColor,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    trialIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: genBtnBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    trialTextContainer: {
+        flex: 1,
+    },
+    trialTitle: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: MainSecondaryBlueColor,
+        fontFamily: generalTitleFont,
+        marginBottom: 6,
+    },
+    trialMessage: {
+        fontSize: generalTextSize,
+        color: generalTextColor,
+        fontFamily: generalTextFont,
+        lineHeight: 20,
+        marginBottom: 6,
+    },
+    trialDaysRemaining: {
+        fontSize: generalSmallTextSize,
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTextFont,
+        fontWeight: generalTitleFontWeight,
     },
     savedSection: {
         marginTop: 0,

@@ -568,6 +568,12 @@
     "sendUsID": "Envoyez-nous un document légal avec le prénom et le nom correspondant à votre compte à l'adresse email suivante ",
     "getVerifiedWithin": "Donnez nous 3 jours pour vérifier votre compte."
   },
+  "trial": {
+    "title": "Essai gratuit Sikiya Premium",
+    "message": "Profitez d'un essai gratuit de 7 jours de Sikiya Premium. Nous espérons que vous apprécierez les conversations !",
+    "dayRemaining": "jour restant",
+    "daysRemaining": "jours restants"
+  },
   "membershipSettings": {
     "planName": "Contributeur Sikiya",
     "price": "4.99 USD",

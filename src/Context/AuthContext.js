@@ -15,7 +15,10 @@ const authReducer = (state, action) => {
         role: action.payload.role,
         verifiedEmail: action.payload.verifiedEmail,
         errorMessage: '',
-        email: action.payload.email || null 
+        email: action.payload.email || null,
+        isOnTrial: action.payload.isOnTrial || false,
+        trialEndDate: action.payload.trialEndDate || null,
+        daysRemaining: action.payload.daysRemaining || 0
       };
     case 'add_error':
       return { 
@@ -31,7 +34,10 @@ const authReducer = (state, action) => {
         role: action.payload.role,
         verifiedEmail: action.payload.verifiedEmail,
         email: action.payload.email || null,
-        errorMessage: '' 
+        errorMessage: '',
+        isOnTrial: action.payload.isOnTrial || false,
+        trialEndDate: action.payload.trialEndDate || null,
+        daysRemaining: action.payload.daysRemaining || 0
       };
     case 'clear_error_message':
       return { 
@@ -48,6 +54,14 @@ const authReducer = (state, action) => {
         ...state,
         verifiedEmail: action.payload.verifiedEmail
       };
+    case 'update_trial':
+      return {
+        ...state,
+        isOnTrial: action.payload.isOnTrial,
+        trialEndDate: action.payload.trialEndDate,
+        daysRemaining: action.payload.daysRemaining,
+        role: action.payload.role
+      };
     case 'clear_state':
       return { 
         ...state, 
@@ -55,7 +69,10 @@ const authReducer = (state, action) => {
         role: null,
         verifiedEmail: false,
         email: null,
-        errorMessage: ''
+        errorMessage: '',
+        isOnTrial: false,
+        trialEndDate: null,
+        daysRemaining: 0
       };
     default:
       return state;
@@ -109,14 +126,25 @@ const signup = (dispatch) => async ({email, password, confirmPassword}) => {
     // API call
     const response = await SikiyaAPI.post('/signup', {email, password});
     
-    // Store token, role, AND verifiedEmail in AsyncStorage
+    // Store token, role, verifiedEmail, AND trial info in AsyncStorage
     await sleep(500);
     await AsyncStorage.multiSet([
       ['token', response.data.token], 
       ['role', response.data.role || null],
-      ['verifiedEmail', String(response.data.verifiedEmail || false)], // Add this - convert to string
-      ['email', email] // Store email for later use
+      ['verifiedEmail', String(response.data.verifiedEmail || false)],
+      ['email', email],
+      ['isOnTrial', String(response.data.isOnTrial || false)],
+      ['trialEndDate', response.data.trialEndDate || '']
     ]);
+    
+    // Calculate days remaining
+    let daysRemaining = 0;
+    if (response.data.isOnTrial && response.data.trialEndDate) {
+      const now = new Date();
+      const trialEnd = new Date(response.data.trialEndDate);
+      const timeRemaining = trialEnd - now;
+      daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)));
+    }
     
     // Update state with token
     dispatch({ 
@@ -124,8 +152,11 @@ const signup = (dispatch) => async ({email, password, confirmPassword}) => {
       payload: { 
         token: response.data.token,
         role: response.data.role || null,
-        verifiedEmail: response.data.verifiedEmail || false, // Default to false
-        email: email
+        verifiedEmail: response.data.verifiedEmail || false,
+        email: email,
+        isOnTrial: response.data.isOnTrial || false,
+        trialEndDate: response.data.trialEndDate || null,
+        daysRemaining: daysRemaining
       } 
     });
 
@@ -173,18 +204,23 @@ const signin = (dispatch) => async ({email, password}) => {
     // Store token first
     await AsyncStorage.setItem('token', response.data.token);
     
-    // Fetch user info (role, email, verifiedEmail) from backend using token
+    // Fetch user info (role, email, verifiedEmail, trial) from backend using token
     const userInfoResponse = await SikiyaAPI.get('/me');
     const userRole = userInfoResponse.data.role;
     const userEmail = userInfoResponse.data.email;
     const userVerifiedEmail = userInfoResponse.data.verifiedEmail;
+    const isOnTrial = userInfoResponse.data.isOnTrial || false;
+    const trialEndDate = userInfoResponse.data.trialEndDate;
+    const daysRemaining = userInfoResponse.data.daysRemaining || 0;
     
-    // Store token, role, AND verifiedEmail in AsyncStorage
+    // Store token, role, verifiedEmail, AND trial info in AsyncStorage
     await AsyncStorage.multiSet([
       ['token', response.data.token], 
       ['role', userRole || null],
       ['verifiedEmail', String(userVerifiedEmail || false)],
-      ['email', userEmail || email] // Use email from backend or fallback to input
+      ['email', userEmail || email],
+      ['isOnTrial', String(isOnTrial)],
+      ['trialEndDate', trialEndDate || '']
     ]);
     await sleep(500);
     
@@ -195,7 +231,10 @@ const signin = (dispatch) => async ({email, password}) => {
         token: response.data.token,
         role: userRole,
         verifiedEmail: userVerifiedEmail || false,
-        email: userEmail || email
+        email: userEmail || email,
+        isOnTrial: isOnTrial,
+        trialEndDate: trialEndDate,
+        daysRemaining: daysRemaining
       } 
     });
 
@@ -288,6 +327,8 @@ const clearState = (dispatch) => async () => {
     await AsyncStorage.removeItem('role');
     await AsyncStorage.removeItem('verifiedEmail');
     await AsyncStorage.removeItem('email');
+    await AsyncStorage.removeItem('isOnTrial');
+    await AsyncStorage.removeItem('trialEndDate');
     dispatch({ type: 'clear_state' });
   } catch (err) {
     console.log('Error clearing state:', err);
@@ -311,6 +352,8 @@ const signout = (dispatch) => async () => {
     await AsyncStorage.removeItem('role');
     await AsyncStorage.removeItem('verifiedEmail');
     await AsyncStorage.removeItem('email');
+    await AsyncStorage.removeItem('isOnTrial');
+    await AsyncStorage.removeItem('trialEndDate');
     dispatch({ type: 'clear_state' });
   } catch (err) {
     console.log('Error clearing state:', err);
@@ -332,17 +375,22 @@ const tryLocalSignin = (dispatch) => async () => {
     }
 
     try {
-      // Fetch user info (role, email, verifiedEmail) from backend using token
+      // Fetch user info (role, email, verifiedEmail, trial) from backend using token
       const userInfoResponse = await SikiyaAPI.get('/me');
       const userRole = userInfoResponse.data.role;
       const userEmail = userInfoResponse.data.email;
       const userVerifiedEmail = userInfoResponse.data.verifiedEmail;
+      const isOnTrial = userInfoResponse.data.isOnTrial || false;
+      const trialEndDate = userInfoResponse.data.trialEndDate;
+      const daysRemaining = userInfoResponse.data.daysRemaining || 0;
       
       // Update AsyncStorage with fresh data from backend
       await AsyncStorage.multiSet([
         ['role', userRole || null],
         ['verifiedEmail', String(userVerifiedEmail || false)],
-        ['email', userEmail || storedEmail || '']
+        ['email', userEmail || storedEmail || ''],
+        ['isOnTrial', String(isOnTrial)],
+        ['trialEndDate', trialEndDate || '']
       ]);
       
       dispatch({ 
@@ -351,7 +399,10 @@ const tryLocalSignin = (dispatch) => async () => {
           token, 
           role: userRole,
           verifiedEmail: userVerifiedEmail || false,
-          email: userEmail || storedEmail || null
+          email: userEmail || storedEmail || null,
+          isOnTrial: isOnTrial,
+          trialEndDate: trialEndDate,
+          daysRemaining: daysRemaining
         } 
       });
     } catch (err) {
@@ -363,6 +414,8 @@ const tryLocalSignin = (dispatch) => async () => {
         await AsyncStorage.removeItem('role');
         await AsyncStorage.removeItem('verifiedEmail');
         await AsyncStorage.removeItem('email');
+        await AsyncStorage.removeItem('isOnTrial');
+        await AsyncStorage.removeItem('trialEndDate');
       } catch (clearErr) {
         // If clearing fails, that's okay - just log it
         console.log('Error clearing AsyncStorage:', clearErr.message || clearErr);
@@ -379,9 +432,39 @@ const tryLocalSignin = (dispatch) => async () => {
   }
 };
 
+// Fetch trial status ------------------------
+const fetchTrialStatus = (dispatch) => async () => {
+  try {
+    const response = await SikiyaAPI.get('/user/trial-status');
+    
+    dispatch({
+      type: 'update_trial',
+      payload: {
+        isOnTrial: response.data.isOnTrial,
+        trialEndDate: response.data.trialEndDate,
+        daysRemaining: response.data.daysRemaining,
+        role: response.data.role
+      }
+    });
+    
+    // Also update AsyncStorage
+    await AsyncStorage.multiSet([
+      ['isOnTrial', String(response.data.isOnTrial)],
+      ['trialEndDate', response.data.trialEndDate || ''],
+      ['role', response.data.role || null]
+    ]);
+    
+    return response.data;
+  } catch (err) {
+    console.log('Error fetching trial status:', err);
+    return null;
+  }
+};
+// -------------------------------------------------
+
 // Update the export
 export const {Provider, Context} = createDataContext(
   authReducer,
-  { signup, signin, clearErrorMessage, updateRole, tryLocalSignin, verifyEmail, resendVerificationCode, clearState, signout }, // Add tryLocalSignin
-  { token: null, role: null, errorMessage: '', verifiedEmail: false, email: null } // Change null to false
+  { signup, signin, clearErrorMessage, updateRole, tryLocalSignin, verifyEmail, resendVerificationCode, clearState, signout, fetchTrialStatus },
+  { token: null, role: null, errorMessage: '', verifiedEmail: false, email: null, isOnTrial: false, trialEndDate: null, daysRemaining: 0 }
 );
