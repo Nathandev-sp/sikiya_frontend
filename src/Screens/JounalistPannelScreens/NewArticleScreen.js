@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style, commentTextSize} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import CountryPicker from '../../Components/CountryPicker';
@@ -11,8 +11,10 @@ import ArticleGroupPicker from '../../Components/ArticleGroupPicker';
 import AfricanCountries from '../../../assets/Data/AfricanCountries.json';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const NewArticleScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const scrollRef = useRef(null);
   const titleInputRef = useRef(null);
   const highlightInputRef = useRef(null);
@@ -97,9 +99,9 @@ const NewArticleScreen = ({ navigation }) => {
     // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       if (titleWordCount < 8 && articleData.articleTitle) {
-        Alert.alert('Title Too Short', 'Article title must be at least 8 words long.');
+        Alert.alert(t('newArticle.titleTooShort'), t('newArticle.titleTooShortMessage'));
       } else {
-        Alert.alert('Missing Fields', 'Please fill in all required fields');
+        Alert.alert(t('newArticle.missingFields'), t('newArticle.missingFieldsMessage'));
       }
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
@@ -139,8 +141,8 @@ const NewArticleScreen = ({ navigation }) => {
       setIsSubmitting(false);
       
       // Show error message
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to create article. Please try again.';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || t('newArticle.failedToCreate');
+      Alert.alert(t('newArticle.error'), errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +154,7 @@ const NewArticleScreen = ({ navigation }) => {
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.loadingContainer}>
           <BigLoaderAnim />
-          <Text style={styles.loadingText}>Creating article...</Text>
+          <Text style={styles.loadingText}>{t('newArticle.creatingArticle')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -187,19 +189,19 @@ const NewArticleScreen = ({ navigation }) => {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>New Article</Text>
+            <Text style={styles.screenTitle}>{t('newArticle.title')}</Text>
           </View>
 
           {/* Article Title Input */}
           <View style={styles.inputSection}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Article Title</Text>
+              <Text style={styles.label}>{t('newArticle.articleTitle')}</Text>
               <Text style={styles.wordCount}>
-                {getWordCount(articleData.articleTitle)} words (min: 8)
+                {getWordCount(articleData.articleTitle)} {t('newArticle.wordsMin')}
               </Text>
             </View>
             <Text style={styles.labelDescription}>
-              Provide a clear and concise title that summarizes your article
+              {t('newArticle.titleDescription')}
             </Text>
             <TextInput
               ref={titleInputRef}
@@ -208,7 +210,7 @@ const NewArticleScreen = ({ navigation }) => {
                 titleFocused && styles.inputFocused,
                 errors.articleTitle && styles.inputError
               ]}
-              placeholder="Enter article title (minimum 8 words)"
+              placeholder={t('newArticle.titlePlaceholder')}
               placeholderTextColor="#aaa"
               value={articleData.articleTitle}
               onChangeText={(text) => handleFormChange('articleTitle', text)}
@@ -223,13 +225,13 @@ const NewArticleScreen = ({ navigation }) => {
           {/* Article Highlight */}
           <View style={styles.inputSection}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Article Highlight</Text>
+              <Text style={styles.label}>{t('newArticle.articleHighlight')}</Text>
               <Text style={styles.wordCount}>
-                {getWordCount(articleData.articleHighlight)}/30 words
+                {getWordCount(articleData.articleHighlight)}/30 {t('newArticle.wordsMax')}
               </Text>
             </View>
             <Text style={styles.labelDescription}>
-              Write a brief summary that captures the essence of your article
+              {t('newArticle.highlightDescription')}
             </Text>
             <TextInput
               ref={highlightInputRef}
@@ -239,7 +241,7 @@ const NewArticleScreen = ({ navigation }) => {
                 highlightFocused && styles.inputFocused,
                 errors.articleHighlight && styles.inputError
               ]}
-              placeholder="Write a brief highlight (30 words max)"
+              placeholder={t('newArticle.highlightPlaceholder')}
               placeholderTextColor="#aaa"
               value={articleData.articleHighlight}
               onChangeText={(text) => {
@@ -247,7 +249,7 @@ const NewArticleScreen = ({ navigation }) => {
                 if (wordCount <= 30) {
                   handleFormChange('articleHighlight', text);
                 } else {
-                  Alert.alert('Word Limit', 'Article highlight must be 30 words or less.');
+                  Alert.alert(t('newArticle.wordLimit'), t('newArticle.highlightWordLimit'));
                 }
               }}
               multiline
@@ -260,13 +262,13 @@ const NewArticleScreen = ({ navigation }) => {
           {/* Full Article */}
           <View style={styles.inputSection}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Full Article</Text>
+              <Text style={styles.label}>{t('newArticle.fullArticle')}</Text>
               <Text style={styles.wordCount}>
-                {getWordCount(articleData.fullArticle)}/300 words
+                {getWordCount(articleData.fullArticle)}/300 {t('newArticle.wordsMax')}
               </Text>
             </View>
             <Text style={styles.labelDescription}>
-              Write the complete article with all details, facts, and information
+              {t('newArticle.fullArticleDescription')}
             </Text>
             <TextInput
               ref={fullArticleInputRef}
@@ -276,7 +278,7 @@ const NewArticleScreen = ({ navigation }) => {
                 fullArticleFocused && styles.inputFocused,
                 errors.fullArticle && styles.inputError
               ]}
-              placeholder="Write the full article (300 words max)"
+              placeholder={t('newArticle.fullArticlePlaceholder')}
               placeholderTextColor="#aaa"
               value={articleData.fullArticle}
               onChangeText={(text) => {
@@ -284,7 +286,7 @@ const NewArticleScreen = ({ navigation }) => {
                 if (wordCount <= 300) {
                   handleFormChange('fullArticle', text);
                 } else {
-                  Alert.alert('Word Limit', 'Full article must be 300 words or less.');
+                  Alert.alert(t('newArticle.wordLimit'), t('newArticle.fullArticleWordLimit'));
                 }
               }}
               multiline
@@ -296,13 +298,13 @@ const NewArticleScreen = ({ navigation }) => {
 
           {/* Country Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Country</Text>
+            <Text style={styles.label}>{t('newArticle.country')}</Text>
             <CountryPicker
               value={articleData.country}
               onSelect={(country) => handleFormChange('country', country)}
               countryList={AfricanCountries}
-              placeholder="Select country"
-              label="Country"
+              placeholder={t('newArticle.selectCountry')}
+              label={t('newArticle.country')}
               error={errors.country}
               onOpen={dismissKeyboard}
             />
@@ -310,13 +312,13 @@ const NewArticleScreen = ({ navigation }) => {
 
           {/* City Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>City</Text>
+            <Text style={styles.label}>{t('newArticle.city')}</Text>
             <CityPicker
               value={articleData.city}
               onSelect={(city) => handleFormChange('city', city)}
               selectedCountry={articleData.country}
-              placeholder="Select city"
-              label="City"
+              placeholder={t('newArticle.selectCity')}
+              label={t('newArticle.city')}
               error={errors.city}
               onOpen={dismissKeyboard}
             />
@@ -324,12 +326,12 @@ const NewArticleScreen = ({ navigation }) => {
 
           {/* Article Group Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Article Category</Text>
+            <Text style={styles.label}>{t('newArticle.articleCategory')}</Text>
             <ArticleGroupPicker
               value={articleData.articleGroup}
               onSelect={(group) => handleFormChange('articleGroup', group)}
-              placeholder="Select article category"
-              label="Article Category"
+              placeholder={t('newArticle.selectCategory')}
+              label={t('newArticle.articleCategory')}
               error={errors.articleGroup}
               onOpen={dismissKeyboard}
             />
@@ -342,7 +344,7 @@ const NewArticleScreen = ({ navigation }) => {
             onPress={handleSubmitArticle}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Continue</Text>
+            <Text style={styles.submitButtonText}>{t('newArticle.continue')}</Text>
           </TouchableOpacity>
 
           <View style={styles.bottomSpacer} />
@@ -396,7 +398,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
+    color: generalTextColor,
     marginBottom: 4,
   },
   labelRow: {
@@ -411,7 +413,7 @@ const styles = StyleSheet.create({
     color: withdrawnTitleColor,
   },
   labelDescription: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
     marginBottom: 12,
@@ -422,12 +424,13 @@ const styles = StyleSheet.create({
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "#FFFFFF",
+    marginBottom: 8,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -451,11 +454,12 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
+    marginBottom: 8,
     //backgroundColor: "#FFFFFF",
     //Adding some content
     zIndex: 8,

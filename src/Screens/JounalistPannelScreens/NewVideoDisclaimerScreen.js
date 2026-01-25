@@ -24,8 +24,10 @@ import AppScreenBackgroundColor, {
   MainSecondaryBlueColor
 } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const NewVideoDisclaimerScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const [agreed, setAgreed] = useState(false);
 
   const handleContinue = () => {
@@ -56,7 +58,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
 
       {/* Title Section */}
       <View style={styles.titleSection}>
-        <Text style={styles.screenTitle}>Video Disclaimer</Text>
+        <Text style={styles.screenTitle}>{t('videoDisclaimer.title')}</Text>
       </View>
 
       {/* Disclaimer Content */}
@@ -66,7 +68,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="videocam" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Upload good quality videos</Text>
+          <Text style={styles.sectionText}>{t('videoDisclaimer.videoQuality')}</Text>
         </View>
 
         {/* Accuracy Section */}
@@ -74,7 +76,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="shield-checkmark" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Upload the most accurate information to the best of your knowledge</Text>
+          <Text style={styles.sectionText}>{t('videoDisclaimer.accuracy')}</Text>
         </View>
 
         {/* Review Process Section */}
@@ -82,7 +84,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="document-text" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>All videos are subject to review by Sikiya's editorial team</Text>
+          <Text style={styles.sectionText}>{t('videoDisclaimer.reviewProcess')}</Text>
         </View>
 
         {/* Proof Requirements Section */}
@@ -90,7 +92,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="lock-closed" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Provide proof text and/or images to support your video</Text>
+          <Text style={styles.sectionText}>{t('videoDisclaimer.proofRequirements')}</Text>
         </View>
 
         {/* Publication Rights Section */}
@@ -98,7 +100,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="globe" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>You grant Sikiya the right to publish and distribute your video</Text>
+          <Text style={styles.sectionText}>{t('videoDisclaimer.publicationRights')}</Text>
         </View>
       </View>
 
@@ -117,7 +119,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           />
         </TouchableOpacity>
         <Text style={styles.agreeText}>
-          I have read and understand the video disclaimer and agree to the terms
+          {t('videoDisclaimer.agreeTerms')}
         </Text>
       </View>
 
@@ -132,7 +134,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
         onPress={handleContinue}
         disabled={!agreed}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={styles.continueButtonText}>{t('videoDisclaimer.continue')}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

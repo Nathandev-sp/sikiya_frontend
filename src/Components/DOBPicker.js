@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform } from "react
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AppScreenBackgroundColor, { articleTitleSize, auth_Style, authScrreenBackgroundColor, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, MainBrownSecondaryColor } from "../styles/GeneralAppStyle";
+import { useLanguage } from "../Context/LanguageContext";
 
 const DatePickerModal = ({
   value,
@@ -20,6 +21,7 @@ const DatePickerModal = ({
   const [tempDate, setTempDate] = useState(
     value ? new Date(value) : new Date(2000, 0, 1)
   );
+  const { t } = useLanguage();
 
   const formatDate = (dateInput) => {
     if (!dateInput) return "";
@@ -143,11 +145,11 @@ const DatePickerModal = ({
               {/* Header */}
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={handleCancel} style={styles.headerButton} activeOpacity={generalActiveOpacity} hitslop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <Text style={styles.modalTitle}>{label}</Text>
                 <TouchableOpacity onPress={handleConfirm} style={styles.headerButton} activeOpacity={generalActiveOpacity} hitslop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.confirmText}>Done</Text>
+                  <Text style={styles.confirmText}>{t('common.done')}</Text>
                 </TouchableOpacity>
               </View>
 

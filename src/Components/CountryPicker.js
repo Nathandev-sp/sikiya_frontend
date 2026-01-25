@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal, SectionList, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AppScreenBackgroundColor, { auth_Style, authScrreenBackgroundColor, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, MainBrownSecondaryColor, withdrawnTitleColor, articleTextSize, generalTextSize, articleTitleSize, generalActiveOpacity } from "../styles/GeneralAppStyle";
+import { useLanguage } from "../Context/LanguageContext";
 
 const CountryPicker = ({
   value,
@@ -16,6 +17,7 @@ const CountryPicker = ({
 }) => {
   const { height } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
+  const { t } = useLanguage();
 
   // Group countries alphabetically
   const sections = useMemo(() => {
@@ -83,7 +85,7 @@ const CountryPicker = ({
             {/* Header */}
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={handleCancel} style={styles.headerButton} activeOpacity={generalActiveOpacity} hitslop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <Text style={styles.modalTitle}>{label}</Text>
               <View style={styles.headerButton} />
@@ -156,8 +158,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#D1D1D6",
   },
   headerButton: {
-    width: 60,
-    paddingHorizontal: 4,
+    width: 75,
+    paddingHorizontal: 2,
     paddingVertical: 4,
   },
   modalTitle: {

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import CountryPicker from "../../../Components/CountryPicker";
 import CityPicker from "../../../Components/CityPicker";
@@ -11,6 +11,7 @@ import AllCountries from "../../../../assets/Data/AllCountries.json";
 import DatePickerModal from "../../../Components/DOBPicker";
 import GoBackButton from "../../../../NavComponents/GoBackButton";
 import VerticalSpacer from "../../../Components/UI/VerticalSpacer";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 const JournalistJoinScreen1 = ({ navigation }) => {
   const { height, width } = useWindowDimensions();
@@ -18,6 +19,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
   const firstNameInputRef = useRef(null);
   const lastNameInputRef = useRef(null);
   const phoneNumberInputRef = useRef(null);
+  const { t } = useLanguage();
 
   // Form input for all the data
   const [journalistFormData, setJournalistFormData] = useState({
@@ -102,7 +104,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.18 }]}>
+            <View style={[styles.headerSection, { height: height * 0.35 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -111,7 +113,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -119,7 +121,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
               <View style={styles.welcomeContainer}>
 
                 <Text style={styles.welcomeSubtitle}>
-                  Complete your profile to start reporting with Sikiya
+                  {t('onboarding.journalistJoinMessage')}
                 </Text>
               </View>
             </View>
@@ -127,7 +129,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
             <View style={auth_Style.detailFormContainer}>
               {/* First Name */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>First Name</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.firstName')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   firstNameFocused && auth_Style.authInputContainerFocused,
@@ -138,7 +140,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                     ref={firstNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your first name"
+                    placeholder={t('profile.firstNamePlaceholder')}
                     placeholderTextColor="#aaa"
                     value={journalistFormData.firstName}
                     onChangeText={text => handleFormChanges('firstName', text)}
@@ -154,7 +156,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
 
               {/* Last Name */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Last Name</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.lastName')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   lastNameFocused && auth_Style.authInputContainerFocused,
@@ -165,7 +167,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                     ref={lastNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your last name"
+                    placeholder={t('profile.lastNamePlaceholder')}
                     placeholderTextColor="#aaa"
                     value={journalistFormData.lastName}
                     onChangeText={text => handleFormChanges('lastName', text)}
@@ -181,19 +183,20 @@ const JournalistJoinScreen1 = ({ navigation }) => {
 
               {/* Date of Birth */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Date of Birth</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.dateOfBirth')}</Text>
                 <DatePickerModal
                   value={journalistFormData.dob}
                   onSelect={date => handleFormChanges('dob', date)}
                   error={error.dob}
-                  label="Date of Birth"
+                  label={t('profile.dateOfBirth')}
+                  placeholder={t('profile.dateOfBirthPlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
 
               {/* WhatsApp Phone Number */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>WhatsApp Phone Number</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.whatsAppPhoneNumber')}</Text>
                 <View style={styles.phoneContainer}>
                   <View style={styles.countryCodeContainer}>
                     <CountryCodePicker
@@ -202,6 +205,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                       error={error.phoneCountryCode}
                       placeholder="Code"
                       onOpen={dismissKeyboard}
+                      label={t('profile.countryCode')}
                     />
                   </View>
                   <View style={[
@@ -215,7 +219,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                       ref={phoneNumberInputRef}
                       style={auth_Style.input}
                       hitSlop={defaultButtonHitslop}
-                      placeholder="Phone number"
+                      placeholder={t('profile.whatsAppPhoneNumberPlaceholder')}
                       placeholderTextColor="#aaa"
                       value={journalistFormData.phoneNumber}
                       onChangeText={text => {
@@ -234,13 +238,13 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   </View>
                 </View>
                 {error.phoneNumber && journalistFormData.phoneNumber && !validatePhoneNumber(journalistFormData.phoneNumber) && (
-                  <Text style={styles.errorText}>Phone number must be between 7 and 15 digits</Text>
+                  <Text style={styles.errorText}>{t('profile.phoneNumberError')}</Text>
                 )}
               </View>
 
               {/* Country */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Country of residence</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.countryOfResidence')}</Text>
                 <CountryPicker
                   value={journalistFormData.country}
                   onSelect={country => {
@@ -252,34 +256,36 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   }}
                   countryList={AllCountries}
                   error={error.country}
-                  label="Country of residence"
+                  label={t('profile.countryOfResidence')}
+                  placeholder={t('profile.countryOfResidencePlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
 
               {/* City */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>City of residence</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.cityOfResidence')}</Text>
                 <CityPicker
                   value={journalistFormData.city}
                   onSelect={city => handleFormChanges('city', city)}
                   selectedCountry={journalistFormData.country}
                   error={error.city}
-                  label="City of residence"
-                  placeholder="Select your city"
+                  label={t('profile.cityOfResidence')}
+                  placeholder={t('profile.cityOfResidencePlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
 
               {/* African Country of Interest */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>African Country of Interest</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.interestedCountry')}</Text>
                 <CountryPicker
                   value={journalistFormData.countryOfInterest}
                   onSelect={country => handleFormChanges('countryOfInterest', country)}
                   countryList={AfricanCountries}
                   error={error.countryOfInterest}
-                  label="African Country of Interest"
+                  label={t('profile.interestedCountry')}
+                  placeholder={t('profile.africanCountryOfInterestPlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
@@ -308,13 +314,14 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 10,
+    paddingTop: 0,
     marginBottom: 12,
+    //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
@@ -341,6 +348,7 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
+    color: '#FFF'
   },
   companyLogo: {
     width: '95%',
@@ -355,11 +363,11 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   welcomeSubtitle: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize+1,
     color: withdrawnTitleColor,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 22,
     paddingHorizontal: 24,
   },
   continueButton: {

@@ -37,6 +37,7 @@ import { Context as AuthContext } from '../Context/AuthContext';
 import { useRewardedAd } from '../Components/Ads/RewardedAd';
 import RewardedAdModal from '../Components/Ads/RewardedAdModal';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
+import { useLanguage } from '../Context/LanguageContext';
 
 const LiveNews = ({ preloadedVideos, route }) => {
     const { width, height } = useWindowDimensions();
@@ -45,6 +46,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const navigation = useNavigation();
     const videoPlayersRef = useRef({});
     const scrollToVideoIdRef = useRef(null); // Track if we need to scroll to a specific video
+    const { t } = useLanguage();
     
     // Auth context for user role
     const { state } = useContext(AuthContext);
@@ -85,15 +87,34 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const adCooldownTimerRef = useRef(null);
     
     const iconColor = AppScreenBackgroundColor;
+    
+    // Preload next videos for smoother experience
+    useEffect(() => {
+        if (videos.length > 0 && currentVideoIndex < videos.length - 1) {
+            // Preload next 2 videos
+            const videosToPreload = videos.slice(currentVideoIndex + 1, currentVideoIndex + 3);
+            videosToPreload.forEach(video => {
+                if (video?.video_url) {
+                    // Create a prefetch request to cache the video
+                    fetch(video.video_url, { 
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    }).catch(() => {
+                        // Silent fail - just optimization
+                    });
+                }
+            });
+        }
+    }, [currentVideoIndex, videos]);
 
     const rewardedModalCopy = pendingRewardAction === 'comments'
         ? {
-            title: 'Watch an Ad to Comment',
-            message: 'Watch a quick ad to unlock another main comment for today.',
+            title: t('video.watchAdToComment'),
+            message: t('video.watchAdCommentMessage'),
         }
         : {
-            title: 'Watch an Ad to Continue',
-            message: 'Watch a short ad to unlock 10 more videos.',
+            title: t('video.watchAdToUnlock'),
+            message: t('video.watchAdMessage'),
         };
 
     // Get current video data
@@ -131,7 +152,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
         } catch (error) {
             console.error('Error fetching videos:', error);
             if (!append) {
-                setError('Failed to load videos. Please try again.');
+                setError(t('video.failedToLoad'));
             }
         } finally {
             setIsLoading(false);
@@ -215,9 +236,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
         if (!isAdLoaded) {
             console.warn('Ad not loaded yet');
             Alert.alert(
-                'Ad Still Loading', 
-                'Rewarded ads can take 30-60 seconds to fully load and be ready to show.\n\nPlease wait a bit longer and try again in 15-20 seconds.',
-                [{ text: 'OK' }]
+                t('video.adStillLoading'), 
+                t('video.adLoadingMessage'),
+                [{ text: t('common.ok') }]
             );
             return;
         }
@@ -263,7 +284,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
             startAdCooldown(60);
         } catch (error) {
             console.error('Error unlocking after rewarded ad:', error?.response?.data || error.message);
-            Alert.alert('Unlock failed', error?.response?.data?.error || 'Please try again.');
+            Alert.alert(t('video.unlockFailed'), error?.response?.data?.error || t('video.tryAgain'));
             if (!actionOverride) {
                 setShowAdModal(true);
             }
@@ -304,9 +325,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
         // Check cooldown
         if (adCooldownSeconds > 0) {
             Alert.alert(
-                'Please Wait',
-                `You just watched an ad! The next ad will be ready in ${adCooldownSeconds} seconds.\n\nThis cooldown ensures the next ad has time to load properly.`,
-                [{ text: 'OK' }]
+                t('video.pleaseWait'),
+                t('video.adCooldownMessage').replace('{{seconds}}', adCooldownSeconds),
+                [{ text: t('common.ok') }]
             );
             return;
         }
@@ -444,7 +465,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const onSendComment = async (text) => {
         if (!text || !currentVideo?._id) return;
         if (isGeneralUser && commentQuota && (commentQuota.remaining ?? 0) <= 0) {
-            Alert.alert('Limit reached', 'You reached your free main comments limit for today.');
+            Alert.alert(t('video.limitReached'), t('video.commentLimitMessage'));
             return;
         }
 
@@ -479,14 +500,30 @@ const LiveNews = ({ preloadedVideos, route }) => {
             console.error('Error sending comment:', error);
             if (error?.response?.status === 403) {
                 Alert.alert(
-                    'Limit reached',
-                    error?.response?.data?.error || 'Main comment limit reached for today.'
+                    t('video.limitReached'),
+                    error?.response?.data?.error || t('video.commentLimitMessage')
                 );
             }
         } finally {
             setCommentLoading(false);
         }
     };
+
+    // Pause video when quota overlay appears
+    useEffect(() => {
+        if (videoLimitReached) {
+            // Pause all videos when quota limit is reached
+            Object.values(videoPlayersRef.current).forEach(player => {
+                if (player && typeof player.pause === 'function') {
+                    try {
+                        player.pause();
+                    } catch (err) {
+                        console.warn('Failed to pause video:', err);
+                    }
+                }
+            });
+        }
+    }, [videoLimitReached]);
 
     // Pause all videos when screen loses focus
     useFocusEffect(
@@ -495,8 +532,12 @@ const LiveNews = ({ preloadedVideos, route }) => {
             return () => {
                 // Screen is unfocused - pause all videos
                 Object.values(videoPlayersRef.current).forEach(player => {
-                    if (player) {
-                        player.pause();
+                    if (player && typeof player.pause === 'function') {
+                        try {
+                            player.pause();
+                        } catch (err) {
+                            console.warn('Failed to pause video on unfocus:', err);
+                        }
                     }
                 });
                 // Clear cooldown timer
@@ -534,9 +575,10 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 onSendComment={onSendComment}
                 setModalVisible={setModalVisible}
                 videoPlayersRef={videoPlayersRef}
-            onVideoQuotaExceeded={handleVideoQuotaExceeded}
-            openCommentModal={openCommentModal}
+                onVideoQuotaExceeded={handleVideoQuotaExceeded}
+                openCommentModal={openCommentModal}
                 setVideos={setVideos}
+                videoLimitReached={videoLimitReached}
             />
         );
     };
@@ -561,8 +603,10 @@ const LiveNews = ({ preloadedVideos, route }) => {
                             setError(null);
                             fetchVideos(1, false);
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('video.retry')}
                     >
-                        <Text style={styles.retryButtonText}>Retry</Text>
+                        <Text style={styles.retryButtonText}>{t('video.retry')}</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -597,14 +641,14 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Ionicons name="videocam-off-outline" size={64} color={withdrawnTitleColor} />
-                        <Text style={styles.emptyText}>No videos available</Text>
+                        <Text style={styles.emptyText}>{t('video.noVideosAvailable')}</Text>
                     </View>
                 }
                 ListFooterComponent={
                     isLoadingMore ? (
                         <View style={styles.loadingMoreContainer}>
                             <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
-                            <Text style={styles.loadingMoreText}>Loading more videos...</Text>
+                            <Text style={styles.loadingMoreText}>{t('video.loadingMoreVideos')}</Text>
                         </View>
                     ) : null
                 }
@@ -615,7 +659,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSend={onSendComment}
-                placeholder="Write your comment..."
+                placeholder={t('video.writeYourComment')}
                 mode="video"
                 isLoading={commentLoading}
                 quota={isGeneralUser ? commentQuota : null}
@@ -642,9 +686,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
             {videoLimitReached && (
                 <View style={[styles.videoQuotaOverlayContainer, main_Style.genContentElevation]}>
                     <View style={styles.videoQuotaOverlay}>
-                        <Text style={styles.quotaTitle}>You’ve reached your daily free video limit.</Text>
+                        <Text style={styles.quotaTitle}>{t('video.quotaReached')}</Text>
                         <Text style={styles.quotaSub}>
-                            Watch an ad to unlock 10 more videos, or upgrade for unlimited access.
+                            {t('video.quotaMessage')}
                         </Text>
                         <View style={styles.quotaActions}>
                             <TouchableOpacity 
@@ -654,7 +698,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
-                                <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>Watch an ad</Text>
+                                <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>{t('comments.watchAd')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 style={[styles.quotaButton, styles.quotaSecondary, main_Style.genButtonElevation]}
@@ -662,7 +706,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                                <Text style={styles.quotaButtonText}>Upgrade</Text>
+                                <Text style={styles.quotaButtonText}>{t('comments.upgrade')}</Text>
                             </TouchableOpacity>
                         </View>
                         
@@ -699,6 +743,7 @@ const VideoItemComponent = ({
     onVideoQuotaExceeded,
     openCommentModal,
     setVideos: setVideosProp,
+    videoLimitReached,
 }) => {
     const resolveJournalistName = (journalist) => {
         if (!journalist) return '';
@@ -715,20 +760,45 @@ const VideoItemComponent = ({
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(item?.number_of_likes || 0);
     const [isLiking, setIsLiking] = useState(false);
+    const [isVideoLoading, setIsVideoLoading] = useState(true);
+    const [videoError, setVideoError] = useState(false);
     const viewTrackedRef = useRef(false); // Track if view has been recorded
     const watchTimeStartRef = useRef(null); // Track when video started playing
     const watchTimeIntervalRef = useRef(null); // Interval for tracking watch time
+    const { t } = useLanguage();
 
     const videoPlayer = useVideoPlayer(
         item?.video_url || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", 
         player => {
             player.loop = true;
+            
             // Store player reference
             if (item?._id) {
                 videoPlayersRef.current[item._id] = player;
             }
-            if (isActive) {
-                player.play();
+            
+            // Set up status listener for loading states
+            player.addListener('statusChange', (status) => {
+                const statusValue = status?.status || '';
+                
+                if (statusValue === 'loading' || statusValue === 'idle') {
+                    setIsVideoLoading(true);
+                    setVideoError(false);
+                } else if (statusValue === 'readyToPlay') {
+                    setIsVideoLoading(false);
+                    setVideoError(false);
+                } else if (statusValue === 'error') {
+                    setIsVideoLoading(false);
+                    setVideoError(true);
+                }
+            });
+            
+            if (isActive && !videoLimitReached) {
+                player.play().catch(err => {
+                    console.error('Error playing video:', err);
+                    setVideoError(true);
+                    setIsVideoLoading(false);
+                });
             } else {
                 player.pause();
             }
@@ -736,7 +806,8 @@ const VideoItemComponent = ({
     );
 
     useEffect(() => {
-        if (isActive) {
+        // Only play video if it's active AND quota limit hasn't been reached
+        if (isActive && !videoLimitReached) {
             videoPlayer.play();
             
             // Track video view when it becomes active (first time)
@@ -778,6 +849,7 @@ const VideoItemComponent = ({
                 }, 30000); // Every 30 seconds
             }
         } else {
+            // Pause video if not active OR quota limit reached
             if (videoPlayer && typeof videoPlayer.pause === 'function') {
                 try {
                     videoPlayer.pause();
@@ -803,7 +875,7 @@ const VideoItemComponent = ({
                 watchTimeStartRef.current = null;
             }
         }
-    }, [isActive, videoPlayer, item?._id]);
+    }, [isActive, videoPlayer, item?._id, videoLimitReached]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -875,6 +947,20 @@ const VideoItemComponent = ({
         }
     };
 
+    const handleRetryVideo = useCallback(() => {
+        setVideoError(false);
+        setIsVideoLoading(true);
+        
+        // Attempt to replay
+        if (videoPlayer) {
+            videoPlayer.play().catch(err => {
+                console.error('Retry failed:', err);
+                setVideoError(true);
+                setIsVideoLoading(false);
+            });
+        }
+    }, [videoPlayer]);
+
     const handleLike = async () => {
         if (isLiking || !item?._id) return;
         
@@ -933,6 +1019,35 @@ const VideoItemComponent = ({
                     nativeControls={false}
                     contentFit="contain"
                 />
+                
+                {/* Loading Overlay */}
+                {isVideoLoading && !videoError && (
+                    <View style={styles.videoLoadingOverlay}>
+                        <View style={[styles.loadingContainer, main_Style.genContentElevation]}>
+                            <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
+                            <Text style={styles.loadingText}>{t('video.loadingVideo')}</Text>
+                        </View>
+                    </View>
+                )}
+                
+                {/* Error Overlay */}
+                {videoError && (
+                    <TouchableOpacity 
+                        style={styles.videoErrorOverlay} 
+                        onPress={handleRetryVideo}
+                        activeOpacity={0.9}
+                    >
+                        <View style={[styles.errorContainer, main_Style.genContentElevation]}>
+                            <Ionicons name="alert-circle-outline" size={56} color={MainBrownSecondaryColor} />
+                            <Text style={styles.errorTitle}>{t('video.videoLoadError')}</Text>
+                            <Text style={styles.errorSubtext}>{t('video.tapToRetry')}</Text>
+                            <View style={[styles.retryButton, main_Style.genButtonElevation]}>
+                                <Ionicons name="refresh-outline" size={20} color={MainBrownSecondaryColor} />
+                                <Text style={styles.retryButtonText}>{t('video.retry')}</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                )}
             </View>
             
             {/* Bottom Info Section */}
@@ -940,7 +1055,7 @@ const VideoItemComponent = ({
                 {/* Title on the left */}
                 <View style={styles.titleContainer}>
                     <Text style={styles.articleTitle} numberOfLines={3}>
-                        {item?.video_title || "Live News Video"}
+                        {item?.video_title || t('video.liveNewsVideo')}
                     </Text>
                     {item?.journalist_id && (
                         <View style={styles.authorInfo}>
@@ -951,7 +1066,7 @@ const VideoItemComponent = ({
                                 <View style={styles.locationInfo}>
                                     <Ionicons name="location" size={14} color="#fff" />
                                     <Text style={styles.locationTextOverlay}>
-                                        {item.location || item.concerned_city || item.concerned_country || 'Location'}
+                                        {item.location || item.concerned_city || item.concerned_country || t('video.location')}
                                     </Text>
                                 </View>
                                 <Text style={styles.dateTextOverlay}>
@@ -1030,7 +1145,7 @@ const VideoItemComponent = ({
                         <View style={styles.commentsHeaderLeft}>
                             <Ionicons name="chatbox-ellipses-outline" size={20} color={MainBrownSecondaryColor} />
                             <Text style={styles.commentsCountText}>
-                                {item?.number_of_comments ? formatNumber(item.number_of_comments) : '0'} Comments
+                                {item?.number_of_comments ? formatNumber(item.number_of_comments) : '0'} {t('comments.comments')}
                             </Text>
                         </View>
                         <View style={styles.commentsHeaderRight}>
@@ -1326,9 +1441,11 @@ const styles = StyleSheet.create({
     videoQuotaOverlay: {
         width: '100%',
         maxWidth: 420,
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: secCardBackgroundColor, //MainSecondaryBlueColor,
         borderRadius: 12,
         padding: 12,
+        borderWidth: 1,
+        borderColor: '#7B0D1E',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.12,
@@ -1340,13 +1457,13 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
         fontWeight: generalTitleFontWeight,
         alignSelf: 'center',
-        color: '#fff',
+        color: '#66101F',
         marginBottom: 8,
     },
     quotaSub: {
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
-        color: 'rgba(255, 255, 255, 0.9)',
+        color: generalTextColor,
         marginBottom: 16,
     },
     quotaActions: {
@@ -1370,7 +1487,7 @@ const styles = StyleSheet.create({
         //borderColor: MainBrownSecondaryColor,
     },
     quotaSecondary: {
-        backgroundColor: MainBrownSecondaryColor,
+        backgroundColor: MainSecondaryBlueColor,
     },
     quotaButtonText: {
         fontSize: generalTextSize,
@@ -1385,6 +1502,82 @@ const styles = StyleSheet.create({
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
         color: '#fff',
+    },
+    videoLoadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        zIndex: 10,
+    },
+    loadingContainer: {
+        backgroundColor: AppScreenBackgroundColor,
+        borderRadius: 16,
+        padding: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 180,
+        borderWidth: 0.8,
+        borderColor: '#ccc',
+    },
+    loadingText: {
+        color: generalTitleColor,
+        fontSize: generalTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    videoErrorOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        padding: 24,
+        zIndex: 10,
+    },
+    errorContainer: {
+        backgroundColor: AppScreenBackgroundColor,
+        borderRadius: 16,
+        padding: 32,
+        alignItems: 'center',
+        maxWidth: 320,
+        borderWidth: 0.8,
+        borderColor: '#ccc',
+    },
+    errorTitle: {
+        fontSize: generalTitleSize,
+        fontFamily: generalTitleFont,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        marginTop: 16,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    errorSubtext: {
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        color: withdrawnTitleColor,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    retryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: genBtnBackgroundColor,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        gap: 8,
+    },
+    retryButtonText: {
+        fontSize: generalTextSize,
+        fontFamily: generalTitleFont,
+        fontWeight: generalTitleFontWeight,
+        color: MainBrownSecondaryColor,
     },
 });
 

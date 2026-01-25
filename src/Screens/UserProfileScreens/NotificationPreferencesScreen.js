@@ -25,9 +25,11 @@ import SikiyaAPI from '../../../API/SikiyaAPI';
 import { Context as AuthContext } from '../../Context/AuthContext';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import { requestNotificationPermissions, getExpoPushToken, registerDeviceWithBackend } from '../../services/notificationService';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const NotificationPreferencesScreen = () => {
     const { state } = useContext(AuthContext);
+    const { t } = useLanguage();
     const isJournalist = state?.role === 'journalist';
     const [preferences, setPreferences] = useState({
         new_article: true,
@@ -57,40 +59,40 @@ const NotificationPreferencesScreen = () => {
     // Notification categories and their items
     const allNotificationCategories = [
         {
-            title: 'Content Notifications',
+            title: t('notifications.contentNotifications'),
             icon: 'newspaper-outline',
             items: [
-                { key: 'new_article', label: 'New Articles Published', description: 'Get notified when journalists you follow publish new articles' },
-                { key: 'new_video', label: 'New Videos Published', description: 'Get notified when journalists you follow publish new videos' },
+                { key: 'new_article', label: t('notifications.newArticlesPublished'), description: t('notifications.newArticlesDescription') },
+                { key: 'new_video', label: t('notifications.newVideosPublished'), description: t('notifications.newVideosDescription') },
             ]
         },
         {
-            title: 'Engagement Notifications',
+            title: t('notifications.engagementNotifications'),
             icon: 'chatbubbles-outline',
             items: [
-                { key: 'comment_reply', label: 'Comment Replies', description: 'Get notified when someone replies to your comments' },
-                { key: 'new_comment', label: 'New Comments on Your Content', description: 'Get notified when someone comments on your articles or videos', journalistOnly: true },
-                { key: 'new_follower', label: 'New Followers', description: 'Get notified when someone starts following you' },
+                { key: 'comment_reply', label: t('notifications.commentReplies'), description: t('notifications.commentRepliesDescription') },
+                { key: 'new_comment', label: t('notifications.newCommentsOnContent'), description: t('notifications.newCommentsDescription'), journalistOnly: true },
+                { key: 'new_follower', label: t('notifications.newFollowers'), description: t('notifications.newFollowersDescription') },
             ]
         },
         {
-            title: 'Your Content Status',
+            title: t('notifications.yourContentStatus'),
             icon: 'checkmark-circle-outline',
             journalistOnly: true,
             items: [
-                { key: 'article_approved', label: 'Article/Video Approved', description: 'Get notified when your content is approved and published' },
-                { key: 'article_rejected', label: 'Article/Video Rejected', description: 'Get notified when your content is rejected' },
+                { key: 'article_approved', label: t('notifications.contentApproved'), description: t('notifications.contentApprovedDescription') },
+                { key: 'article_rejected', label: t('notifications.contentRejected'), description: t('notifications.contentRejectedDescription') },
             ]
         },
         {
-            title: 'Milestones',
+            title: t('notifications.milestones'),
             icon: 'trophy-outline',
             journalistOnly: true,
             items: [
-                { key: 'article_first_like', label: 'First Like', description: 'Get notified when someone likes your article for the first time' },
-                { key: 'article_milestone_likes', label: '1000 Likes Achievement', description: 'Get notified when your article reaches 1000 likes' },
-                { key: 'article_milestone_comments', label: '25 Comments Achievement', description: 'Get notified when your article reaches 25 comments' },
-                { key: 'video_milestone_comments', label: 'Video Comments Milestone', description: 'Get notified when your video reaches 25 comments' },
+                { key: 'article_first_like', label: t('notifications.firstLike'), description: t('notifications.firstLikeDescription') },
+                { key: 'article_milestone_likes', label: t('notifications.likeMilestone'), description: t('notifications.likeMilestoneDescription') },
+                { key: 'article_milestone_comments', label: t('notifications.commentMilestone'), description: t('notifications.commentMilestoneDescription') },
+                { key: 'video_milestone_comments', label: t('notifications.videoCommentMilestone'), description: t('notifications.videoCommentMilestoneDescription') },
             ]
         }
     ];
@@ -161,9 +163,9 @@ const NotificationPreferencesScreen = () => {
         } catch (error) {
             console.error('Error fetching notification preferences:', error);
             Alert.alert(
-                'Error',
-                'Failed to load notification preferences. Please try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('notifications.failedToLoad'),
+                [{ text: t('common.ok') }]
             );
         } finally {
             setLoading(false);
@@ -177,12 +179,12 @@ const NotificationPreferencesScreen = () => {
             
             if (!granted) {
                 Alert.alert(
-                    'Notifications Disabled',
-                    'Notifications are disabled in your device settings. Would you like to open settings to enable them?',
+                    t('notifications.notificationsDisabled'),
+                    t('notifications.notificationsDisabledMessage'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common.cancel'), style: 'cancel' },
                         { 
-                            text: 'Open Settings', 
+                            text: t('notifications.openSettings'), 
                             onPress: () => Linking.openSettings()
                         }
                     ]
@@ -198,17 +200,17 @@ const NotificationPreferencesScreen = () => {
                 await fetchPreferences();
             } else {
                 Alert.alert(
-                    'Error',
-                    'Failed to register for notifications. Please try again.',
-                    [{ text: 'OK' }]
+                    t('common.error'),
+                    t('notifications.failedToRegister'),
+                    [{ text: t('common.ok') }]
                 );
             }
         } catch (error) {
             console.error('Error enabling notifications:', error);
             Alert.alert(
-                'Error',
-                'Failed to enable notifications. Please try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('notifications.failedToEnable'),
+                [{ text: t('common.ok') }]
             );
         }
     };
@@ -228,9 +230,9 @@ const NotificationPreferencesScreen = () => {
                 // Revert on failure
                 setPreferences(preferences);
                 Alert.alert(
-                    'Error',
-                    'Failed to update notification preference. Please try again.',
-                    [{ text: 'OK' }]
+                    t('common.error'),
+                    t('notifications.failedToUpdate'),
+                    [{ text: t('common.ok') }]
                 );
             }
         } catch (error) {
@@ -238,9 +240,9 @@ const NotificationPreferencesScreen = () => {
             // Revert on error
             setPreferences(preferences);
             Alert.alert(
-                'Error',
-                'Failed to update notification preference. Please check your connection and try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('notifications.failedToUpdateConnection'),
+                [{ text: t('common.ok') }]
             );
         } finally {
             setSaving(false);
@@ -262,17 +264,17 @@ const NotificationPreferencesScreen = () => {
                 setQuietHoursEnd(end);
             } else {
                 Alert.alert(
-                    'Error',
-                    'Failed to update quiet hours. Please try again.',
-                    [{ text: 'OK' }]
+                    t('common.error'),
+                    t('notifications.failedToUpdateQuietHours'),
+                    [{ text: t('common.ok') }]
                 );
             }
         } catch (error) {
             console.error('Error updating quiet hours:', error);
             Alert.alert(
-                'Error',
-                'Failed to update quiet hours. Please check your connection and try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('notifications.failedToUpdateQuietHoursConnection'),
+                [{ text: t('common.ok') }]
             );
         } finally {
             setSaving(false);
@@ -295,7 +297,7 @@ const NotificationPreferencesScreen = () => {
                 <View style={styles.loadingContainer}>
                     <BigLoaderAnim />
                     <Text style={styles.loadingText}>
-                        {checkingPermission ? 'Checking notification status...' : 'Loading preferences...'}
+                        {checkingPermission ? t('notifications.checkingStatus') : t('notifications.loadingPreferences')}
                     </Text>
                 </View>
             </SafeAreaView>
@@ -315,7 +317,7 @@ const NotificationPreferencesScreen = () => {
                     {/* Header Section */}
                     <View style={settingsStyles.headerSection}>
                         <Ionicons name="notifications-outline" style={settingsStyles.headerIcon} />
-                        <Text style={settingsStyles.headerTitle}>Notification Preferences</Text>
+                        <Text style={settingsStyles.headerTitle}>{t('notifications.notificationPreferences')}</Text>
                     </View>
 
                     <View style={styles.notificationPromptContainer}>
@@ -323,10 +325,9 @@ const NotificationPreferencesScreen = () => {
                             <Ionicons name="notifications-off-outline" size={80} color={withdrawnTitleColor} />
                         </View>
                         
-                        <Text style={styles.notificationPromptTitle}>Enable Notifications</Text>
+                        <Text style={styles.notificationPromptTitle}>{t('notifications.enableNotifications')}</Text>
                         <Text style={styles.notificationPromptDescription}>
-                            To manage your notification preferences, you need to enable notifications first. 
-                            Stay updated with new articles, comments, and interactions from journalists you follow.
+                            {t('notifications.enableNotificationsDescription')}
                         </Text>
 
                         <TouchableOpacity 
@@ -335,11 +336,11 @@ const NotificationPreferencesScreen = () => {
                             onPress={handleEnableNotifications}
                         >
                             <Ionicons name="notifications" size={24} color="#fff" style={styles.enableButtonIcon} />
-                            <Text style={styles.enableButtonText}>Enable Notifications</Text>
+                            <Text style={styles.enableButtonText}>{t('notifications.enableNotifications')}</Text>
                         </TouchableOpacity>
 
                         <Text style={styles.notificationPromptNote}>
-                            You can customize which notifications you receive after enabling them.
+                            {t('notifications.customizeNote')}
                         </Text>
                     </View>
                 </ScrollView>
@@ -358,7 +359,7 @@ const NotificationPreferencesScreen = () => {
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
                     <Ionicons name="notifications-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Notification Preferences</Text>
+                    <Text style={settingsStyles.headerTitle}>{t('notifications.notificationPreferences')}</Text>
                 </View>
 
                 {notificationCategories.map((category, categoryIndex) => (
@@ -402,16 +403,16 @@ const NotificationPreferencesScreen = () => {
                         <View style={styles.iconContainer}>
                             <Ionicons name="moon-outline" size={20} color={withdrawnTitleColor} />
                         </View>
-                        <Text style={styles.categoryTitle}>Quiet Hours</Text>
+                        <Text style={styles.categoryTitle}>{t('notifications.quietHours')}</Text>
                     </View>
 
                     <View style={[styles.preferencesContainer, main_Style.genButtonElevation]}>
                         {/* Enable Quiet Hours */}
                         <View style={styles.preferenceItem}>
                             <View style={styles.preferenceTextContainer}>
-                                <Text style={styles.preferenceLabel}>Enable Quiet Hours</Text>
+                                <Text style={styles.preferenceLabel}>{t('notifications.enableQuietHours')}</Text>
                                 <Text style={styles.preferenceDescription}>
-                                    Pause push notifications during specific hours. You'll still see them in your notification center.
+                                    {t('notifications.quietHoursDescription')}
                                 </Text>
                             </View>
                             <Switch
@@ -427,17 +428,17 @@ const NotificationPreferencesScreen = () => {
                         {quietHoursEnabled && (
                             <View style={[styles.preferenceItem, styles.timeRangeContainer]}>
                                 <View style={styles.timePickerContainer}>
-                                    <Text style={styles.timeLabel}>From</Text>
+                                    <Text style={styles.timeLabel}>{t('notifications.from')}</Text>
                                     <TouchableOpacity
                                         style={styles.timeButton}
                                         onPress={() => {
                                             Alert.alert(
-                                                'Set Start Time',
-                                                'Choose when quiet hours should begin',
+                                                t('notifications.setStartTime'),
+                                                t('notifications.chooseStartTime'),
                                                 Array.from({ length: 24 }, (_, i) => ({
                                                     text: formatHour(i),
                                                     onPress: () => updateQuietHours(quietHoursEnabled, i, quietHoursEnd)
-                                                })).concat([{ text: 'Cancel', style: 'cancel' }])
+                                                })).concat([{ text: t('common.cancel'), style: 'cancel' }])
                                             );
                                         }}
                                         disabled={saving}
@@ -450,17 +451,17 @@ const NotificationPreferencesScreen = () => {
                                 <Ionicons name="arrow-forward" size={20} color={withdrawnTitleColor} style={styles.arrowIcon} />
 
                                 <View style={styles.timePickerContainer}>
-                                    <Text style={styles.timeLabel}>To</Text>
+                                    <Text style={styles.timeLabel}>{t('notifications.to')}</Text>
                                     <TouchableOpacity
                                         style={styles.timeButton}
                                         onPress={() => {
                                             Alert.alert(
-                                                'Set End Time',
-                                                'Choose when quiet hours should end',
+                                                t('notifications.setEndTime'),
+                                                t('notifications.chooseEndTime'),
                                                 Array.from({ length: 24 }, (_, i) => ({
                                                     text: formatHour(i),
                                                     onPress: () => updateQuietHours(quietHoursEnabled, quietHoursStart, i)
-                                                })).concat([{ text: 'Cancel', style: 'cancel' }])
+                                                })).concat([{ text: t('common.cancel'), style: 'cancel' }])
                                             );
                                         }}
                                         disabled={saving}
@@ -477,8 +478,7 @@ const NotificationPreferencesScreen = () => {
                             <View style={styles.quietHoursInfo}>
                                 <Ionicons name="information-circle-outline" size={16} color={MainBrownSecondaryColor} />
                                 <Text style={styles.quietHoursInfoText}>
-                                    Push notifications will be paused from {formatHour(quietHoursStart)} to {formatHour(quietHoursEnd)}. 
-                                    All notifications will still appear in your notification center.
+                                    {t('notifications.quietHoursInfoText').replace('{start}', formatHour(quietHoursStart)).replace('{end}', formatHour(quietHoursEnd))}
                                 </Text>
                             </View>
                         )}
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
     },
     preferencesContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: secCardBackgroundColor,
         borderRadius: 12,
         marginHorizontal: 12,
         paddingVertical: 8,

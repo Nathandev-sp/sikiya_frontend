@@ -1,29 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, Image, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import LottieView from 'lottie-react-native';
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, bannerBackgroundColor, MainBrownSecondaryColor, auth_Style, articleTitleFont, articleTextSize } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style } from "../../styles/GeneralAppStyle";
+import { useLanguage } from '../../Context/LanguageContext';
 
 const Intro_message = "A News platform that inspire conversations on the political, economic, social, and cultural dimensions shaping the continent."
 
-const values = [
-  { title: "Community", desc: "We connect people across Africa to share and grow together." },
-  { title: "Integrity", desc: "We value honesty and transparency in all we do." },
-  { title: "Innovation", desc: "We embrace new ideas to drive progress." },
-  { title: "Empowerment", desc: "We empower voices and support positive change." },
-];
-
-const missionBullets = [
-  "Empower communities with knowledge",
-  "Encourage critical thinking",
-  "Spark meaningful engagement",
-];
-
-// Single Lottie animation for the grid
 const animation = require("../../../assets/LottieView/SikiyaOnboarding.json");
 
 const SikiyaIntro = () => {
 
   const { height } = useWindowDimensions();
+  const { t } = useLanguage();
 
 
   return (
@@ -38,8 +26,9 @@ const SikiyaIntro = () => {
           />
         </View>
         <View style={styles.TextGridContainer}>
+          <Text style={styles.introTitle}>{t('onboarding.whatIsSikiya')}</Text>
           <Text style={styles.introParagraph}>
-            {Intro_message}
+            {t('onboarding.whatIsSikiyaDescription')}
           </Text>
         </View>
       </View>
@@ -51,107 +40,55 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     padding: 0,
-    //justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   ImageGridContainer: {
-    width: '95%',
-    height: '70%',
+    width: '100%',
+    height: '65%',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
-    marginTop: 0,
+    marginTop: 4,
     backgroundColor: '#F6F3EF',
-    borderRadius: 12,
-    padding: 2,
-  },
-  gridImage: {
-    width: '50%',
-    height: '49%',
-    borderRadius: 4,
-    marginBottom: 0,
-    marginTop: 0,
-    shadowColor: '#000', // iOS shadow
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    //borderWidth: 1,
-    borderColor: 'gray',
-    
-  },
-  gridAnimation: {
-    width: '48%',
-    height: '48%',
-    marginBottom: 2,
-    marginTop: 2,
+    borderRadius: 16,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   singleAnimation: {
-    width: '80%',
-    height: '90%',
+    width: '85%',
+    height: '95%',
     alignSelf: 'center',
   },
   TextGridContainer: {
     width: '100%',
-    height: '48%',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
+    height: '35%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 0,
   },
-  introParagraph: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTextSize,
-    color: generalTextColor,
-    textAlign: 'left',
-    marginBottom: 20,
-    lineHeight: 24,
-    letterSpacing: 0.2,
-  },
-  introMissionParagraph: {
+  introTitle: {
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize + 2,
     fontWeight: '700',
     color: generalTitleColor,
-    textAlign: 'left',
+    textAlign: 'center',
     marginBottom: 12,
-    marginTop: 4,
+    letterSpacing: 0.3,
   },
-  missionBulletsContainer: {
-    width: '100%',
-    paddingLeft: 4,
-  },
-  bulletItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-    paddingRight: 8,
-  },
-  bulletPoint: {
-    fontSize: 18,
-    color: MainBrownSecondaryColor,
-    marginRight: 12,
-    marginTop: 2,
-    lineHeight: 22,
-  },
-  bulletText: {
+  introParagraph: {
     fontFamily: generalTextFont,
     fontSize: generalTextSize,
     color: generalTextColor,
-    flex: 1,
-    lineHeight: 22,
-    letterSpacing: 0.1,
+    textAlign: 'center',
+    lineHeight: 23,
+    letterSpacing: 0.2,
   },
-  valuesGrid: {
-    flex: 1,
-    width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'stretch',
-    backgroundColor: 'green',
-    padding: 2,
-  },
-  
 });
 
 export default SikiyaIntro;

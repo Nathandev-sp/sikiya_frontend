@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, withdrawnTitleColor, articleTitleFont } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, withdrawnTitleColor, articleTitleFont, main_Style } from "../../styles/GeneralAppStyle";
+import { useLanguage } from '../../Context/LanguageContext';
 
 // Example images for each value (replace with your own local or remote images)
 const valueImages = [
@@ -10,43 +11,43 @@ const valueImages = [
   require("../../../assets/OnboardingImages/balance.png"), // Empowerment
 ];
 
-const values = [
-  { 
-    title: "Truth & Accuracy", 
-    desc: "Hold journalists accountable.",
-    img: valueImages[0]
-  },
-  { 
-    title: "Coverage", 
-    desc: "Every story matters.",
-    img: valueImages[1]
-  },
-  { 
-    title: "Open Dialogue", 
-    desc: "Meaningful conversations.",
-    img: valueImages[2]
-  },
-  { 
-    title: "Respect", 
-    desc: "Safe, inclusive space.",
-    img: valueImages[3]
-  },
-];
-
-
-
 const SikiyaValues = () => {
 
     const { height } = useWindowDimensions();
+    const { t } = useLanguage();
+
+    // Define values inside component to access translation function
+    const values = [
+      { 
+        title: t('onboarding.truthAccuracy'), 
+        desc: t('onboarding.truthAccuracyDesc'),
+        img: valueImages[0]
+      },
+      { 
+        title: t('onboarding.coverage'), 
+        desc: t('onboarding.coverageDesc'),
+        img: valueImages[1]
+      },
+      { 
+        title: t('onboarding.openDialogue'), 
+        desc: t('onboarding.openDialogueDesc'),
+        img: valueImages[2]
+      },
+      { 
+        title: t('onboarding.respect'), 
+        desc: t('onboarding.respectDesc'),
+        img: valueImages[3]
+      },
+    ];
 
 
   return (
     <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
         <View style={styles.mainContainer}>
-        <Text style={styles.headerText}>Our Values</Text>
+        <Text style={styles.headerText}>{t('onboarding.ourValues')}</Text>
         <View style={styles.valuesGrid}>
             {values.map((val, idx) => (
-            <View key={idx} style={styles.valueBox}>
+            <View key={idx} style={[styles.valueBox, main_Style.genContentElevation]}>
                 <View style={styles.valueImageContainer}>
                     <Image source={val.img} style={styles.valueImage} />
                 </View>

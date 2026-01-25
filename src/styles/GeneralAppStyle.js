@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-const AppScreenBackgroundColor = '#F8F8F8'; //#FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
+const AppScreenBackgroundColor = '#FAFAFA'; //#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
 const MainBrownSecondaryColor = '#66462C'; //blue from the screen header 66462C
 const MainBlueColor = '##344E7B'; // Dark purple color for titles #344E7B
 
@@ -110,8 +110,8 @@ const auth_Style = StyleSheet.create({
   authSafeArea: {
       flex: 1,
       backgroundColor: AppScreenBackgroundColor, //#ECECEC #EEEEEE #FDFFF #F6F3EF #F7F3EF
-      paddingLeft: 4,
-      paddingRight: 4,
+      paddingLeft: 2,
+      paddingRight: 2,
   },
   authLabel: {
       fontSize: 14,
@@ -119,16 +119,17 @@ const auth_Style = StyleSheet.create({
       marginBottom: 4,
       marginLeft: 0,
       fontFamily: generalTitleFont,
-      color: MainBrownSecondaryColor,
+      color: generalTextColor,
   },
   authInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 10,
+    marginVertical: 1,
     backgroundColor: "#FFFFFF", // #F0F6FA #E0EDF5 #EBEBEB #F5F5F5
     //Adding some content
     zIndex: 8,
@@ -155,7 +156,7 @@ const auth_Style = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: generalTextFont,
-    fontSize: commentTextSize,
+    fontSize: generalTextSize,
     color: '#222',
     backgroundColor: 'transparent',
     borderWidth: 0,
@@ -194,9 +195,8 @@ const auth_Style = StyleSheet.create({
   onboardingContainer: {
     alignSelf: 'center',
     padding: 12,
-    paddingVertical:20,
     backgroundColor: cardBackgroundColor,  //#E4EEFF #EBF2FE #DBE2EE #D5DDEB #E9E2D8
-    borderRadius: 12,
+    borderRadius: 16,
   },
    formContainer: {
     flex: 1,

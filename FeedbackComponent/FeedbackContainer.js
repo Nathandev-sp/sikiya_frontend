@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import BigLoaderAnim from '../src/Components/LoadingComps/BigLoaderAnim';
 import { Ionicons } from '@expo/vector-icons';
 import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitleSize, generalTitleFontWeight, generalTitleFont, generalTitleColor, main_Style, genBtnBackgroundColor, commentTextSize, generalTextSize, withdrawnTitleColor, generalSmallTextSize, MainSecondaryBlueColor } from '../src/styles/GeneralAppStyle';
+import { useLanguage } from '../src/Context/LanguageContext';
 
 
 const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, hideHeader = false, totalCommentCount = null }) => {
@@ -15,6 +16,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [totalCount, setTotalCount] = useState(totalCommentCount || 0);
+    const { t } = useLanguage();
     //console.log("Article ID:", articleId, "Video ID:", videoId);
 
     //console.log('Fetched article:', articleId);
@@ -88,7 +90,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             <View style={styles.loaderContainer}>
                 <BigLoaderAnim />
                 <Text style={styles.loadingText}>
-                    {commentLoading ? "Posting your comment..." : "Loading comments..."}
+                    {commentLoading ? t('comments.postingComment') : t('comments.loadingComments')}
                 </Text>
             </View>
         );
@@ -106,7 +108,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             <View style={styles.commentsHeader}>
                 <View style={styles.commentsHeaderLeft}>
                     <Ionicons name="chatbox-ellipses-outline" size={20} color={MainBrownSecondaryColor} />
-                    <Text style={styles.commentsCountText}>{formattedCount} Comments</Text>
+                    <Text style={styles.commentsCountText}>{formattedCount} {t('comments.comments')}</Text>
                 </View>
                 {onAddCommentPress && (
                     <TouchableOpacity 
@@ -136,8 +138,8 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
         return (
             <View style={styles.emptyStateContainer}>
                 <Ionicons name="chatbubbles-outline" size={48} color={withdrawnTitleColor} />
-                <Text style={styles.emptyStateText}>No comments yet</Text>
-                <Text style={styles.emptyStateSubtext}>Be the first to start the conversation</Text>
+                <Text style={styles.emptyStateText}>{t('comments.noCommentsYet')}</Text>
+                <Text style={styles.emptyStateSubtext}>{t('comments.beTheFirstToStartTheConversation')}</Text>
             </View>
         );
     };

@@ -1,45 +1,53 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, articleTitleFont, generalTextFontWeight } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style } from "../../styles/GeneralAppStyle";
+import { useLanguage } from '../../Context/LanguageContext';
 
 const journalistImage = require("../../../assets/OnboardingImages/team.png");
 const box2Image = require("../../../assets/OnboardingImages/contributorImage.png");
 const box3Image = require("../../../assets/OnboardingImages/user.png");
 
-const UserSpeech = "Stay informed with trusted, relevant content tailored to keep you engaged and inspired."
-
 const UserIntro = () => {
   const { height } = useWindowDimensions();
+  const { t } = useLanguage();
 
   return (
     <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
-      {/* Top Container */}
-      <View style={styles.topContainer}>
-        <Image source={journalistImage} style={styles.journalistImage} />
-        <View style={styles.topTextContainer}>
-          <Text style={styles.headline}>Our Users</Text>
-          <Text style={styles.description}>
-                {UserSpeech}
-          </Text>
+      {/* Header Section */}
+      <View style={styles.headerSection}>
+        <View style={styles.imageWrapper}>
+          <Image source={journalistImage} style={styles.journalistImage} />
         </View>
+        <Text style={styles.headline}>{t('onboarding.ourUsers')}</Text>
       </View>
 
-      {/* Bottom Container */}
+      {/* Description Section */}
+      <View style={styles.descriptionContainer}>
+        <Text style={styles.description}>
+          {t('onboarding.userSpeech')}
+        </Text>
+      </View>
+
+      {/* Info Boxes */}
       <View style={styles.bottomContainer}>
         {/* Contributors */}
         <View style={styles.infoBox}>
-          <Image source={box2Image} style={styles.boxImage} />
+          <View style={styles.iconContainer}>
+            <Image source={box2Image} style={styles.boxImage} />
+          </View>
           <View style={styles.boxTextContainer}>
-            <Text style={styles.boxTitle}>Contributors</Text>
-            <Text style={styles.boxDesc}>All access to articles and videos with no ads.</Text>
+            <Text style={styles.boxTitle}>{t('onboarding.contributors')}</Text>
+            <Text style={styles.boxDesc}>{t('onboarding.contributorsDesc')}</Text>
           </View>
         </View>
         {/* General Users */}
         <View style={styles.infoBox}>
-          <Image source={box3Image} style={styles.boxImage} />
+          <View style={styles.iconContainer}>
+            <Image source={box3Image} style={styles.boxImage} />
+          </View>
           <View style={styles.boxTextContainer}>
-            <Text style={styles.boxTitle}>General Users</Text>
-            <Text style={styles.boxDesc}>Access articles and stay informed for free with adds.</Text>
+            <Text style={styles.boxTitle}>{t('onboarding.generalUsers')}</Text>
+            <Text style={styles.boxDesc}>{t('onboarding.generalUsersDesc')}</Text>
           </View>
         </View>
       </View>
@@ -48,68 +56,88 @@ const UserIntro = () => {
 };
 
 const styles = StyleSheet.create({
-  topContainer: {
-    height: '45%',
-    flexDirection: 'column',
+  headerSection: {
     alignItems: 'center',
-    paddingHorizontal: 0,
-    paddingVertical: 10,
-    //backgroundColor: 'green',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  imageWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#F6F3EF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   journalistImage: {
-    width: 82,
-    height: 82,
-    borderRadius: "50%",
-  },
-  topTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    width: 62,
+    height: 62,
+    borderRadius: 31,
   },
   headline: {
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize + 4,
     fontWeight: '700',
     color: generalTitleColor,
-    marginBottom: 10,
+    marginTop: 12,
     textAlign: 'center',
     letterSpacing: 0.3,
+  },
+  descriptionContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    justifyContent: 'center',
   },
   description: {
     fontFamily: generalTextFont,
     fontSize: generalTextSize,
     color: generalTextColor,
-    paddingHorizontal: 12,
     textAlign: 'center',
-    lineHeight: 23,
+    lineHeight: 22,
     letterSpacing: 0.2,
   },
   bottomContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 4,
-    paddingVertical: 10,
-    height: '65%',
-    //backgroundColor: 'red',
+    paddingBottom: 4,
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F6F3EF',
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 12,
+    padding: 8,
     paddingVertical: 16,
-    marginBottom: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
   },
   boxImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 14,
+    width: 42,
+    height: 42,
+    resizeMode: 'contain',
   },
   boxTextContainer: {
     flex: 1,
@@ -117,7 +145,7 @@ const styles = StyleSheet.create({
   boxTitle: {
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize,
-    //fontWeight: generalTextFontWeight,
+    fontWeight: '700',
     color: generalTitleColor,
     marginBottom: 6,
     letterSpacing: 0.2,

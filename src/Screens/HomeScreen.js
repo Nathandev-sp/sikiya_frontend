@@ -14,6 +14,7 @@ import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import NewsCartv2 from '../Components/NewsCartv2';
 import sleep from '../Helpers/Sleep';
 import BannerAdComponent from '../Components/Ads/BannerAd';
+import { useLanguage } from '../Context/LanguageContext';
 
 // Create a completely stable Highlights wrapper component outside HomeScreen
 // This ensures it's never recreated and never rerenders
@@ -61,6 +62,7 @@ StaticLogo.displayName = 'StaticLogo';
 
 const HomeScreen = ({route}) => {
     const navigation = useNavigation();
+    const { t } = useLanguage();
 
     // Import the preloaded data
     const preloadedHomeArticles = route?.params?.preloadedHomeArticles;
@@ -345,20 +347,21 @@ const HomeScreen = ({route}) => {
         extrapolate: 'clamp',
     });
 
+    // Categories with translation keys
     const categories = [
-        { name: 'Explore', icon: 'compass', color: MainSecondaryBlueColor },
-        { name: 'Politics', icon: 'flag', color: '#FE5F55' },
-        { name: 'Economy', icon: 'trending-up', color: '#7FB069' },
-        { name: 'Social', icon: 'people', color: '#7C3AED' },
-        { name: 'Tech', icon: 'hardware-chip', color: '#2563EB' },
-        { name: 'Business', icon: 'briefcase', color: '#562C2C' },
-        { name: 'Sports', icon: 'football', color: '#EA580C' },
-        { name: 'Culture', icon: 'library', color: '#F4D35E' },
-        { name: 'World', icon: 'globe', color: '#28AFB0' },
+        { key: 'Explore', name: 'explore', icon: 'compass', color: MainSecondaryBlueColor },
+        { key: 'Politics', name: 'politics', icon: 'flag', color: '#FE5F55' },
+        { key: 'Economy', name: 'economy', icon: 'trending-up', color: '#7FB069' },
+        { key: 'Social', name: 'social', icon: 'people', color: '#7C3AED' },
+        { key: 'Tech', name: 'tech', icon: 'hardware-chip', color: '#2563EB' },
+        { key: 'Business', name: 'business', icon: 'briefcase', color: '#562C2C' },
+        { key: 'Sports', name: 'sports', icon: 'football', color: '#EA580C' },
+        { key: 'Culture', name: 'culture', icon: 'library', color: '#F4D35E' },
+        { key: 'World', name: 'world', icon: 'globe', color: '#28AFB0' },
     ];
 
-    const handleCategoryPress = async (categoryName) => {
-        if (categoryName === selectedCategory) return; // Prevent re-fetching same category
+    const handleCategoryPress = async (categoryKey) => {
+        if (categoryKey === selectedCategory) return; // Prevent re-fetching same category
         
         // Clear any existing timeout
         if (loaderTimeoutRef.current) {
@@ -369,8 +372,8 @@ const HomeScreen = ({route}) => {
         // This prevents the full-screen loader from appearing and hiding the logo
         
         // For Explore, just switch - no filtering needed
-        if (categoryName === 'Explore') {
-            setSelectedCategory(categoryName);
+        if (categoryKey === 'Explore') {
+            setSelectedCategory(categoryKey);
             setFilteringCategory(false);
             setLoading(false); // Ensure loading is false
             return;
@@ -386,29 +389,29 @@ const HomeScreen = ({route}) => {
             
             // Filter articles by category from Explore cache
             const filteredArticles = exploreArticles.filter(article => 
-                article.article_group === categoryName
+                article.article_group === categoryKey
             );
             
             // Update category immediately with filtered articles
-            setSelectedCategory(categoryName);
+            setSelectedCategory(categoryKey);
             
             // Update cache for this category with filtered articles
             setArticlesByCategory(prev => ({
                 ...prev,
-                [categoryName]: filteredArticles
+                [categoryKey]: filteredArticles
             }));
             
             // Reset pagination for this category
             setCategoryPages(prev => ({
                 ...prev,
-                [categoryName]: 1
+                [categoryKey]: 1
             }));
             
             // If we have filtered articles, allow pagination
             // If no filtered articles, still allow pagination to fetch from API
             setHasMoreByCategory(prev => ({
                 ...prev,
-                [categoryName]: true // Always true initially, will be updated by pagination
+                [categoryKey]: true // Always true initially, will be updated by pagination
             }));
             
             // Ensure loading is false (never show full-screen loader)
@@ -423,13 +426,13 @@ const HomeScreen = ({route}) => {
             // IMPORTANT: Always fetch page 1 from API in background to get full list
             // This ensures pagination works correctly (we need the full API list, not just filtered cache)
             // Fetch from API in background to populate the full category list
-            fetchTopHeadlines(categoryName, false).then(() => {
+            fetchTopHeadlines(categoryKey, false).then(() => {
                 // After fetching, update hasMore based on actual API results
-                const apiArticles = articlesByCategory[categoryName] || [];
+                const apiArticles = articlesByCategory[categoryKey] || [];
                 if (apiArticles.length < 10) {
                     setHasMoreByCategory(prev => ({
                         ...prev,
-                        [categoryName]: false
+                        [categoryKey]: false
                     }));
                 }
             }).catch(err => {
@@ -438,12 +441,12 @@ const HomeScreen = ({route}) => {
         } else {
             // No Explore articles yet, fetch from API
             // But don't show full-screen loader - keep the screen visible
-            setSelectedCategory(categoryName);
+            setSelectedCategory(categoryKey);
             setLoading(false); // Don't set loading=true - this would hide the screen
             setFilteringCategory(true); // Show bottom loader instead
             
             // Fetch articles for the selected category
-            await fetchTopHeadlines(categoryName, false);
+            await fetchTopHeadlines(categoryKey, false);
         }
     };
 
@@ -557,12 +560,20 @@ const HomeScreen = ({route}) => {
         // Show empty state if no articles and not loading
         const currentArticles = getCategoryArticles();
         if (currentArticles.length === 0 && !loading && !loadingMore) {
+            // Get the category label for display
+            const category = categories.find(c => c.key === selectedCategory);
+            const categoryLabel = category 
+                ? (category.key === 'Explore' 
+                    ? t(`navigation.${category.name}`)
+                    : t(`articleCategories.${category.name}`))
+                : selectedCategory;
+            
             return (
                 <View style={styles.emptyContainer}>
                     <Ionicons name="newspaper-outline" size={64} color={generalTextColor} style={{ opacity: 0.3 }} />
-                    <Text style={styles.emptyText}>No articles found</Text>
+                    <Text style={styles.emptyText}>{t('article.noArticles')}</Text>
                     <Text style={styles.emptySubtext}>
-                        {`No ${selectedCategory} articles available at the moment`}
+                        {t('categories.noArticlesInCategory', { category: categoryLabel })}
                     </Text>
                 </View>
             );
@@ -581,39 +592,58 @@ const HomeScreen = ({route}) => {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.categoriesContainer}
                 >
-                    {categories.map((cat, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[
-                                styles.categoryButton,
-                                selectedCategory === cat.name && styles.selectedCategoryButton,
-                            ]}
-                            onPress={() => handleCategoryPress(cat.name)}
-                            activeOpacity={generalActiveOpacity}
-                        >
-                            <View style={[
-                                styles.categoryIconContainer, main_Style.genContentElevation, selectedCategory !== cat.name && { borderColor: cat.color },
-                                selectedCategory === cat.name && styles.selectedCategoryIconContainer,
-                                selectedCategory === cat.name && { 
-                                    backgroundColor: cat.color
-                                }
-                            ]}>
-                                <Ionicons 
-                                    name={cat.icon} 
-                                    size={22} 
-                                    color={selectedCategory === cat.name ? '#fff' : cat.color} 
-                                />
-                                <Text style={[
-                                    styles.categoryText,
-                                    { color: selectedCategory === cat.name ? '#fff' : cat.color },
-                                    selectedCategory === cat.name && styles.selectedCategoryText
+                    {categories.map((cat, index) => {
+                        const isSelected = selectedCategory === cat.key;
+                        const isExplore = cat.key === 'Explore';
+                        // Use appropriate translation namespace
+                        const categoryLabel = isExplore 
+                            ? t(`navigation.${cat.name}`)
+                            : t(`articleCategories.${cat.name}`);
+                        
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.categoryButton,
+                                    isSelected && styles.selectedCategoryButton,
+                                ]}
+                                onPress={() => handleCategoryPress(cat.key)}
+                                activeOpacity={generalActiveOpacity}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${categoryLabel} ${t('categories.category')}`}
+                                accessibilityState={{ selected: isSelected }}
+                                accessibilityHint={`${t('categories.filterBy')} ${categoryLabel}`}
+                            >
+                                <View style={[
+                                    styles.categoryIconContainer, 
+                                    main_Style.genContentElevation, 
+                                    !isSelected && { borderColor: cat.color },
+                                    isSelected && styles.selectedCategoryIconContainer,
+                                    isSelected && { 
+                                        backgroundColor: cat.color,
+                                        transform: [{ scale: 1.05 }]
+                                    }
                                 ]}>
-                                    {cat.name}
-                                </Text>
-                            </View>
-                            
-                        </TouchableOpacity>
-                    ))}
+                                    <Ionicons 
+                                        name={cat.icon} 
+                                        size={22} 
+                                        color={isSelected ? '#fff' : cat.color} 
+                                    />
+                                    <Text 
+                                        style={[
+                                            styles.categoryText,
+                                            { color: isSelected ? '#fff' : cat.color },
+                                            isSelected && styles.selectedCategoryText
+                                        ]}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                    >
+                                        {categoryLabel}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
             </View>
             
@@ -749,20 +779,25 @@ const styles = StyleSheet.create({
     categoryIconContainer: {
         width: 120,
         height: 40,
-        borderRadius: 2,
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 0,
-        backgroundColor: secCardBackgroundColor,
+        backgroundColor: AppScreenBackgroundColor,
         flexDirection: 'row',
         paddingHorizontal: 8,
         gap: 8,
-        borderWidth: 0.8,
+        borderWidth: 1.2,
         borderColor: 'transparent',
-        borderRadius: 12,
+        ...main_Style.genButtonElevation
     },
     selectedCategoryIconContainer: {
         opacity: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
     },
     categoryText: {
         fontSize: commentTextSize,

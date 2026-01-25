@@ -11,6 +11,7 @@ import SikiyaAPI from '../../API/SikiyaAPI';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
 import { getImageUrl } from '../utils/imageUrl';
+import i18n from '../utils/i18n';
 
 const UserProfileScreen = ({route}) => {
     const navigation = useNavigation();
@@ -185,7 +186,7 @@ const UserProfileScreen = ({route}) => {
                         <View style={styles.profileInfoContainer}>
                             {/* Name */}
                             <Text style={styles.userName}>
-                                {userProfile?.displayName || "Display Name to be added"}
+                                {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
                             </Text>
 
                             {/* Impact and Engagement Stats Card */}
@@ -193,12 +194,12 @@ const UserProfileScreen = ({route}) => {
                                 <View style={styles.statsContainerLeft}>
                                     <View style={styles.statItemLeft}>
                                         <Text style={styles.statNumber}>{(userProfile?.trust_score || userProfile?.respect_score || 0)}%</Text>
-                                        <Text style={styles.statLabelLeft}>Trust Score</Text>
+                                        <Text style={styles.statLabelLeft}>{i18n.t('profile.trustScore')}</Text>
                                     </View>
                                     
                                     <View style={styles.statItemLeft}>
                                         <Text style={styles.statNumber}>{userProfile?.total_upvotes_count || 0}</Text>
-                                        <Text style={styles.statLabelLeft}>Total Upvotes</Text>
+                                        <Text style={styles.statLabelLeft}>{i18n.t('profile.totalUpvotes')}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -213,7 +214,7 @@ const UserProfileScreen = ({route}) => {
                             onPress={() => navigation.navigate('UserFollow',{follower: 'Following'})}
                         >
                             <Text style={styles.statNumber}>{userProfile?.number_following || 0}</Text>
-                            <Text style={styles.statLabel}>Following</Text>
+                            <Text style={styles.statLabel}>{i18n.t('profile.following')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity 
@@ -222,7 +223,7 @@ const UserProfileScreen = ({route}) => {
                             onPress={() => navigation.navigate('UserFollow',{follower: 'Followers'})}
                         >
                             <Text style={styles.statNumber}>{userProfile?.number_of_followers || 0}</Text>
-                            <Text style={styles.statLabel}>Followers</Text>
+                            <Text style={styles.statLabel}>{i18n.t('profile.followers')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -231,7 +232,7 @@ const UserProfileScreen = ({route}) => {
                 <View style={styles.savedSection}>
                     <View style={styles.savedSectionHeader}>
                         <Ionicons name="bookmark" size={20} color={MainSecondaryBlueColor} />
-                        <Text style={styles.savedSectionTitle}>Saved Articles</Text>
+                        <Text style={styles.savedSectionTitle}>{i18n.t('profile.savedArticles')}</Text>
                         {userProfile?.saved_articles?.length > 0 && (
                             <Text style={styles.articleCount}>({userProfile.saved_articles.length})</Text>
                         )}
@@ -244,9 +245,11 @@ const UserProfileScreen = ({route}) => {
                             ))
                         ) : (
                             <View style={styles.noArticlesContainer}>
-                                <Ionicons name="bookmark-outline" size={48} color={withdrawnTitleColor} />
-                                <Text style={styles.noArticlesText}>No saved articles yet</Text>
-                                <Text style={styles.noArticlesSubtext}>Articles you bookmark will appear here</Text>
+                                <View style={styles.noArticlesIconContainer}>
+                                    <Ionicons name="bookmark-outline" size={48} color={withdrawnTitleColor} />
+                                </View>
+                                <Text style={styles.noArticlesText}>{i18n.t('profile.noSavedArticles')}</Text>
+                                <Text style={styles.noArticlesSubtext}>{i18n.t('profile.noSavedArticlesMessage')}</Text>
                             </View>
                         )}
                     </View>
@@ -458,22 +461,33 @@ const styles = StyleSheet.create({
         padding: 48,
         alignItems: 'center',
         backgroundColor: lightBannerBackgroundColor,
-        borderRadius: 12,
+        borderRadius: 16,
         marginHorizontal: 12,
     },
+    noArticlesIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: genBtnBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
     noArticlesText: {
-        fontSize: generalTextSize,
+        fontSize: generalTitleSize,
         color: generalTitleColor,
         fontFamily: generalTitleFont,
         fontWeight: generalTitleFontWeight,
-        marginTop: 16,
-        marginBottom: 4,
+        marginBottom: 8,
+        textAlign: 'center',
     },
     noArticlesSubtext: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
         textAlign: 'center',
+        lineHeight: 20,
     },
 });
 

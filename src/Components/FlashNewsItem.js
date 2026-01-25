@@ -1,72 +1,105 @@
-import React, {useState} from 'react';
-import { View, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
-import LottieView from 'lottie-react-native';
+import React, { useState } from 'react';
+import { View, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AppScreenBackgroundColor, { articleTitleFont, articleTitleFontWeight, articleTitleSize, cardBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, main_Style, mainborderColor, mainBrownColor, mainTitleColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
+import { Ionicons } from '@expo/vector-icons';
+import i18n from '../utils/i18n';
+import { 
+  articleTitleFont, 
+  articleTitleFontWeight, 
+  articleTitleSize, 
+  generalLineHeight, 
+  generalSmallTextSize, 
+  generalTitleFont, 
+  main_Style,
+  mainBrownColor 
+} from '../styles/GeneralAppStyle';
 import TextSlicer from '../Helpers/TextSlicer';
 import DateConverter from '../Helpers/DateConverter';
-import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
-const FashNewsItem = ({article}) => {
-  const {width, height} = useWindowDimensions()
-  const navigation = useNavigation()
-  //console.log('Article in FlashNewsItem:', article);
+const FlashNewsItem = ({ article }) => {
+  const { width, height } = useWindowDimensions();
+  const navigation = useNavigation();
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
-  const HandlePressFlashNewsItem = () => {
-    
-    navigation.navigate('NewsHome', {article: article})
-    
-  }
-  //console.log('Article in FlashNewsItem:', article);
+  const handlePressFlashNewsItem = () => {
+    navigation.navigate('NewsHome', { article: article });
+  };
 
   return (
-    <View style={[styles.container, {width: width * 0.94, height: height * 0.3}]}>
-      <TouchableOpacity activeOpacity={0.7} onPress={HandlePressFlashNewsItem} style={[styles.touchableContainer, main_Style.genButtonElevation]}>
-          <Image
-            style={styles.image}
-            defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')}
-            source={{ uri: getImageUrl(article.article_front_image) }}
-            />
-            {/* Light Dark Overlay over entire image */}
-            <View style={styles.overlay} pointerEvents="none" />
-            
-            {/* Content Overlay */}
-            <View style={styles.contentOverlay}>
-              <View style={styles.contentOverlayInner}>
-                <Text style={styles.title}>{TextSlicer(article.article_title, 70)}</Text>
-                <View style={styles.metaInfo}>
-                  <View style={styles.locationRow}>
-                    <Ionicons name="location" size={12} color="#fff" />
-                    <Text style={styles.locationText}>
-                      {article?.location || "Bukavu, RDC"}
-                    </Text>
-                  </View>
-                  <Text style={styles.dateText}>
-                    {DateConverter(article.published_on)}
-                  </Text>
-                </View>
-              </View>
-            </View>
+    <View style={[styles.container, { width: width * 0.94, height: height * 0.3 }]}>
+      <TouchableOpacity 
+        activeOpacity={0.7} 
+        onPress={handlePressFlashNewsItem} 
+        style={[styles.touchableContainer, main_Style.genButtonElevation]}
+        accessibilityRole="button"
+        accessibilityLabel={`${i18n.t('flashNews.readArticle')}: ${article.article_title}`}
+        accessibilityHint={i18n.t('flashNews.tapToRead')}
+      >
+        {/* Image with loading state */}
+        <Image
+          style={styles.image}
+          defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')}
+          source={{ uri: getImageUrl(article.article_front_image) }}
+          resizeMode="cover"
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            setImageError(true);
+          }}
+        />
 
+        {/* Loading indicator */}
+        {imageLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={mainBrownColor} />
+          </View>
+        )}
+
+        {/* Gradient overlay for better text readability */}
+        <View style={styles.gradientOverlay} pointerEvents="none" />
+        
+        {/* Content Overlay */}
+        <View style={styles.contentOverlay}>
+          <View style={styles.contentOverlayInner}>
+            <Text style={styles.title} numberOfLines={3} ellipsizeMode="tail">
+              {TextSlicer(article.article_title, 70)}
+            </Text>
+            <View style={styles.metaInfo}>
+              <View style={styles.locationRow}>
+                <Ionicons name="location" size={12} color="#fff" />
+                <Text style={styles.locationText} numberOfLines={1}>
+                  {article?.location || i18n.t('flashNews.defaultLocation')}
+                </Text>
+              </View>
+              <Text style={styles.dateText}>
+                {DateConverter(article.published_on)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Flash badge indicator */}
+        <View style={styles.flashBadge}>
+          <Ionicons name="flash" size={14} color="#fff" />
+          <Text style={styles.flashBadgeText}>{i18n.t('flashNews.flash')}</Text>
+        </View>
       </TouchableOpacity>
-      
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginLeft: 8,
-    marginRight: 8,
+    marginHorizontal: 8,
     alignContent: 'center',
     justifyContent: 'center',
     zIndex: 10,
-    borderRadius: 12,
+    borderRadius: 4,
     marginTop: 8,
     marginBottom: 2,
-
-    
   },
   touchableContainer: {
     width: '100%',
@@ -77,20 +110,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
     borderRadius: 12,
-    borderWidth: 0,
   },
-  overlay: {
+  loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    zIndex: 1,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderRadius: 12,
     zIndex: 1,
   },
@@ -104,10 +150,10 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   contentOverlayInner: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   title: {
     fontSize: articleTitleSize,
@@ -116,9 +162,9 @@ const styles = StyleSheet.create({
     fontFamily: articleTitleFont,
     marginBottom: 10,
     lineHeight: generalLineHeight,
-    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
   metaInfo: {
     flexDirection: 'row',
@@ -129,36 +175,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flex: 1,
+    marginRight: 8,
   },
   locationText: {
     fontSize: generalSmallTextSize,
     color: '#fff',
     fontFamily: generalTitleFont,
-    opacity: 0.8,
+    opacity: 0.9,
   },
   dateText: {
     fontSize: generalSmallTextSize,
     color: '#fff',
     fontFamily: generalTitleFont,
-    opacity: 0.8,
+    opacity: 0.9,
   },
-  animation: {
+  flashBadge: {
     position: 'absolute',
-    fontSize: 10,
-    width: 90,
-    height: 90,
-    top: 0.5,
+    top: 12,
     left: 12,
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    zIndex: 3,
   },
-  border: {
-    borderWidth: 0,
-    borderColor: '#9D7340',
+  flashBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: generalTitleFont,
   },
 });
 
-export default FashNewsItem;
+export default FlashNewsItem;

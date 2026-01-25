@@ -1,17 +1,21 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, Switch, Alert, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, secCardBackgroundColor } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, secCardBackgroundColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import GoBackButton from "../../../../NavComponents/GoBackButton";
 import * as ImagePicker from 'expo-image-picker';
 import SikiyaAPI from "../../../../API/SikiyaAPI";
 import SmallLoadingState from "../../../Components/LoadingComps/SmallLoadingState";
+import { useLanguage } from "../../../Context/LanguageContext";
+import VerticalSpacer from "../../../Components/UI/VerticalSpacer";
+import MediumLoadingState from "../../../Components/LoadingComps/MediumLoadingState";
 
 const JournalistJoinScreen2 = ({ navigation, route }) => {
   const { journalistInfo } = route.params;
   const { height, width } = useWindowDimensions();
   const scrollRef = useRef(null);
+  const { t } = useLanguage();
 
   // Profile photo state
   const [profileImageKey, setProfileImageKey] = useState(null);
@@ -56,7 +60,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
       console.log('Image upload error:', error);
       console.log('Error response:', error.response?.data);
       console.log('Error status:', error.response?.status);
-      Alert.alert('Upload failed', 'Failed to upload profile image. Please try again.');
+      Alert.alert(t('alerts.uploadFailed'), t('alerts.uploadFailedDescription'));
       setProfileImageUrl(null);
       setProfileImageKey(null);
     } finally {
@@ -68,15 +72,15 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
   // Pick image from gallery or camera
   const pickImage = async () => {
     Alert.alert(
-      "Add Profile Photo",
-      "Choose an option",
+      t('alerts.addProfilePhoto'),
+      t('alerts.addProfilePhotoDescription'),
       [
         {
-          text: "Camera",
+          text: t('alerts.camera'),
           onPress: async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Camera permission is required to take a photo.');
+              Alert.alert(t('alerts.permissionNeeded'), t('alerts.cameraPermissionDescription '));
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -92,11 +96,11 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
           }
         },
         {
-          text: "Gallery",
+          text: t('alerts.gallery'),
           onPress: async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Gallery permission is required to select a photo.');
+              Alert.alert(t('alerts.permissionNeeded'), t('alerts.galleryPermissionDescription'));
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -111,7 +115,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
             }
           }
         },
-        { text: "Cancel", style: "cancel" }
+        { text: t('common.cancel'), style: "cancel" }
       ]
     );
   };
@@ -187,7 +191,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.2 }]}>
+            <View style={[styles.headerSection, { height: height * 0.35 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -196,14 +200,14 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
 
               <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeSubtitle}>
-                  Tell us more about your journalism experience
+                  {t('onboarding.journalistJoinMessage2')}
                 </Text>
               </View>
             </View>
@@ -212,7 +216,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
               {/* Profile Photo and Public Nickname Row */}
               <View style={[styles.profileRow, main_Style.genButtonElevation]}>
                 <Text style={styles.profilePreviewText}>
-                  This is how users will see you in the app
+                  {t('onboarding.thisIsHowUsersWillSeeYouInTheApp')}
                 </Text>
                 <View style={styles.profileRowContent}>
                   <TouchableOpacity 
@@ -223,7 +227,9 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   >
                     <View style={[styles.profileImageWrapper, uploadingImage && styles.profileImageLoading]}>
                       {uploadingImage ? (
-                        <SmallLoadingState />
+                        <View style={styles.loadingContainer}>
+                          <MediumLoadingState />
+                        </View>
                       ) : profileImageUrl ? (
                         <Image source={{ uri: profileImageUrl }} style={[
                           styles.profileImage,
@@ -242,7 +248,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                     
                   </TouchableOpacity>
                   <View style={styles.nicknameSection}>
-                    <Text style={auth_Style.authLabel}>Public Nickname</Text>
+                    <Text style={auth_Style.authLabel}>{t('profile.displayName')}</Text>
                     <View style={[
                       auth_Style.authInputContainer,
                       error.nickname && auth_Style.inputErrorCont
@@ -251,7 +257,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                       <TextInput
                         style={auth_Style.input}
                         hitSlop={defaultButtonHitslop}
-                        placeholder="Enter your nickname"
+                        placeholder={t('onboarding.displayNamePlaceholder')}
                         placeholderTextColor="#aaa"
                         value={journalistInfo2.nickname || ''}
                         onChangeText={(text) => handleFormChanges('nickname', text)}
@@ -264,13 +270,13 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
 
               {/* Affiliation Question and Toggle */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Are you affiliated to any media company?</Text>
+                <Text style={auth_Style.authLabel}>{t('onboarding.mediaAffiliation')}</Text>
                 <View style={styles.toggleRow}>
-                  <Text style={styles.toggleLabel}>{journalistInfo2.affiliated ? "Yes" : "No"}</Text>
+                  <Text style={styles.toggleLabel}>{journalistInfo2.affiliated ? t('common.yes') : t('common.no')}</Text>
                   <Switch
                     value={journalistInfo2.affiliated}
                     onValueChange={(value) => handleFormChanges('affiliated', value)}
-                    thumbColor={journalistInfo2.affiliated ? MainBrownSecondaryColor : "#ccc"}
+                    thumbColor={journalistInfo2.affiliated ? MainBrownSecondaryColor : AppScreenBackgroundColor}
                     trackColor={{ false: "#e0e0e0", true: "#d4c4b0" }}
                   />
                 </View>
@@ -278,7 +284,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
 
               {/* Media Company */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Media Company Affiliation</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.mediaCompany')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   mediaCompanyFocused && auth_Style.authInputContainerFocused,
@@ -289,9 +295,9 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder={journalistInfo2.affiliated ? "Enter your media company" : "Independent Journalist"}
+                    placeholder={journalistInfo2.affiliated ? t('onboarding.mediaAffiliationPlaceholder') : t('onboarding.independentJournalist')}
                     placeholderTextColor="#aaa"
-                    value={journalistInfo2.affiliated ? journalistInfo2.mediaCompany : "Independent Journalist"}
+                    value={journalistInfo2.affiliated ? journalistInfo2.mediaCompany : t('onboarding.independentJournalist')}
                     onChangeText={(text) => handleFormChanges('mediaCompany', text)}
                     autoCapitalize="words"
                     onFocus={() => {
@@ -306,7 +312,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
 
               {/* Area of Expertise - Always Enabled */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Area of Expertise</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.areaOfExpertise')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   areaOfExpertiseFocused && auth_Style.authInputContainerFocused,
@@ -316,7 +322,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="e.g., Politics, Sports, Technology"
+                    placeholder={t('onboarding.areaOfExpertisePlaceholder')}
                     placeholderTextColor="#aaa"
                     value={journalistInfo2.areaOfExpertise}
                     onChangeText={(text) => handleFormChanges('areaOfExpertise', text)}
@@ -332,7 +338,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
 
               {/* Description */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Description</Text>
+                <Text style={auth_Style.authLabel}>{t('onboarding.description')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   descriptionFocused && auth_Style.authInputContainerFocused,
@@ -343,7 +349,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   <TextInput
                     style={[auth_Style.input, { height: 80, textAlignVertical: 'top', paddingTop: 8 }]}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Tell us about yourself and your experience"
+                    placeholder={t('onboarding.descriptionPlaceholder')}
                     placeholderTextColor="#aaa"
                     value={journalistInfo2.description}
                     onChangeText={(text) => handleFormChanges('description', text)}
@@ -365,11 +371,12 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                 activeOpacity={generalActiveOpacity}
                 onPress={handleNextJournalistJoin}
               >
-                <Text style={auth_Style.authButtonText}>Continue</Text>
+                <Text style={auth_Style.authButtonText}>{t('common.continue')}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#fff" style={styles.arrowIcon} />
               </TouchableOpacity>
             </View>
           </View>
+          <VerticalSpacer height={24} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -383,18 +390,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 10,
     marginBottom: 0,
+    //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
     borderRadius: 16,
     marginBottom: 0,
     flex: 1,
-    maxHeight: '60%',
+    //maxHeight: '60%',
     position: 'relative',
   },
   backButtonWrapper: {
@@ -414,6 +422,7 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
+    color: AppScreenBackgroundColor,
   },
   companyLogo: {
     width: '70%',
@@ -427,21 +436,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 8,
   },
-  welcomeTitle: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 6,
-    fontWeight: '700',
-    color: generalTitleColor,
-    textAlign: 'center',
-    marginBottom: 8,
-    marginTop: 12,
-  },
   welcomeSubtitle: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize + 1,
     color: withdrawnTitleColor,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
     paddingHorizontal: 24,
   },
   profileRow: {
@@ -471,10 +471,21 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   profileImageWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     overflow: 'hidden',
     marginBottom: 6,
+    backgroundColor: AppScreenBackgroundColor,
+  },
+  loadingContainer: {
+    width: 70,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileImageLoading: {
+    borderWidth: 1.5,
     borderColor: '#ccc',
   },
   profileImageError: {

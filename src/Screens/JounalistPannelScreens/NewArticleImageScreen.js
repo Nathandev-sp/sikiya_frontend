@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor, commentTextSize} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
+import { useLanguage } from '../../Context/LanguageContext';
+import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 
 const NewArticleImageScreen = ({ navigation, route }) => {
+  const { t } = useLanguage();
   const scrollRef = useRef(null);
   const { articleId, articleTitle, articleData } = route.params || {};
 
@@ -40,15 +43,15 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   // Image picker function with aspect ratio (1.25 width, 0.8 height for big images, 1.25:0.9 for additional)
   const pickImage = async (setImageFunction, onImageSelected, aspect = [1.25, 0.8]) => {
     Alert.alert(
-      "Select Photo",
-      "Choose an option",
+      t('articleImages.selectPhoto'),
+      t('articleImages.chooseOption'),
       [
         {
-          text: "Camera",
+          text: t('articleImages.camera'),
           onPress: async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Camera permission is required to take a photo.');
+              Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.cameraPermissionMessage'));
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -65,11 +68,11 @@ const NewArticleImageScreen = ({ navigation, route }) => {
           }
         },
         {
-          text: "Gallery",
+          text: t('articleImages.gallery'),
           onPress: async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Gallery permission is required to select a photo.');
+              Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.galleryPermissionMessage'));
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -85,7 +88,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
             }
           }
         },
-        { text: "Cancel", style: "cancel" }
+        { text: t('articleImages.cancel'), style: "cancel" }
       ]
     );
   };
@@ -93,7 +96,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   // Upload hero image to S3
   const uploadHeroImage = async (uri) => {
     if (!articleId) {
-      Alert.alert('Error', 'Article ID is missing');
+      Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
       return;
     }
 
@@ -119,7 +122,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       console.log('Hero image uploaded successfully. Key:', response.data.imageKey);
     } catch (error) {
       console.error('Error uploading hero image:', error);
-      Alert.alert('Upload failed', error.response?.data?.error || 'Failed to upload hero image. Please try again.');
+      Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadHero'));
     } finally {
       setUploadingHero(false);
     }
@@ -128,7 +131,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   // Upload additional images to S3
   const uploadAdditionalImage = async (uri, index) => {
     if (!articleId) {
-      Alert.alert('Error', 'Article ID is missing');
+      Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
       return;
     }
 
@@ -165,7 +168,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       console.log('Additional image uploaded successfully. Key:', response.data.imageKeys[0]);
     } catch (error) {
       console.error('Error uploading additional image:', error);
-      Alert.alert('Upload failed', error.response?.data?.error || 'Failed to upload image. Please try again.');
+      Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadImage'));
     } finally {
       setUploadingAdditional(false);
     }
@@ -174,7 +177,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   // Upload proof image to S3
   const uploadProofImage = async (uri) => {
     if (!articleId) {
-      Alert.alert('Error', 'Article ID is missing');
+      Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
       return;
     }
 
@@ -200,7 +203,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       console.log('Proof image uploaded successfully. Key:', response.data.imageKey);
     } catch (error) {
       console.error('Error uploading proof image:', error);
-      Alert.alert('Upload failed', error.response?.data?.error || 'Failed to upload proof image. Please try again.');
+      Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadProof'));
     } finally {
       setUploadingProof(false);
     }
@@ -237,10 +240,10 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       const missingFields = [];
-      if (newErrors.heroImageKey) missingFields.push('main photo');
-      if (newErrors.proofImageKey) missingFields.push('proof photo');
-      if (newErrors.proofText) missingFields.push('proof text');
-      Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
+      if (newErrors.heroImageKey) missingFields.push(t('articleImages.mainPhoto'));
+      if (newErrors.proofImageKey) missingFields.push(t('articleImages.proofPhoto'));
+      if (newErrors.proofText) missingFields.push(t('articleImages.proofText'));
+      Alert.alert(t('articleImages.missingFields'), `${t('articleImages.pleaseProvide')} ${missingFields.join(', ')}`);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
@@ -271,8 +274,8 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error updating article:', error);
       setIsSubmitting(false);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to update article. Please try again.';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || t('articleImages.failedToUpdate');
+      Alert.alert(t('articleImages.error'), errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -284,7 +287,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.loadingContainer}>
           <BigLoaderAnim />
-          <Text style={styles.loadingText}>Submitting article...</Text>
+          <Text style={styles.loadingText}>{t('articleImages.submittingArticle')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -320,14 +323,14 @@ const NewArticleImageScreen = ({ navigation, route }) => {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>{articleTitle || 'Article Images'}</Text>
+            <Text style={styles.screenTitle}>{articleTitle || t('articleImages.title')}</Text>
           </View>
 
           {/* Photo Upload Section */}
           <View style={styles.photoSection}>
-            <Text style={styles.label}>Photos</Text>
+            <Text style={styles.label}>{t('articleImages.photos')}</Text>
             <Text style={styles.labelDescription}>
-              Upload a main photo and up to 3 additional photos to accompany your article
+              {t('articleImages.photosDescription')}
             </Text>
             
             {/* Main Photo */}
@@ -343,14 +346,14 @@ const NewArticleImageScreen = ({ navigation, route }) => {
               {uploadingHero ? (
                 <View style={styles.photoPlaceholder}>
                   <MediumLoadingState />
-                  <Text style={styles.photoPlaceholderText}>Uploading...</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('articleImages.uploading')}</Text>
                 </View>
               ) : mainPhoto ? (
                 <Image source={{ uri: mainPhoto }} style={styles.mainPhoto} />
               ) : (
                 <View style={styles.photoPlaceholder}>
                   <Ionicons name="camera" size={32} color={withdrawnTitleColor} />
-                  <Text style={styles.photoPlaceholderText}>Main Photo</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('articleImages.mainPhotoLabel')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -388,22 +391,22 @@ const NewArticleImageScreen = ({ navigation, route }) => {
           <View style={styles.proofSection}>
             <View style={styles.proofHeader}>
               <Ionicons name="lock-closed" size={20} color={MainBrownSecondaryColor} />
-              <Text style={styles.proofTitle}>Proof</Text>
+              <Text style={styles.proofTitle}>{t('articleImages.proof')}</Text>
             </View>
 
             {/* Disclaimer Text */}
             <View style={[styles.disclaimerContainer, main_Style.genContentElevation]}>
               <Text style={styles.disclaimerText}>
-                • Please ensure that every article you submit meets the highest standards of accuracy and quality{'\n'}
-                • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
-                • Every article will undergo a review and evaluation process before being published{'\n'}
-                • Article submissions are final. Submitting low-quality or inaccurate content may negatively impact your trust score and reduce the visibility of your future articles.
+                {t('articleImages.disclaimer1')}{'\n'}
+                {t('articleImages.disclaimer2')}{'\n'}
+                {t('articleImages.disclaimer3')}{'\n'}
+                {t('articleImages.disclaimer4')}
               </Text>
             </View>
 
             {/* Proof Photo */}
             <Text style={styles.labelDescription}>
-              Upload a photo taken at the time and place of your reporting as proof
+              {t('articleImages.proofPhotoDescription')}
             </Text>
             <TouchableOpacity 
               style={[
@@ -417,23 +420,23 @@ const NewArticleImageScreen = ({ navigation, route }) => {
               {uploadingProof ? (
                 <View style={styles.photoPlaceholder}>
                   <MediumLoadingState />
-                  <Text style={styles.photoPlaceholderText}>Uploading...</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('articleImages.uploading')}</Text>
                 </View>
               ) : proofPhoto ? (
                 <Image source={{ uri: proofPhoto }} style={styles.proofPhoto} />
               ) : (
                 <View style={styles.photoPlaceholder}>
                   <Ionicons name="camera" size={32} color={withdrawnTitleColor} />
-                  <Text style={styles.photoPlaceholderText}>Proof Photo</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('articleImages.proofPhotoLabel')}</Text>
                 </View>
               )}
             </TouchableOpacity>
 
             {/* Proof Text */}
             <View>
-              <Text style={styles.label}>Proof of Article</Text>
+              <Text style={styles.label}>{t('articleImages.proofOfArticle')}</Text>
               <Text style={styles.labelDescription}>
-                Provide source information or additional context that verifies your article
+                {t('articleImages.proofDescription')}
               </Text>
               <TextInput
                 style={[
@@ -442,7 +445,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
                   proofTextFocused && styles.inputFocused,
                   errors.proofText && styles.inputError
                 ]}
-                placeholder="Provide proof or source information"
+                placeholder={t('articleImages.proofPlaceholder')}
                 placeholderTextColor="#aaa"
                 value={proofText}
                 onChangeText={(text) => {
@@ -473,10 +476,12 @@ const NewArticleImageScreen = ({ navigation, route }) => {
             onPress={handleSubmitArticle}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit Article</Text>
+            <Text style={styles.submitButtonText}>{t('articleImages.submitArticle')}</Text>
           </TouchableOpacity>
 
           <View style={styles.bottomSpacer} />
+          
+          <VerticalSpacer height={50} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -524,11 +529,11 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
+    color: generalTextColor,
     marginBottom: 4,
   },
   labelDescription: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
     marginBottom: 12,
@@ -542,10 +547,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     overflow: 'hidden',
-    borderWidth: 0.6,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
+    marginBottom: 16,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -569,10 +575,9 @@ const styles = StyleSheet.create({
   additionalPhotoContainer: {
     flex: 1,
     height: 100,
-    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     overflow: 'hidden',
-    borderWidth: 0.6,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
@@ -608,33 +613,39 @@ const styles = StyleSheet.create({
   proofSection: {
     paddingHorizontal: 16,
     marginBottom: 20,
+    marginTop: 12,
   },
   proofHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   proofTitle: {
-    fontSize: generalTextSize,
+    fontSize: articleTextSize+3,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
     color: MainBrownSecondaryColor,
     marginLeft: 8,
+    //marginTop: 12,
   },
   disclaimerContainer: {
     backgroundColor: lightBannerBackgroundColor,
     borderRadius: 8,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+    borderWidth: 0.5,
+    borderColor: '#ccc',
     marginBottom: 16,
     borderLeftWidth: 3,
     borderLeftColor: MainBrownSecondaryColor,
+    ...main_Style.genContentElevation,
   },
   disclaimerText: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 24,
   },
   proofPhotoContainer: {
     width: '100%',
@@ -643,10 +654,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    borderWidth: 0.6,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
+    marginBottom: 24,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -665,7 +677,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,

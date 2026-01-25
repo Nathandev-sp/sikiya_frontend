@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import DateConverter from '../src/Helpers/DateConverter';
 import SikiyaAPI from '../API/SikiyaAPI';
 import { getImageUrl } from '../src/utils/imageUrl';
+import { useLanguage } from '../src/Context/LanguageContext';
 
 const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, showSubComments, showDeleteButton, onDelete}) => {
 
@@ -14,6 +15,7 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
     const [likes, setLikes] = useState(comment.number_of_likes || 0);
     const [dislikes, setDislikes] = useState(comment.number_of_dislikes || 0);
     const [isLoading, setIsLoading] = useState(false);
+    const { t } = useLanguage();
 
     useEffect(() => {
         if (comment._id) {
@@ -145,7 +147,7 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
                                 size={16} 
                                 color='#007BFF' 
                             />
-                            <Text style={styles.seeMoreText}>{showSubComments ? 'See Less' : 'See More'}</Text>
+                            <Text style={styles.seeMoreText}>{showSubComments ? t('comments.seeLess') : t('comments.seeMore')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity 
@@ -154,7 +156,7 @@ const CommentElement = ({comment, showButtons, onToggleSubComments, onReply, sho
                             hitSlop={defaultButtonHitslop}
                         >
                             <Ionicons name='arrow-undo' size={16} color='#28A745' />
-                            <Text style={styles.replyText}>Reply</Text>
+                            <Text style={styles.replyText}>{t('comments.reply')}</Text>
                         </TouchableOpacity>
                     </>
                 ) : (

@@ -11,15 +11,19 @@ import { Context as AuthContext } from "../../Context/AuthContext";
 import { useLanguage } from "../../Context/LanguageContext";
 
 // Import terms and conditions
-import { termsAndConditions as termsData } from "../../../assets/PDFs/UserT&C";
+import { termsAndConditions } from "../../../assets/PDFs/TermsAndConditions";
 
 const TermAndConditionsScreen = ({ navigation, route }) => {
-  const { userInfo } = route.params;
+  const { userInfo, userType = 'user' } = route.params; // userType can be 'user' or 'journalist'
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const { state, updateRole } = useContext(AuthContext);
   const { appLanguage, contentLanguage } = useLanguage();
+  const { t } = useLanguage();
 
+  // Get the appropriate terms based on user type and language
+  const language = appLanguage === 'fr' ? 'fr' : 'en';
+  const termsData = termsAndConditions[userType][language];
   const createUserProfile = async () => {
     if (!agreed) return;
 
@@ -55,7 +59,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={auth_Style.authSafeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={"dark-content"} />
-      <AuthScreenMiniHeader title="Terms and Conditions" />
+      <AuthScreenMiniHeader title={t('onboarding.termsAndConditions')} />
       
       <View style={[auth_Style.formContainer]}>
         {/* Terms and Conditions ScrollView */}
@@ -67,7 +71,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
           >
             {/* Header */}
             <Text style={styles.termsTitle}>{termsData.title}</Text>
-            <Text style={styles.lastUpdated}>Last Updated: {termsData.lastUpdated}</Text>
+            <Text style={styles.lastUpdated}>{t('onboarding.lastUpdated')}: {termsData.lastUpdated}</Text>
 
             {/* Sections */}
             {termsData.sections.map((section, index) => (
@@ -94,7 +98,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
             />
           </TouchableOpacity>
           <Text style={styles.agreeText}>
-            I have read and agree to Sikiya's terms and conditions
+            {t('onboarding.agreeToTerms')}
           </Text>
         </View>
 
@@ -116,7 +120,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
           {loading ? (
             <LottieLoad />
           ) : (
-            <Text style={auth_Style.authButtonText}>Open Sikiya</Text>
+            <Text style={auth_Style.authButtonText}>{t('onboarding.openSikiya')}</Text>
           )}
         </TouchableOpacity>
       </View>

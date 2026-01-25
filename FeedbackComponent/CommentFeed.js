@@ -4,6 +4,7 @@ import CommentElement from '../FeedbackComponent/CommentElement';
 import { defaultButtonHitslop, generalTextFont, MainBrownSecondaryColor } from '../src/styles/GeneralAppStyle';
 import CommentInputModal from './CommentInputModal'; // Adjust path if needed
 import SikiyaAPI from '../API/SikiyaAPI';
+import { useLanguage } from '../src/Context/LanguageContext';
 
 const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
     const [showSubComments, setShowSubComments] = useState(false);
@@ -12,6 +13,7 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
     const [loadingSubComments, setLoadingSubComments] = useState(false);
     const [loadingReply, setLoadingReply] = useState(false);
     const animationValue = useRef(new Animated.Value(0)).current;
+    const { t } = useLanguage();
 
     //console.log("Comment", mainComment)
 
@@ -141,14 +143,14 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
                     {loadingSubComments ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="small" color="#007BFF" />
-                            <Text style={styles.loadingText}>Loading replies...</Text>
+                            <Text style={styles.loadingText}>{t('comments.loadingReplies')}</Text>
                         </View>
                     ) : subComments.length > 0 ? (
                         subComments.map((comment) => (
                             <CommentElement key={comment._id} comment={comment} showButtons={false} />
                         ))
                     ) : (
-                        <Text style={styles.noRepliesText}>No replies yet. Be the first to reply!</Text>
+                        <Text style={styles.noRepliesText}>{t('comments.noRepliesYet')}</Text>
                     )}
                 </Animated.View>
             )}

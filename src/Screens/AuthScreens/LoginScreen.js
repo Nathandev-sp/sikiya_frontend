@@ -1,11 +1,12 @@
 import React, { useState, useRef, useContext } from "react";
 import { View, Text, StyleSheet,Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from "react-native";
-import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor } from "../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, articleTitleFont } from "../../styles/GeneralAppStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Context as AuthContext } from "../../Context/AuthContext"; // Import AuthContext if needed
 import { set } from "mongoose";
 import LottieLoad from "../../Helpers/LottieLoad";
+import { useLanguage } from "../../Context/LanguageContext";
 
 const LoginScreen = ({navigation}) => {
   
@@ -17,6 +18,7 @@ const LoginScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const scrollRef = useRef(null);
 
@@ -57,23 +59,23 @@ const LoginScreen = ({navigation}) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={{ flex: 1 }}>
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.38 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <Image 
-                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
 
               <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeTitle}>Welcome</Text>
-                <Text style={styles.welcomeSubtitle}>Login to join conversations that change Africa.</Text>
+                <Text style={styles.welcomeTitle}>{t('auth.welcome')}</Text>
+                <Text style={styles.welcomeSubtitle}>{t('auth.loginToJoinConversations')}</Text>
               </View>
             </View>
 
             <View style={[auth_Style.formContainer, {marginTop: 20}]}>
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Email</Text>
+                <Text style={auth_Style.authLabel}>{t('auth.email')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   emailFocused && auth_Style.authInputContainerFocused
@@ -82,7 +84,7 @@ const LoginScreen = ({navigation}) => {
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your email"
+                    placeholder={t('auth.emailPlaceholder')}
                     placeholderTextColor="#aaa"
                     value={email}
                     onChangeText={setEmail}
@@ -95,7 +97,7 @@ const LoginScreen = ({navigation}) => {
               </View>
 
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Password</Text>
+                <Text style={auth_Style.authLabel}>{t('auth.password')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   passwordFocused && auth_Style.authInputContainerFocused
@@ -104,7 +106,7 @@ const LoginScreen = ({navigation}) => {
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     placeholderTextColor="#aaa"
                     value={password}
                     onChangeText={setPassword}
@@ -127,9 +129,9 @@ const LoginScreen = ({navigation}) => {
               </View>
 
               <View style={styles.signupRow}>
-                <Text style={styles.signupText}>Don't have an account?</Text>
+                <Text style={styles.signupText}>{t('auth.dontHaveAccount')}</Text>
                 <TouchableOpacity onPress={goToSignupScreen} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.signupLink}>Sign Up</Text>
+                  <Text style={styles.signupLink}>{t('auth.signUp')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -138,13 +140,13 @@ const LoginScreen = ({navigation}) => {
               </View>: null}
 
               <TouchableOpacity  style={[auth_Style.authButtonStyle, styles.loginButton]} activeOpacity={generalActiveOpacity} onPress={handleLogin}>
-                {loading ? (<LottieLoad />) : (<Text style={auth_Style.authButtonText}>Login</Text>)}
+                {loading ? (<LottieLoad />) : (<Text style={auth_Style.authButtonText}>{t('auth.login')}</Text>)}
               </TouchableOpacity>
 
               {/* Forgot Password Link - Below Button */}
               <View style={styles.forgotPasswordContainer}>
                 <TouchableOpacity onPress={goToForgotPassword} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -165,13 +167,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
-    borderRadius: 16,
+    borderRadius: 24,
     marginBottom: 12,
-    flex: 1,
+    //flex: 1,
     maxHeight: '70%',
   },
   companyLogo: {
@@ -182,13 +184,13 @@ const styles = StyleSheet.create({
   welcomeContainer: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    flex: 0.3,
+    //flex: 0.3,
     justifyContent: 'center',
     paddingTop: 8,
   },
   welcomeTitle: {
     fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 8,
+    fontSize: generalTitleSize + 6,
     fontWeight: '700',
     color: generalTitleColor,
     textAlign: 'center',
@@ -196,9 +198,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   welcomeSubtitle: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize+1,
     color: withdrawnTitleColor,
+    fontWeight: '600',
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 24,

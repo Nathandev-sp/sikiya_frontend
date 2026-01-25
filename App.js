@@ -780,6 +780,7 @@ export default function App() {
     'NotoSans-LightItalic': require('./assets/Fonts/NotoSans-LightItalic.ttf'),
     'NotoSans-MediumItalic': require('./assets/Fonts/NotoSans-MediumItalic.ttf'),
     'NotoSans-SemiBoldItalic': require('./assets/Fonts/NotoSans-SemiBoldItalic.ttf'),
+    "OpenSans-Bold": require('./assets/Fonts/OpenSans-Bold.ttf'),
   });
 
   if (!fontsloaded) {

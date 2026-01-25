@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleTextSize, cardBackgroundColor, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleFont, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTextSize, cardBackgroundColor, commentTextSize, generalActiveOpacity, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleFont, genBtnBackgroundColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, mainBrownColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -9,6 +9,7 @@ import { useRoute } from '@react-navigation/native';
 import { useLanguage } from '../../Context/LanguageContext';
 import { Context as AuthContext } from '../../Context/AuthContext';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import * as Updates from 'expo-updates';
 
 const LanguageSettingScreen = () => {
     const { state } = useContext(AuthContext);
@@ -37,17 +38,17 @@ const LanguageSettingScreen = () => {
         {
             id: 'english',
             name: t('language.englishOnly'),
-            description: 'See only English articles and videos',
+            description: t('language.englishOnlyDescription'),
         },
         {
             id: 'french',
             name: t('language.frenchOnly'),
-            description: 'See only French articles and videos',
+            description: t('language.frenchOnlyDescription'),
         },
         {
             id: 'both',
             name: t('language.bothLanguages'),
-            description: 'See articles and videos in all languages',
+            description: t('language.bothLanguagesDescription'),
         }
     ];
 
@@ -61,56 +62,83 @@ const LanguageSettingScreen = () => {
         return selectedAppLanguage !== appLanguage || selectedContentLanguage !== contentLanguage;
     };
 
+    const reloadApp = async () => {
+        try {
+            // Reload the app to apply language changes
+            await Updates.reloadAsync();
+        } catch (error) {
+            console.error('Error reloading app:', error);
+            // Fallback: just show success message
+            Alert.alert(
+                t('common.success'),
+                t('language.languageUpdated'),
+                [{ text: t('common.ok') }]
+            );
+        }
+    };
+
     const handleSaveChanges = async () => {
         if (!hasChanges()) {
-            Alert.alert(t('common.error'), 'No changes to save');
+            Alert.alert(t('common.error'), t('language.noChangesToSave'));
             return;
         }
 
-        setIsSaving(true);
+        // Show confirmation alert before reloading
+        Alert.alert(
+            t('language.changeLanguage'),
+            t('language.reloadPrompt'),
+            [
+                {
+                    text: t('common.cancel'),
+                    style: 'cancel'
+                },
+                {
+                    text: t('common.continue'),
+                    onPress: async () => {
+                        setIsSaving(true);
 
-        try {
-            // Update local context and AsyncStorage
-            const localResult = await changeLanguagePreferences(selectedAppLanguage, selectedContentLanguage);
-            
-            if (!localResult.success) {
-                throw new Error(localResult.error || 'Failed to update local preferences');
-            }
+                        try {
+                            // Update local context and AsyncStorage
+                            const localResult = await changeLanguagePreferences(selectedAppLanguage, selectedContentLanguage);
+                            
+                            if (!localResult.success) {
+                                throw new Error(localResult.error || t('language.failedToUpdate'));
+                            }
 
-            // Update on backend
-            try {
-                await SikiyaAPI.put(
-                    '/user/language-preferences',
-                    {
-                        appLanguage: selectedAppLanguage,
-                        contentLanguage: selectedContentLanguage,
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${state.token}`,
-                        },
+                            // Update on backend
+                            try {
+                                await SikiyaAPI.put(
+                                    '/user/language-preferences',
+                                    {
+                                        appLanguage: selectedAppLanguage,
+                                        contentLanguage: selectedContentLanguage,
+                                    },
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${state.token}`,
+                                        },
+                                    }
+                                );
+                            } catch (apiError) {
+                                console.error('Error updating language preferences on backend:', apiError);
+                                // Don't throw - local changes are already saved
+                            }
+
+                            // Reload the app to apply changes
+                            await reloadApp();
+                        } catch (error) {
+                            console.error('Error saving language preferences:', error);
+                            Alert.alert(
+                                t('common.error'),
+                                error.message || t('language.failedToSave'),
+                                [{ text: t('common.ok') }]
+                            );
+                            setIsSaving(false);
+                        }
                     }
-                );
-            } catch (apiError) {
-                console.error('Error updating language preferences on backend:', apiError);
-                // Don't throw - local changes are already saved
-            }
-
-            Alert.alert(
-                t('common.success'),
-                t('language.languageChanged'),
-                [{ text: t('common.ok') }]
-            );
-        } catch (error) {
-            console.error('Error saving language preferences:', error);
-            Alert.alert(
-                t('common.error'),
-                error.message || 'Failed to save language preferences',
-                [{ text: t('common.ok') }]
-            );
-        } finally {
-            setIsSaving(false);
-        }
+                }
+            ]
+        );
     };
 
     return (
@@ -124,7 +152,7 @@ const LanguageSettingScreen = () => {
                 
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
-                    <Ionicons name="language-outline" style={settingsStyles.headerIcon} />
+                    <Ionicons name="language" style={settingsStyles.headerIcon} />
                     <Text style={settingsStyles.headerTitle}>{t('language.appLanguage')}</Text>
                 </View>
 
@@ -141,6 +169,7 @@ const LanguageSettingScreen = () => {
                             key={language.id}
                             style={[
                                 styles.languageCard,
+                                main_Style.genContentElevation,
                                 selectedAppLanguage === language.id && styles.selectedLanguageCard
                             ]}
                             onPress={() => setSelectedAppLanguage(language.id)}
@@ -166,8 +195,8 @@ const LanguageSettingScreen = () => {
                                 <View style={styles.checkmarkContainer}>
                                     <Ionicons 
                                         name="checkmark-circle" 
-                                        size={20} 
-                                        color={'#007AA3'} 
+                                        size={22} 
+                                        color={'#2BA1E6'} 
                                     />
                                 </View>
                             )}
@@ -190,6 +219,7 @@ const LanguageSettingScreen = () => {
                             key={language.id}
                             style={[
                                 styles.contentLanguageCard,
+                                main_Style.genContentElevation,
                                 selectedContentLanguage === language.id && styles.selectedLanguageCard
                             ]}
                             onPress={() => setSelectedContentLanguage(language.id)}
@@ -211,8 +241,8 @@ const LanguageSettingScreen = () => {
                                 <View style={styles.checkmarkContainer}>
                                     <Ionicons 
                                         name="checkmark-circle" 
-                                        size={20} 
-                                        color={'#007AA3'} 
+                                        size={22} 
+                                        color={'#2BA1E6'} 
                                     />
                                 </View>
                             )}
@@ -235,7 +265,10 @@ const LanguageSettingScreen = () => {
                         disabled={!hasChanges() || isSaving}
                     >
                         {isSaving ? (
-                            <ActivityIndicator color="#fff" size="small" />
+                            <>
+                                <ActivityIndicator color="#fff" size="small" style={{marginRight: 8}} />
+                                <Text style={styles.changeButtonText}>{t('language.reloadingApp')}</Text>
+                            </>
                         ) : (
                             <>
                                 <Ionicons name="save-outline" size={20} color="#fff" style={{marginRight: 8}} />
@@ -256,26 +289,30 @@ const LanguageSettingScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     formContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginHorizontal: 8,
-        padding: 16,
+        backgroundColor: genBtnBackgroundColor,
+        borderRadius: 16,
+        marginHorizontal: 12,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     sectionTitle: {
-        fontSize: articleTextSize,
-        fontWeight: generalTextFontWeight,
-        color: withdrawnTitleColor,
-        marginBottom: 4,
+        fontSize: generalTextSize,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        marginBottom: 8,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.3,
     },
     sectionDescription: {
-        fontSize: commentTextSize,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        lineHeight: 18,
+        lineHeight: 20,
+        marginBottom: 4,
     },
     languageCard: {
         flexDirection: 'row',
@@ -283,19 +320,20 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
-        marginBottom: 8,
-        backgroundColor: '#fff',
+        borderColor: '#ccc',
+        marginBottom: 10,
+        backgroundColor: AppScreenBackgroundColor,
     },
     selectedLanguageCard: {
-        borderColor: '#007AA3',
-        backgroundColor: secCardBackgroundColor,
+        borderColor: '#2BA1E6',
+        borderWidth: 1.2,
+        backgroundColor: '#F0F6FA',
     },
     languageIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: lightBannerBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -309,34 +347,37 @@ const styles = StyleSheet.create({
     languageNameRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 2,
+        marginBottom: 4,
     },
     languageName: {
         fontSize: generalTextSize,
-        fontWeight: generalTextFontWeight,
+        fontWeight: '600',
         color: generalTextColor,
         fontFamily: generalTitleFont,
         marginRight: 8,
+        letterSpacing: 0.2,
     },
     currentBadge: {
-        backgroundColor: '#007AA3',
+        backgroundColor: '#2BA1E6',
         paddingHorizontal: 8,
-        paddingVertical: 4,
+        paddingVertical: 3,
         borderRadius: 10,
-        marginLeft: 12,
+        marginLeft: 6,
         alignItems: 'center',
         justifyContent: 'center',
     },
     currentBadgeText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 10,
-        fontWeight: 'bold',
+        fontWeight: '700',
         fontFamily: generalTextFont,
+        letterSpacing: 0.3,
     },
     languageNativeName: {
-        fontSize: 12,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        fontStyle: 'italic',
     },
     checkmarkContainer: {
         marginLeft: 8,
@@ -347,26 +388,37 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
-        marginBottom: 8,
-        backgroundColor: '#fff',
+        borderColor: '#ccc',
+        marginBottom: 10,
+        backgroundColor: AppScreenBackgroundColor,
     },
     contentLanguageTextContainer: {
         flex: 1,
     },
     contentLanguageDescription: {
-        fontSize: 11,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         marginTop: 4,
+        lineHeight: 18,
     },
     changeButton: {
         backgroundColor: MainBrownSecondaryColor,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        flexDirection: 'row',
+        gap: 10,
+        marginTop: 4,
+        shadowColor: MainBrownSecondaryColor,
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
     disabledButton: {
         backgroundColor: withdrawnTitleColor,
@@ -375,8 +427,9 @@ const styles = StyleSheet.create({
     changeButtonText: {
         color: AppScreenBackgroundColor,
         fontSize: generalTextSize,
-        fontWeight: generalTextFontWeight,
+        fontWeight: '700',
         fontFamily: generalTitleFont,
+        letterSpacing: 0.5,
     },
 });
 

@@ -8,8 +8,10 @@ import GoBackButton from '../../../NavComponents/GoBackButton';
 import CommentElement from '../../../FeedbackComponent/CommentElement';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const CommentHistorySettingScreen = () => {
+    const { t } = useLanguage();
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -29,9 +31,9 @@ const CommentHistorySettingScreen = () => {
         } catch (error) {
             console.error('Error fetching secondary comments:', error);
             Alert.alert(
-                'Error',
-                'Failed to load your comment history. Please try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                t('commentHistory.failedToLoadHistory'),
+                [{ text: t('common.ok') }]
             );
         } finally {
             setLoading(false);
@@ -46,15 +48,15 @@ const CommentHistorySettingScreen = () => {
 
     const handleDeleteComment = (comment) => {
         Alert.alert(
-            'Delete Comment',
-            'Are you sure you want to delete this comment? This action cannot be undone.',
+            t('commentHistory.deleteComment'),
+            t('commentHistory.deleteCommentConfirmation'),
             [
                 {
-                    text: 'Cancel',
+                    text: t('common.cancel'),
                     style: 'cancel'
                 },
                 {
-                    text: 'Delete',
+                    text: t('common.delete'),
                     style: 'destructive',
                     onPress: () => deleteComment(comment._id)
                 }
@@ -71,16 +73,16 @@ const CommentHistorySettingScreen = () => {
             if (response.data.success) {
                 // Remove the comment from the list
                 setComments(prevComments => prevComments.filter(c => c._id !== commentId));
-                Alert.alert('Success', 'Comment deleted successfully', [{ text: 'OK' }]);
+                Alert.alert(t('common.success'), t('commentHistory.commentDeletedSuccess'), [{ text: t('common.ok') }]);
             } else {
-                throw new Error(response.data.error || 'Failed to delete comment');
+                throw new Error(response.data.error || t('commentHistory.failedToDeleteComment'));
             }
         } catch (error) {
             console.error('Error deleting comment:', error);
             Alert.alert(
-                'Error',
-                error.response?.data?.error || 'Failed to delete comment. Please try again.',
-                [{ text: 'OK' }]
+                t('common.error'),
+                error.response?.data?.error || t('commentHistory.failedToDeleteComment'),
+                [{ text: t('common.ok') }]
             );
         } finally {
             setDeletingCommentId(null);
@@ -89,11 +91,11 @@ const CommentHistorySettingScreen = () => {
 
     const getCommentContext = (comment) => {
         if (comment.articleTitle) {
-            return `Article: ${comment.articleTitle}`;
+            return `${t('commentHistory.article')}: ${comment.articleTitle}`;
         } else if (comment.videoTitle) {
-            return `Video: ${comment.videoTitle}`;
+            return `${t('commentHistory.video')}: ${comment.videoTitle}`;
         }
-        return 'Comment';
+        return t('commentHistory.comment');
     };
 
     if (loading) {
@@ -105,7 +107,7 @@ const CommentHistorySettingScreen = () => {
                 </View>
                 <View style={styles.loadingContainer}>
                     <BigLoaderAnim />
-                    <Text style={styles.loadingText}>Loading your comments...</Text>
+                    <Text style={styles.loadingText}>{t('commentHistory.loadingComments')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -132,22 +134,22 @@ const CommentHistorySettingScreen = () => {
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
                     <Ionicons name="time-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Comment History</Text>
+                    <Text style={settingsStyles.headerTitle}>{t('commentHistory.commentHistory')}</Text>
                 </View>
 
                 {comments.length === 0 ? (
                     <View style={[styles.emptyContainer, main_Style.genButtonElevation]}>
                         <Ionicons name="chatbubbles-outline" size={64} color={withdrawnTitleColor} />
-                        <Text style={styles.emptyTitle}>No Comments Yet</Text>
+                        <Text style={styles.emptyTitle}>{t('commentHistory.noCommentsYet')}</Text>
                         <Text style={styles.emptyDescription}>
-                            You haven't made any replies yet. Your comment history will appear here once you start replying to comments.
+                            {t('commentHistory.noCommentsDescription')}
                         </Text>
                     </View>
                 ) : (
                     <View style={styles.commentsContainer}>
                         <View style={styles.commentsHeader}>
                             <Text style={styles.commentsCount}>
-                                {comments.length} {comments.length === 1 ? 'Reply' : 'Replies'}
+                                {comments.length} {comments.length === 1 ? t('commentHistory.reply') : t('commentHistory.replies')}
                             </Text>
                         </View>
                         

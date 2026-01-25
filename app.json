@@ -2,10 +2,10 @@
   "expo": {
     "name": "Sikiya",
     "slug": "Sikiya",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.png",
+    "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.2.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sikiya.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
@@ -50,7 +50,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.png",
+          "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.2.png",
           "color": "#04698F",
           "sounds": []
         }

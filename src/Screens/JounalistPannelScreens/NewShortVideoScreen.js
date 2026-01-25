@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, generalTitleSize, generalTitleFontWeight, generalSmallTextSize, articleTextSize, largeTextSize, generalTextSize, lightBannerBackgroundColor} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, generalTitleSize, generalTitleFontWeight, generalSmallTextSize, articleTextSize, largeTextSize, generalTextSize, lightBannerBackgroundColor, commentTextSize} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import { useLanguage } from '../../Context/LanguageContext';
+import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 
 const NewShortVideoScreen = ({ navigation, route }) => {
+  const { t } = useLanguage();
   const { videoId, videoTitle, videoData } = route.params || {};
   const scrollRef = useRef(null);
   const [video, setVideo] = useState(null);
@@ -37,7 +40,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   // Upload video to S3
   const uploadVideoToS3 = async (uri) => {
     if (!videoId) {
-      Alert.alert('Error', 'Video ID is missing');
+      Alert.alert(t('videoUpload.error'), t('videoUpload.videoIdMissing'));
       return;
     }
 
@@ -66,7 +69,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
       console.log('Video uploaded successfully. Key:', response.data.videoKey);
     } catch (error) {
       console.error('Error uploading video:', error);
-      Alert.alert('Upload failed', error.response?.data?.error || 'Failed to upload video. Please try again.');
+      Alert.alert(t('videoUpload.uploadFailed'), error.response?.data?.error || t('videoUpload.failedToUploadVideo'));
     } finally {
       setUploadingVideo(false);
     }
@@ -75,15 +78,15 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   // Video picker function
   const pickVideo = async () => {
     Alert.alert(
-      "Select Video",
-      "Choose an option",
+      t('videoUpload.selectVideo'),
+      t('videoUpload.chooseOption'),
       [
         {
-          text: "Camera",
+          text: t('videoUpload.camera'),
           onPress: async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Camera permission is required to record a video.');
+              Alert.alert(t('videoUpload.permissionNeeded'), t('videoUpload.cameraVideoPermission'));
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -96,7 +99,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
               const videoAsset = result.assets[0];
               // Check video duration
               if (videoAsset.duration && videoAsset.duration > 60000) {
-                Alert.alert('Video Too Long', 'Video must be 1 minute or less.');
+                Alert.alert(t('videoUpload.videoTooLong'), t('videoUpload.videoTooLongMessage'));
                 return;
               }
               await uploadVideoToS3(videoAsset.uri);
@@ -104,11 +107,11 @@ const NewShortVideoScreen = ({ navigation, route }) => {
           }
         },
         {
-          text: "Gallery",
+          text: t('videoUpload.gallery'),
           onPress: async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Gallery permission is required to select a video.');
+              Alert.alert(t('videoUpload.permissionNeeded'), t('videoUpload.galleryVideoPermission'));
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -121,14 +124,14 @@ const NewShortVideoScreen = ({ navigation, route }) => {
               const videoAsset = result.assets[0];
               // Check video duration
               if (videoAsset.duration && videoAsset.duration > 60000) {
-                Alert.alert('Video Too Long', 'Video must be 1 minute or less.');
+                Alert.alert(t('videoUpload.videoTooLong'), t('videoUpload.videoTooLongMessage'));
                 return;
               }
               await uploadVideoToS3(videoAsset.uri);
             }
           }
         },
-        { text: "Cancel", style: "cancel" }
+        { text: t('videoUpload.cancel'), style: "cancel" }
       ]
     );
   };
@@ -136,7 +139,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   // Upload proof image to S3
   const uploadProofImage = async (uri) => {
     if (!videoId) {
-      Alert.alert('Error', 'Video ID is missing');
+      Alert.alert(t('videoUpload.error'), t('videoUpload.videoIdMissing'));
       return;
     }
 
@@ -165,7 +168,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
       console.log('Proof image uploaded successfully. Key:', response.data.imageKey);
     } catch (error) {
       console.error('Error uploading proof image:', error);
-      Alert.alert('Upload failed', error.response?.data?.error || 'Failed to upload proof image. Please try again.');
+      Alert.alert(t('videoUpload.uploadFailed'), error.response?.data?.error || t('videoUpload.failedToUploadProof'));
     } finally {
       setUploadingProof(false);
     }
@@ -174,15 +177,15 @@ const NewShortVideoScreen = ({ navigation, route }) => {
   // Image picker function for proof photo
   const pickImage = async (aspect = [1.25, 0.8]) => {
     Alert.alert(
-      "Select Photo",
-      "Choose an option",
+      t('videoUpload.selectPhoto'),
+      t('videoUpload.chooseOption'),
       [
         {
-          text: "Camera",
+          text: t('videoUpload.camera'),
           onPress: async () => {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Camera permission is required to take a photo.');
+              Alert.alert(t('videoUpload.permissionNeeded'), t('videoUpload.cameraPhotoPermission'));
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
@@ -197,11 +200,11 @@ const NewShortVideoScreen = ({ navigation, route }) => {
           }
         },
         {
-          text: "Gallery",
+          text: t('videoUpload.gallery'),
           onPress: async () => {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Permission needed', 'Gallery permission is required to select a photo.');
+              Alert.alert(t('videoUpload.permissionNeeded'), t('videoUpload.galleryPhotoPermission'));
               return;
             }
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -215,7 +218,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             }
           }
         },
-        { text: "Cancel", style: "cancel" }
+        { text: t('videoUpload.cancel'), style: "cancel" }
       ]
     );
   };
@@ -243,10 +246,10 @@ const NewShortVideoScreen = ({ navigation, route }) => {
     // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       const missingFields = [];
-      if (newErrors.videoKey) missingFields.push('video');
-      if (newErrors.proofImageKey) missingFields.push('proof photo');
-      if (newErrors.proofText) missingFields.push('proof text');
-      Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
+      if (newErrors.videoKey) missingFields.push(t('videoUpload.video'));
+      if (newErrors.proofImageKey) missingFields.push(t('videoUpload.proofPhoto'));
+      if (newErrors.proofText) missingFields.push(t('videoUpload.proofText'));
+      Alert.alert(t('videoUpload.missingFields'), `${t('videoUpload.pleaseProvide')} ${missingFields.join(', ')}`);
       return;
     }
 
@@ -269,8 +272,8 @@ const NewShortVideoScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error updating video:', error);
       setIsSubmitting(false);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to update video. Please try again.';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || t('videoUpload.failedToUpdate');
+      Alert.alert(t('videoUpload.error'), errorMessage);
     }
   };
 
@@ -280,7 +283,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.loadingContainer}>
           <BigLoaderAnim />
-          <Text style={styles.loadingText}>Submitting video...</Text>
+          <Text style={styles.loadingText}>{t('videoUpload.submittingVideo')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -316,14 +319,14 @@ const NewShortVideoScreen = ({ navigation, route }) => {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>{videoTitle || 'New Video'}</Text>
+            <Text style={styles.screenTitle}>{videoTitle || t('videoUpload.title')}</Text>
           </View>
 
           {/* Video Upload Section */}
           <View style={styles.videoSection}>
-            <Text style={styles.label}>Video</Text>
+            <Text style={styles.label}>{t('videoUpload.videoLabel')}</Text>
             <Text style={styles.labelDescription}>
-              Upload a video that is relevant to your article (maximum 1 minute)
+              {t('videoUpload.videoDescription')}
             </Text>
             
             {/* Video Container */}
@@ -339,19 +342,19 @@ const NewShortVideoScreen = ({ navigation, route }) => {
               {uploadingVideo ? (
                 <View style={styles.videoPlaceholder}>
                   <MediumLoadingState />
-                  <Text style={styles.videoPlaceholderText}>Uploading...</Text>
+                  <Text style={styles.videoPlaceholderText}>{t('videoUpload.uploading')}</Text>
                 </View>
               ) : video ? (
                 <View style={styles.videoPreview}>
                   <Ionicons name="play-circle" size={64} color={AppScreenBackgroundColor} />
-                  <Text style={styles.videoPreviewText}>Video Selected</Text>
-                  <Text style={styles.videoPreviewSubtext}>Tap to change</Text>
+                  <Text style={styles.videoPreviewText}>{t('videoUpload.videoSelected')}</Text>
+                  <Text style={styles.videoPreviewSubtext}>{t('videoUpload.tapToChange')}</Text>
                 </View>
               ) : (
                 <View style={styles.videoPlaceholder}>
                   <Ionicons name="videocam" size={48} color={withdrawnTitleColor} />
-                  <Text style={styles.videoPlaceholderText}>Upload Video</Text>
-                  <Text style={styles.videoPlaceholderSubtext}>Max 1 minute</Text>
+                  <Text style={styles.videoPlaceholderText}>{t('videoUpload.uploadVideo')}</Text>
+                  <Text style={styles.videoPlaceholderSubtext}>{t('videoUpload.maxDuration')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -364,22 +367,22 @@ const NewShortVideoScreen = ({ navigation, route }) => {
           <View style={styles.proofSection}>
             <View style={styles.proofHeader}>
               <Ionicons name="lock-closed" size={20} color={MainBrownSecondaryColor} />
-              <Text style={styles.proofTitle}>Proof</Text>
+              <Text style={styles.proofTitle}>{t('videoUpload.proof')}</Text>
             </View>
 
             {/* Disclaimer Text */}
             <View style={[styles.disclaimerContainer, main_Style.genContentElevation]}>
               <Text style={styles.disclaimerText}>
-                • Please ensure that every video you submit meets the highest standards of accuracy and quality{'\n'}
-                • All proof must be taken at the time and place of the reporting. Reusing old or previously submitted proof is strictly prohibited.{'\n'}
-                • Every video will undergo a review and evaluation process before being published{'\n'}
-                • Video submissions are final. Submitting low-quality or inaccurate content may negatively impact your trust score and reduce the visibility of your future videos.
+                {t('videoUpload.disclaimer1')}{'\n'}
+                {t('videoUpload.disclaimer2')}{'\n'}
+                {t('videoUpload.disclaimer3')}{'\n'}
+                {t('videoUpload.disclaimer4')}
               </Text>
             </View>
 
             {/* Proof Photo */}
             <Text style={styles.labelDescription}>
-              Upload a photo taken at the time and place of your reporting as proof
+              {t('videoUpload.proofPhotoDescription')}
             </Text>
             <TouchableOpacity 
               style={[
@@ -393,23 +396,23 @@ const NewShortVideoScreen = ({ navigation, route }) => {
               {uploadingProof ? (
                 <View style={styles.photoPlaceholder}>
                   <MediumLoadingState />
-                  <Text style={styles.photoPlaceholderText}>Uploading...</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('videoUpload.uploading')}</Text>
                 </View>
               ) : proofPhoto ? (
                 <Image source={{ uri: proofPhoto }} style={styles.proofPhoto} />
               ) : (
                 <View style={styles.photoPlaceholder}>
                   <Ionicons name="camera" size={32} color={withdrawnTitleColor} />
-                  <Text style={styles.photoPlaceholderText}>Proof Photo</Text>
+                  <Text style={styles.photoPlaceholderText}>{t('videoUpload.proofPhotoLabel')}</Text>
                 </View>
               )}
             </TouchableOpacity>
 
             {/* Proof Text */}
             <View>
-              <Text style={styles.label}>Proof of Video</Text>
+              <Text style={styles.label}>{t('videoUpload.proofOfVideo')}</Text>
               <Text style={styles.labelDescription}>
-                Provide source information or additional context that verifies your video
+                {t('videoUpload.proofDescription')}
               </Text>
               <TextInput
                 style={[
@@ -418,7 +421,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
                   proofTextFocused && styles.inputFocused,
                   errors.proofText && styles.inputError
                 ]}
-                placeholder="Provide proof or source information"
+                placeholder={t('videoUpload.proofPlaceholder')}
                 placeholderTextColor="#aaa"
                 value={proofText}
                 onChangeText={(text) => {
@@ -449,8 +452,10 @@ const NewShortVideoScreen = ({ navigation, route }) => {
             onPress={handleSubmitVideo}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit Video</Text>
+            <Text style={styles.submitButtonText}>{t('videoUpload.submitVideo')}</Text>
           </TouchableOpacity>
+
+          <VerticalSpacer height={50} />
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -499,11 +504,11 @@ const styles = StyleSheet.create({
     fontSize: generalTitleSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
+    color: generalTextColor,
     marginBottom: 4,
   },
   labelDescription: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
     marginBottom: 12,
@@ -556,7 +561,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderWidth: 0.6,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
@@ -625,12 +630,14 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "#FFFFFF",
+    marginBottom: 4,
+
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -657,8 +664,10 @@ const styles = StyleSheet.create({
     fontSize: largeTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginLeft: 8,
+    marginBottom: 4,
+    marginTop: 4,
   },
   proofPhotoContainer: {
     width: '100%',
@@ -667,10 +676,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    borderWidth: 0.6,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
+    marginBottom: 24,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -694,10 +704,10 @@ const styles = StyleSheet.create({
     borderLeftColor: MainBrownSecondaryColor,
   },
   disclaimerText: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    lineHeight: 20,
+    lineHeight: 24,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

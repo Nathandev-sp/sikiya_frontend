@@ -9,11 +9,13 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import {Context as AuthContext} from '../../Context/AuthContext';
 import { useContext } from 'react';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import { useLanguage } from '../../Context/LanguageContext';
 
 
 const MembershipSettingScreen = () => {
     const navigation = useNavigation();
     const {state} = useContext(AuthContext);
+    const { t } = useLanguage();
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [processingPackageId, setProcessingPackageId] = useState(null);
 
@@ -30,38 +32,38 @@ const MembershipSettingScreen = () => {
     // Contributor tier details
     const contributorPlan = {
         id: 1,
-        name: 'Sikiya Contributor',
-        price: '4.99 USD',
-        period: '/month',
+        name: t('membershipSettings.planName'),
+        price: t('membershipSettings.price'),
+        period: t('membershipSettings.period'),
         roleKey: 'contributor',
-        tagline: 'Full Access to Premium Features',
+        tagline: t('membershipSettings.tagline'),
         image: require('../../../assets/OnboardingImages/contributorImage.png'),
         color: '#49A078',
         features: [
             {
                 icon: 'infinite-outline',
-                title: 'Unlimited Video Access',
-                description: 'Watch unlimited videos with no daily restrictions'
+                title: t('membershipSettings.unlimitedVideoAccess'),
+                description: t('membershipSettings.unlimitedVideoDescription')
             },
             {
                 icon: 'close-circle-outline',
-                title: 'Ad-Free Experience',
-                description: 'Enjoy content without interruptions or advertisements'
+                title: t('membershipSettings.adFreeExperience'),
+                description: t('membershipSettings.adFreeDescription')
             },
             {
                 icon: 'chatbubble-ellipses-outline',
-                title: 'Full Comment Access',
-                description: 'Post new comments and engage fully with the community'
+                title: t('membershipSettings.fullCommentAccess'),
+                description: t('membershipSettings.fullCommentDescription')
             },
             {
                 icon: 'person-outline',
-                title: 'Visible Profile',
-                description: 'Your profile is visible to other users and contributors'
+                title: t('membershipSettings.visibleProfile'),
+                description: t('membershipSettings.visibleProfileDescription')
             },
             {
                 icon: 'checkmark-circle-outline',
-                title: 'No Restrictions',
-                description: 'Use all features without any limitations'
+                title: t('membershipSettings.noRestrictions'),
+                description: t('membershipSettings.noRestrictionsDescription')
             }
         ]
     };
@@ -75,19 +77,19 @@ const MembershipSettingScreen = () => {
                 
                 // Open iOS Settings for subscription management
                 Alert.alert(
-                    'Manage Subscription',
-                    'To manage your subscription, you\'ll be directed to your iOS Settings.',
+                    t('membershipSettings.manageSubscription'),
+                    t('membershipSettings.manageSubscriptionMessage'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common.cancel'), style: 'cancel' },
                         { 
-                            text: 'Open Settings',
+                            text: t('membershipSettings.openSettings'),
                             onPress: async () => {
                                 try {
                                     await Linking.openURL('app-settings:');
                                 } catch (err) {
                                     Alert.alert(
-                                        'Settings',
-                                        'To manage your subscription:\n\n1. Open Settings app\n2. Tap your name at the top\n3. Tap Subscriptions\n4. Select Sikiya'
+                                        t('membership.settings'),
+                                        t('membershipSettings.settingsManageInstructions')
                                     );
                                 }
                             }
@@ -96,7 +98,7 @@ const MembershipSettingScreen = () => {
                 );
             } catch (error) {
                 console.error('Error opening settings:', error);
-                Alert.alert('Error', 'Could not open subscription settings.');
+                Alert.alert(t('common.error'), t('membershipSettings.couldNotOpenSettings'));
             }
         } else if (Platform.OS === 'android') {
             try {
@@ -105,17 +107,17 @@ const MembershipSettingScreen = () => {
                 
                 // Open Google Play subscription management
                 Alert.alert(
-                    'Manage Subscription',
-                    'To manage your subscription, you\'ll be directed to Google Play.',
+                    t('membershipSettings.manageSubscription'),
+                    t('membershipSettings.manageSubscriptionMessageGoogle'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
+                        { text: t('common.cancel'), style: 'cancel' },
                         { 
-                            text: 'Open Google Play',
+                            text: t('membershipSettings.openGooglePlay'),
                             onPress: async () => {
                                 try {
                                     await Linking.openURL('https://play.google.com/store/account/subscriptions');
                                 } catch (err) {
-                                    Alert.alert('Error', 'Could not open Google Play subscriptions.');
+                                    Alert.alert(t('common.error'), t('membershipSettings.couldNotOpenGooglePlay'));
                                 }
                             }
                         }
@@ -123,7 +125,7 @@ const MembershipSettingScreen = () => {
                 );
             } catch (error) {
                 console.error('Error opening Play Store:', error);
-                Alert.alert('Error', 'Could not open subscription settings.');
+                Alert.alert(t('common.error'), t('membershipSettings.couldNotOpenSettings'));
             }
         }
     };
@@ -153,19 +155,19 @@ const MembershipSettingScreen = () => {
                 
                 if (result.success) {
                     Alert.alert(
-                        'Purchases Restored',
-                        'Your subscription has been restored successfully!',
-                        [{ text: 'OK', onPress: () => navigation.goBack() }]
+                        t('membershipSettings.purchasesRestored'),
+                        t('membershipSettings.subscriptionRestoredSuccess'),
+                        [{ text: t('common.ok'), onPress: () => navigation.goBack() }]
                     );
                 } else {
-                    Alert.alert('No Purchases Found', result.message || 'No previous purchases were found.');
+                    Alert.alert(t('membershipSettings.noPurchasesFound'), result.message || t('membershipSettings.noPreviousPurchases'));
                 }
             } else {
-                Alert.alert('Not Available', 'Restore purchases is only available on iOS and Android.');
+                Alert.alert(t('membershipSettings.notAvailable'), t('membershipSettings.restoreOnlyMobile'));
             }
         } catch (error) {
             console.error('Error restoring purchases:', error);
-            Alert.alert('Error', error.message || 'Failed to restore purchases. Please try again.');
+            Alert.alert(t('common.error'), error.message || t('common.tryAgain'));
         } finally {
             setIsSubscribing(false);
         }
@@ -175,7 +177,7 @@ const MembershipSettingScreen = () => {
     const handleSubscribe = async () => {
         // Check if already subscribed
         if (currentUserRole === 'contributor') {
-            Alert.alert('Already Subscribed', 'You already have an active Contributor subscription.');
+            Alert.alert(t('membershipSettings.alreadySubscribed'), t('membershipSettings.alreadySubscribedMessage'));
             return;
         }
 
@@ -200,11 +202,11 @@ const MembershipSettingScreen = () => {
                     
                     if (result.success) {
                         Alert.alert(
-                            'Subscription Activated',
-                            'Your subscription has been activated successfully!',
+                            t('membershipSettings.subscriptionActivated'),
+                            t('membershipSettings.subscriptionActivatedMessage'),
                             [
                                 {
-                                    text: 'OK',
+                                    text: t('common.ok'),
                                     onPress: () => {
                                         // Refresh user data
                                         navigation.goBack();
@@ -216,8 +218,8 @@ const MembershipSettingScreen = () => {
                 } catch (error) {
                     console.error('iOS purchase error:', error);
                     Alert.alert(
-                        'Purchase Failed',
-                        error.message || 'Failed to complete purchase. Please try again.'
+                        t('membershipSettings.purchaseFailed'),
+                        error.message || t('membershipSettings.purchaseFailedMessage')
                     );
                 } finally {
                     setProcessingPackageId(null);
@@ -240,11 +242,11 @@ const MembershipSettingScreen = () => {
                     
                     if (result.success) {
                         Alert.alert(
-                            'Subscription Activated',
-                            'Your subscription has been activated successfully!',
+                            t('membershipSettings.subscriptionActivated'),
+                            t('membershipSettings.subscriptionActivatedMessage'),
                             [
                                 {
-                                    text: 'OK',
+                                    text: t('common.ok'),
                                     onPress: () => {
                                         // Refresh user data
                                         navigation.goBack();
@@ -256,8 +258,8 @@ const MembershipSettingScreen = () => {
                 } catch (error) {
                     console.error('Android purchase error:', error);
                     Alert.alert(
-                        'Purchase Failed',
-                        error.message || 'Failed to complete purchase. Please try again.'
+                        t('membershipSettings.purchaseFailed'),
+                        error.message || t('membershipSettings.purchaseFailedMessage')
                     );
                 } finally {
                     setProcessingPackageId(null);
@@ -267,16 +269,16 @@ const MembershipSettingScreen = () => {
             } else {
                 // Unsupported platform
                 Alert.alert(
-                    'Not Available',
-                    'Subscriptions are only available on iOS and Android devices.',
-                    [{ text: 'OK' }]
+                    t('membershipSettings.notAvailable'),
+                    t('membershipSettings.subscriptionsOnlyMobile'),
+                    [{ text: t('common.ok') }]
                 );
                 setProcessingPackageId(null);
                 setIsSubscribing(false);
             }
         } catch (error) {
             console.error('Subscription failed:', error);
-            Alert.alert('Error', 'Failed to start subscription. Please try again.');
+            Alert.alert(t('common.error'), t('membershipSettings.failedToStartSubscription'));
             setProcessingPackageId(null);
             setIsSubscribing(false);
         }
@@ -298,7 +300,7 @@ const MembershipSettingScreen = () => {
                     {/* Header Section */}
                     <View style={settingsStyles.headerSection}>
                         <Ionicons name="shield-checkmark" style={settingsStyles.headerIcon} />
-                        <Text style={settingsStyles.headerTitle}>Journalist Access</Text>
+                        <Text style={settingsStyles.headerTitle}>{t('membershipSettings.journalistAccess')}</Text>
                     </View>
 
                     {/* Hero Card - Journalist Version */}
@@ -307,10 +309,10 @@ const MembershipSettingScreen = () => {
                             <Ionicons name="shield-checkmark" size={50} color="#fff" />
                         </View>
                         <View style={styles.heroContent}>
-                            <Text style={styles.heroTitle}>Verified Journalist</Text>
-                            <Text style={styles.heroTagline}>Premium Access Included</Text>
+                            <Text style={styles.heroTitle}>{t('membershipSettings.verifiedJournalist')}</Text>
+                            <Text style={styles.heroTagline}>{t('membershipSettings.premiumAccessIncluded')}</Text>
                             <View style={styles.journalistPriceTag}>
-                                <Text style={styles.journalistPriceText}>Complimentary</Text>
+                                <Text style={styles.journalistPriceText}>{t('membershipSettings.complimentary')}</Text>
                             </View>
                         </View>
                     </View>
@@ -319,7 +321,7 @@ const MembershipSettingScreen = () => {
 
                     {/* Features Section */}
                     <View style={[styles.featuresContainer, main_Style.genButtonElevation]}>
-                        <Text style={styles.sectionTitle}>Premium Features Included</Text>
+                        <Text style={styles.sectionTitle}>{t('membershipSettings.premiumFeaturesIncluded')}</Text>
                         
                         {contributorPlan.features.map((feature, idx) => (
                             <View key={idx} style={styles.featureRow}>
@@ -344,9 +346,9 @@ const MembershipSettingScreen = () => {
                     <View style={styles.actionContainer}>
                         <View style={[styles.journalistStatusCard]}>
                             <Ionicons name="shield-checkmark" size={22} color={MainSecondaryBlueColor} />
-                            <Text style={styles.journalistStatusTitle}>Verified Account</Text>
+                            <Text style={styles.journalistStatusTitle}>{t('membershipSettings.verifiedAccount')}</Text>
                             <Text style={styles.journalistStatusDescription}>
-                                Your journalist account includes all premium features at no additional cost
+                                {t('membershipSettings.journalistPremiumDescription')}
                             </Text>
                         </View>
                     </View>
@@ -368,7 +370,7 @@ const MembershipSettingScreen = () => {
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
                     <Ionicons name="diamond-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Sikiya Contributor</Text>
+                    <Text style={settingsStyles.headerTitle}>{t('membershipSettings.planName')}</Text>
                 </View>
 
                 {/* Hero Card with Image */}
@@ -391,7 +393,7 @@ const MembershipSettingScreen = () => {
 
                 {/* Features Section */}
                 <View style={[styles.featuresContainer, main_Style.genButtonElevation]}>
-                    <Text style={styles.sectionTitle}>Premium Features Included</Text>
+                    <Text style={styles.sectionTitle}>{t('membershipSettings.premiumFeaturesIncluded')}</Text>
                     
                     {contributorPlan.features.map((feature, idx) => (
                         <View key={idx} style={styles.featureRow}>
@@ -425,7 +427,7 @@ const MembershipSettingScreen = () => {
                             {isSubscribing ? (
                                 <View style={styles.loadingContainer}>
                                     <ActivityIndicator size="small" color="#49A078" />
-                                    <Text style={styles.upgradeButtonText}>Processing...</Text>
+                                    <Text style={styles.upgradeButtonText}>{t('membershipSettings.processing')}</Text>
                                 </View>
                             ) : (
                                 <>
@@ -433,10 +435,8 @@ const MembershipSettingScreen = () => {
                                         <Ionicons name="diamond" size={24} color="#fff" />
                                     </View>
                                     <View style={styles.upgradeTextContainer}>
-                                        <Text style={styles.upgradeButtonTitle}>Upgrade to Contributor</Text>
-                                        <Text style={styles.upgradeButtonSubtitle}>
-                                            Unlock all features for {contributorPlan.price}{contributorPlan.period}
-                                        </Text>
+                                        <Text style={styles.upgradeButtonTitle}>{t('membershipSettings.upgradeToContributor')}</Text>
+                                        
                                     </View>
                                     <Ionicons name="arrow-forward" size={22} color="#49A078" />
                                 </>
@@ -444,7 +444,7 @@ const MembershipSettingScreen = () => {
                         </TouchableOpacity>
                         
                         <Text style={styles.upgradeHelper}>
-                            Secure payment processed through {Platform.OS === 'ios' ? 'Apple' : 'Google Play'}
+                            {Platform.OS === 'ios' ? t('membershipSettings.securePaymentApple') : t('membershipSettings.securePaymentGoogle')}
                         </Text>
                     </View>
                 ) : (
@@ -452,9 +452,9 @@ const MembershipSettingScreen = () => {
                     <View style={styles.actionContainer}>
                         <View style={[styles.activeSubscriptionCard, main_Style.genButtonElevation]}>
                             <Ionicons name="checkmark-circle" size={24} color={contributorPlan.color} />
-                            <Text style={styles.activeTitle}>You're a Contributor!</Text>
+                            <Text style={styles.activeTitle}>{t('membershipSettings.youAreContributor')}</Text>
                             <Text style={styles.activeDescription}>
-                                Enjoying all premium features with full access to Sikiya
+                                {t('membershipSettings.enjoyingPremiumFeatures')}
                             </Text>
                         </View>
                         
@@ -466,11 +466,11 @@ const MembershipSettingScreen = () => {
                             activeOpacity={generalActiveOpacity}
                         >
                             <Ionicons name="settings-outline" size={20} color={withdrawnTitleColor} />
-                            <Text style={styles.manageButtonText}>Manage Subscription</Text>
+                            <Text style={styles.manageButtonText}>{t('membershipSettings.manageSubscription')}</Text>
                         </TouchableOpacity>
                         
                         <Text style={styles.manageHelper}>
-                            Manage your subscription through {Platform.OS === 'ios' ? 'Apple Settings' : 'Google Play'}
+                            {Platform.OS === 'ios' ? t('membershipSettings.manageViaApple') : t('membershipSettings.manageViaGoogle')}
                         </Text>
                     </View>
                 )}
@@ -487,10 +487,10 @@ const MembershipSettingScreen = () => {
                             activeOpacity={generalActiveOpacity}
                         >
                             <Ionicons name="refresh-outline" size={18} color={MainBrownSecondaryColor} />
-                            <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+                            <Text style={styles.restoreButtonText}>{t('membershipSettings.restorePurchases')}</Text>
                         </TouchableOpacity>
                         <Text style={styles.restoreHelperText}>
-                            Restore previous purchases if you've reinstalled the app or switched devices
+                            {t('membershipSettings.restorePurchasesDescription')}
                         </Text>
                     </View>
                 )}

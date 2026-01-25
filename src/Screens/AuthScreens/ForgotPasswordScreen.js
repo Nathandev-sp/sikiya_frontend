@@ -2,11 +2,12 @@ import React, { useState, useRef, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop, MainSecondaryBlueColor, articleTitleFont } from "../../styles/GeneralAppStyle";
 import { Context as AuthContext } from "../../Context/AuthContext";
 import LottieLoad from "../../Helpers/LottieLoad";
 import SikiyaAPI from "../../../API/SikiyaAPI";
 import { Alert } from "react-native";
+import { useLanguage } from "../../Context/LanguageContext";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const { state, clearErrorMessage } = useContext(AuthContext);
@@ -14,6 +15,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const [emailFocused, setEmailFocused] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const scrollRef = useRef(null);
   const { height } = useWindowDimensions();
@@ -69,28 +71,29 @@ const ForgotPasswordScreen = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section - Same as LoginScreen */}
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.44 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <Image 
-                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
 
               <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeTitle}>Reset Password</Text>
+                <Text style={styles.welcomeTitle}>{t('auth.resetPassword')}</Text>
+                <Text style={styles.instructionText}>
+                {t('auth.resendLinkMessage')}
+                </Text>   
               </View>
             </View>
 
             {/* Form Section */}
             <View style={[auth_Style.formContainer]}>
-              <Text style={styles.instructionText}>
-                Please enter your email address and we will send you a link to reset your password.
-              </Text>
+              
 
               {/* Email Input - Same style as LoginScreen */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Email</Text>
+                <Text style={auth_Style.authLabel}>{t('auth.email')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   emailFocused && auth_Style.authInputContainerFocused,
@@ -100,7 +103,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   <TextInput
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your email"
+                    placeholder={t('auth.emailPlaceholder')}
                     placeholderTextColor="#aaa"
                     value={email}
                     onChangeText={(text) => {
@@ -129,7 +132,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 {loading ? (
                   <LottieLoad />
                 ) : (
-                  <Text style={auth_Style.authButtonText}>Send Reset Link</Text>
+                  <Text style={auth_Style.authButtonText}>{t('auth.sendResetLink')}</Text>
                 )}
               </TouchableOpacity>
 
@@ -141,7 +144,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   activeOpacity={generalActiveOpacity}
                   hitSlop={defaultButtonHitslop}
                 >
-                  <Text style={styles.backToLoginText}>Back to Login</Text>
+                  <Text style={styles.backToLoginText}>{t('auth.login')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -157,17 +160,17 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 10,
+    paddingTop: 24,
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
-    borderRadius: 16,
-    marginBottom: 0,
+    borderRadius: 24,
+    marginBottom: 12,
     flex: 1,
     maxHeight: '70%',
   },
@@ -178,29 +181,30 @@ const styles = StyleSheet.create({
   },
   welcomeContainer: {
     alignItems: 'center',
-    paddingHorizontal: 32,
-    flex: 0.3,
+    paddingHorizontal: 20,
     justifyContent: 'center',
-    paddingTop: 8,
+    paddingTop: 16,
+    //flex: 0.1,
     //backgroundColor: 'red',
   },
   welcomeTitle: {
     fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 8,
+    fontSize: generalTitleSize + 6,
     fontWeight: '700',
     color: generalTitleColor,
     textAlign: 'center',
-    marginBottom: 16,
-    marginTop: 20,
+    marginBottom: 8,
+    marginTop: 0,
   },
   instructionText: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize+1,
     color: withdrawnTitleColor,
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 24,
-    marginBottom: 24,
+    paddingTop: 16,
+    marginBottom: 16,
   },
   sendButton: {
     width: 200,

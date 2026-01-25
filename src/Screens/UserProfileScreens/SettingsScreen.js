@@ -8,24 +8,26 @@ import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useRoute } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { Context as AuthContext } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const SettingsScreen = () => {
     const route = useRoute();
     const { firstname, lastname } = route.params || {};
     const navigation = useNavigation();
     const { signout } = useContext(AuthContext);
+    const { t } = useLanguage();
 
     const handleLogout = () => {
         Alert.alert(
-            'Sign Out',
-            'Are you sure you want to sign out?',
+            t('alerts.signOut'),
+            t('alerts.signOutDescription'),
             [
                 {
-                    text: 'Cancel',
+                    text: t('common.cancel'),
                     style: 'cancel'
                 },
                 {
-                    text: 'Yes',
+                    text: t('common.yes'),
                     onPress: () => signout(),
                     style: 'destructive'
                 }
@@ -37,40 +39,40 @@ const SettingsScreen = () => {
     // Menu items configuration
     const menuItems = [
         {
-            title: 'Profile',
+            title: t('generalSettings.profile'),
             icon: <Ionicons name="person-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('ProfileSettings', { firstname, lastname }),
-            description: 'Edit profile information'
+            description: t('generalSettings.profileDescription')
         },
         {
-            title: 'Membership',
+            title: t('generalSettings.membership'),
             icon: <Ionicons name="card-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('SubscriptionSettings', { firstname, lastname }),
-            description: 'Manage your subscription'
+            description: t('generalSettings.membershipDescription')
         },
         {
-            title: 'Comment History',
+            title: t('generalSettings.commentHistory'),
             icon: <Ionicons name="time-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('CommentSettings', { firstname, lastname }),
-            description: 'Manage the response to a comment'
+            description: t('generalSettings.commentHistoryDescription')
         },
         {
-            title: 'Language',
+            title: t('generalSettings.language'),
             icon: <Ionicons name="language-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('LanguageSettings', { firstname, lastname }),
-            description: 'Change app language'
+            description: t('generalSettings.languageDescription')
         },
         {
-            title: 'Notification Preferences',
+            title: t('generalSettings.notificationPreferences'),
             icon: <Ionicons name="notifications-outline" size={24} />,
             onPress: () => navigation.navigate('NotificationPreferences', { firstname, lastname }),
-            description: 'Manage your notification settings'
+            description: t('generalSettings.notificationPreferencesDescription')
         },
         {
-            title: 'Help & Support',
+            title: t('generalSettings.helpSupport'),
             icon: <Ionicons name="help-circle-outline" size={24} color="#333" />,
             onPress: () => navigation.navigate('HelpSupportSettings', { firstname, lastname }),
-            description: 'Get assistance and FAQs'
+            description: t('generalSettings.helpSupportDescription')
         }
     ];
 
@@ -84,7 +86,7 @@ const SettingsScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 
                 <View style={styles.profileSection}>
-                    <Text style={styles.userName}>Settings</Text>
+                    <Text style={styles.userName}>{t('generalSettings.settings')}</Text>
                 </View>
 
                 <View style={[styles.menuContainer, main_Style.genButtonElevation]}>
@@ -113,14 +115,15 @@ const SettingsScreen = () => {
                     style={[styles.logoutButton, main_Style.genButtonElevation]} 
                     onPress={handleLogout}
                     activeOpacity={generalActiveOpacity}
+                    hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                 >
                     <Ionicons name="log-out-outline" size={18} color={MainBrownSecondaryColor} />
-                    <Text style={styles.logoutText}>Log Out</Text>
+                    <Text style={styles.logoutText}>{t('generalSettings.logout')}</Text>
                 </TouchableOpacity>
                 
                 <VerticalSpacer height={30} />
                 
-                <Text style={styles.versionText}>Version 1.0.0</Text>
+                <Text style={styles.versionText}>Version 1.0.2</Text>
             </ScrollView>
         </SafeAreaView>
     );
@@ -129,7 +132,7 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     profileSection: {
         alignItems: 'center',

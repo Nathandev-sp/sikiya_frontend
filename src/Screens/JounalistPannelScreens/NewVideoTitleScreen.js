@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style, commentTextSize} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import CountryPicker from '../../Components/CountryPicker';
@@ -11,8 +11,10 @@ import VideoGroupPicker from '../../Components/VideoGroupPicker';
 import AfricanCountries from '../../../assets/Data/AfricanCountries.json';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const NewVideoTitleScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const scrollRef = useRef(null);
   const titleInputRef = useRef(null);
   
@@ -85,9 +87,9 @@ const NewVideoTitleScreen = ({ navigation }) => {
     // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       if (titleWordCount < 8 && videoData.videoTitle) {
-        Alert.alert('Title Too Short', 'Video title must be at least 8 words long.');
+        Alert.alert(t('newVideo.titleTooShort'), t('newVideo.titleTooShortMessage'));
       } else {
-        Alert.alert('Missing Fields', 'Please fill in all required fields');
+        Alert.alert(t('newVideo.missingFields'), t('newVideo.missingFieldsMessage'));
       }
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
@@ -125,8 +127,8 @@ const NewVideoTitleScreen = ({ navigation }) => {
       setIsSubmitting(false);
       
       // Show error message
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to create video. Please try again.';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.error || error.message || t('newVideo.failedToCreate');
+      Alert.alert(t('newVideo.error'), errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -138,7 +140,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <View style={styles.loadingContainer}>
           <BigLoaderAnim />
-          <Text style={styles.loadingText}>Creating video...</Text>
+          <Text style={styles.loadingText}>{t('newVideo.creatingVideo')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -173,19 +175,19 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
           {/* Title Section */}
           <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>New Video</Text>
+            <Text style={styles.screenTitle}>{t('newVideo.title')}</Text>
           </View>
 
           {/* Video Title Input */}
           <View style={styles.inputSection}>
             <View style={styles.labelRow}>
-              <Text style={styles.label}>Video Title</Text>
+              <Text style={styles.label}>{t('newVideo.videoTitle')}</Text>
               <Text style={styles.wordCount}>
-                {getWordCount(videoData.videoTitle)} words (min: 8)
+                {getWordCount(videoData.videoTitle)} {t('newVideo.wordsMin')}
               </Text>
             </View>
             <Text style={styles.labelDescription}>
-              Provide a clear and descriptive title that summarizes your video content
+              {t('newVideo.titleDescription')}
             </Text>
             <TextInput
               ref={titleInputRef}
@@ -194,7 +196,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
                 titleFocused && styles.inputFocused,
                 errors.videoTitle && styles.inputError
               ]}
-              placeholder="Enter video title (minimum 8 words)"
+              placeholder={t('newVideo.titlePlaceholder')}
               placeholderTextColor="#aaa"
               value={videoData.videoTitle}
               onChangeText={(text) => handleFormChange('videoTitle', text)}
@@ -208,13 +210,13 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
           {/* Country Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Country</Text>
+            <Text style={styles.label}>{t('newVideo.country')}</Text>
             <CountryPicker
               value={videoData.country}
               onSelect={(country) => handleFormChange('country', country)}
               countryList={AfricanCountries}
-              placeholder="Select country"
-              label="Country"
+              placeholder={t('newVideo.selectCountry')}
+              label={t('newVideo.country')}
               error={errors.country}
               onOpen={dismissKeyboard}
             />
@@ -222,13 +224,13 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
           {/* City Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>City</Text>
+            <Text style={styles.label}>{t('newVideo.city')}</Text>
             <CityPicker
               value={videoData.city}
               onSelect={(city) => handleFormChange('city', city)}
               selectedCountry={videoData.country}
-              placeholder="Select city"
-              label="City"
+              placeholder={t('newVideo.selectCity')}
+              label={t('newVideo.city')}
               error={errors.city}
               onOpen={dismissKeyboard}
             />
@@ -236,12 +238,12 @@ const NewVideoTitleScreen = ({ navigation }) => {
 
           {/* Video Group Picker */}
           <View style={styles.inputSection}>
-            <Text style={styles.label}>Video Category</Text>
+            <Text style={styles.label}>{t('newVideo.videoCategory')}</Text>
             <VideoGroupPicker
               value={videoData.videoGroup}
               onSelect={(group) => handleFormChange('videoGroup', group)}
-              placeholder="Select video category"
-              label="Video Category"
+              placeholder={t('newVideo.selectCategory')}
+              label={t('newVideo.videoCategory')}
               error={errors.videoGroup}
               onOpen={dismissKeyboard}
             />
@@ -254,7 +256,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
             onPress={handleSubmitVideo}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Continue</Text>
+            <Text style={styles.submitButtonText}>{t('newVideo.continue')}</Text>
           </TouchableOpacity>
 
           <View style={styles.bottomSpacer} />
@@ -311,7 +313,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
+    color: generalTextColor,
     marginBottom: 4,
   },
   wordCount: {
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
     color: withdrawnTitleColor,
   },
   labelDescription: {
-    fontSize: generalSmallTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
     marginBottom: 12,
@@ -331,12 +333,13 @@ const styles = StyleSheet.create({
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.2,
+    borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "#FFFFFF",
+    marginBottom: 4,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties

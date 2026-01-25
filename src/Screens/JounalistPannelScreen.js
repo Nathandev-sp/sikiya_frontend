@@ -23,8 +23,10 @@ import AppScreenBackgroundColor, {
 } from '../styles/GeneralAppStyle';
 import { StatusBar } from 'expo-status-bar';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
+import { useLanguage } from '../Context/LanguageContext';
 
 const JounalistPannelScreen = ({ navigation }) => {
+  const { t } = useLanguage();
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
   const [submissionsError, setSubmissionsError] = useState(null);
@@ -91,7 +93,7 @@ const JounalistPannelScreen = ({ navigation }) => {
     } catch (err) {
       console.error('Error fetching submissions:', err);
       if (!append) {
-        setSubmissionsError('Failed to load submissions');
+        setSubmissionsError(t('journalistPanel.failedToLoad'));
       }
     } finally {
       setLoadingSubmissions(false);
@@ -174,7 +176,7 @@ const JounalistPannelScreen = ({ navigation }) => {
           <View style={styles.statsRow}>
             {/* Total Articles Published */}
             <View style={styles.statCardPurple}>
-              <Text style={styles.statCardTitle}>Total Articles</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.totalArticles')}</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.total_articles_published}
               </Text>
@@ -182,7 +184,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             
             {/* Monthly Readers */}
             <View style={styles.statCardBlue}>
-              <Text style={styles.statCardTitle}>Monthly Readers</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyReaders')}</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.monthly_readers.toLocaleString()}
               </Text>
@@ -192,7 +194,7 @@ const JounalistPannelScreen = ({ navigation }) => {
           <View style={styles.statsRow}>
             {/* Engagement Score */}
             <View style={styles.statCardGreen}>
-              <Text style={styles.statCardTitle}>Engagement</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.engagement')}</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : `${stats.engagement_score}%`}
               </Text>
@@ -200,7 +202,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             
             {/* User Impact */}
             <View style={styles.statCardOrange}>
-              <Text style={styles.statCardTitle}>Impact Tier</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.impactTier')}</Text>
               <Text style={styles.statCardValue}>
                 {loadingStats ? '...' : stats.user_impact}
               </Text>
@@ -216,7 +218,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <Ionicons name="document-text" size={24} color={generalTextColor} style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>New Article</Text>
+            <Text style={styles.buttonText}>{t('journalistPanel.newArticle')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -225,7 +227,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             activeOpacity={0.7}
           >
             <Ionicons name="videocam" size={24} color={generalTextColor} style={styles.buttonIcon} />
-            <Text style={styles.buttonText}>New Video</Text>
+            <Text style={styles.buttonText}>{t('journalistPanel.newVideo')}</Text>
           </TouchableOpacity>
         </View>
         
@@ -233,13 +235,13 @@ const JounalistPannelScreen = ({ navigation }) => {
         <View style={styles.contentContainer}>
           <View style={styles.sectionTitleContainer}>
             <Ionicons name="document-text" size={20} color={generalTitleColor} style={styles.sectionTitleIcon} />
-            <Text style={styles.sectionTitle}>Your Articles</Text>
+            <Text style={styles.sectionTitle}>{t('journalistPanel.yourArticles')}</Text>
           </View>
           
           {loadingSubmissions ? (
             <View style={styles.loadingContainer}>
               <MediumLoadingState />
-              <Text style={styles.loadingText}>Loading submissions...</Text>
+              <Text style={styles.loadingText}>{t('journalistPanel.loadingSubmissions')}</Text>
             </View>
           ) : submissionsError ? (
             <View style={styles.emptyState}>
@@ -259,14 +261,14 @@ const JounalistPannelScreen = ({ navigation }) => {
               {loadingMore && (
                 <View style={styles.loadingMoreContainer}>
                   <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
-                  <Text style={styles.loadingMoreText}>Loading more...</Text>
+                  <Text style={styles.loadingMoreText}>{t('journalistPanel.loadingMore')}</Text>
                 </View>
               )}
             </>
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="document-text-outline" size={48} color={withdrawnTitleColor} />
-              <Text style={styles.placeholderText}>Your submitted articles and videos will appear here</Text>
+              <Text style={styles.placeholderText}>{t('journalistPanel.noSubmissionsYet')}</Text>
             </View>
           )}
         </View>

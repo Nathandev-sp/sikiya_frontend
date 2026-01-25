@@ -24,8 +24,10 @@ import AppScreenBackgroundColor, {
   MainSecondaryBlueColor
 } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const NewArticleDisclaimerScreen = ({ navigation, route }) => {
+  const { t } = useLanguage();
   const { articleId, articleTitle, articleData } = route.params || {};
   const [agreed, setAgreed] = useState(false);
 
@@ -61,7 +63,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
 
       {/* Title Section */}
       <View style={styles.titleSection}>
-        <Text style={styles.screenTitle}>Article Disclaimer</Text>
+        <Text style={styles.screenTitle}>{t('articleDisclaimer.title')}</Text>
       </View>
 
       {/* Disclaimer Content */}
@@ -71,7 +73,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="image" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Upload good images with good quality</Text>
+          <Text style={styles.sectionText}>{t('articleDisclaimer.imageQuality')}</Text>
         </View>
 
         {/* Accuracy Section */}
@@ -79,7 +81,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="shield-checkmark" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Upload the most accurate information to the best of your knowledge</Text>
+          <Text style={styles.sectionText}>{t('articleDisclaimer.accuracy')}</Text>
         </View>
 
         {/* Review Process Section */}
@@ -87,7 +89,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="document-text" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>All articles are subject to review by Sikiya's editorial team</Text>
+          <Text style={styles.sectionText}>{t('articleDisclaimer.reviewProcess')}</Text>
         </View>
 
         {/* Proof Requirements Section */}
@@ -95,7 +97,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="lock-closed" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>Provide proof text and/or images to support your article</Text>
+          <Text style={styles.sectionText}>{t('articleDisclaimer.proofRequirements')}</Text>
         </View>
 
         {/* Publication Rights Section */}
@@ -103,7 +105,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="globe" size={32} color={MainSecondaryBlueColor} />
           </View>
-          <Text style={styles.sectionText}>You grant Sikiya the right to publish and distribute your article</Text>
+          <Text style={styles.sectionText}>{t('articleDisclaimer.publicationRights')}</Text>
         </View>
       </View>
 
@@ -122,7 +124,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
           />
         </TouchableOpacity>
         <Text style={styles.agreeText}>
-          I have read and understand the article disclaimer and agree to the terms
+          {t('articleDisclaimer.agreeTerms')}
         </Text>
       </View>
 
@@ -137,7 +139,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
         onPress={handleContinue}
         disabled={!agreed}
       >
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={styles.continueButtonText}>{t('articleDisclaimer.continue')}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

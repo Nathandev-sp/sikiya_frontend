@@ -1,67 +1,41 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { auth_Style, AppScreenBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor } from "../../styles/GeneralAppStyle";
+import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor } from "../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
 import GoBackButton from "../../../NavComponents/GoBackButton";
-import LottieLoad from "../../Helpers/LottieLoad";
-import SikiyaAPI from "../../../API/SikiyaAPI";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../Context/LanguageContext";
 
 // Import terms and conditions
-import { termsAndConditions as termsData } from "../../../assets/PDFs/UserT&C";
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+import { termsAndConditions } from "../../../assets/PDFs/UserT&C";
 
 const JournalistTermConditions = ({ route }) => {
   const navigation = useNavigation();
   const { journalistInfo, journalistInfo2, profileImageKey } = route.params;
   const [agreed, setAgreed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { appLanguage, contentLanguage } = useLanguage();
+  const { appLanguage, t } = useLanguage();
+  
+  // Get the correct terms based on language
+  const language = appLanguage === 'fr' ? 'fr' : 'en';
+  const termsData = termsAndConditions.journalist[language];
 
-  const createJournalistProfile = async () => {
+  const handleContinue = () => {
     if (!agreed) return;
-
-    setLoading(true);
-
-    try {
-      const payload = {
-        firstname: journalistInfo.firstName,
-        lastname: journalistInfo.lastName,
-        date_of_birth: journalistInfo.dob,
-        city_of_residence: journalistInfo.city,
-        country_of_residence: journalistInfo.country,
-        interested_african_country: journalistInfo.countryOfInterest,
-        signed_agreement: true,
-        displayName: journalistInfo2.nickname || `${journalistInfo.firstName} ${journalistInfo.lastName}`,
-        journalist_affiliation: journalistInfo2.mediaCompany.trim() || 'Independent Journalist',
-        journalist_description: journalistInfo2.description,
-        area_of_expertise: journalistInfo2.areaOfExpertise,
-        profile_picture: profileImageKey,
-        phone_country_code: journalistInfo.phoneCountryCode?.code || journalistInfo.phoneCountryCode,
-        phone_number: journalistInfo.phoneNumber,
-        appLanguage: appLanguage, // Include app language from context
-        contentLanguage: contentLanguage // Include content language from context
-      };
-
-      const response = await SikiyaAPI.post('/signup/journalist', payload);
-      await sleep(500);
-      navigation.navigate("JournalistFinishJoin")
-
-    } catch (error) {
-      console.log("Error creating user profile:", error);
-    } finally {
-      setLoading(false);
-    }
+    
+    // Navigate to finish screen which will handle the API call
+    navigation.navigate("JournalistFinishJoin", {
+      journalistInfo,
+      journalistInfo2,
+      profileImageKey
+    });
   };
 
   return (
     <SafeAreaView style={auth_Style.authSafeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={"dark-content"} />
-      <AuthScreenMiniHeader title="Terms and Conditions" />
+      <AuthScreenMiniHeader title={t('onboarding.termsAndConditions')} />
       <GoBackButton />
       
       <View style={[auth_Style.formContainer]}>
@@ -74,7 +48,7 @@ const JournalistTermConditions = ({ route }) => {
           >
             {/* Header */}
             <Text style={styles.termsTitle}>{termsData.title}</Text>
-            <Text style={styles.lastUpdated}>Last Updated: {termsData.lastUpdated}</Text>
+            <Text style={styles.lastUpdated}>{t('onboarding.lastUpdated')}: {termsData.lastUpdated}</Text>
 
             {/* Sections */}
             {termsData.sections.map((section, index) => (
@@ -101,7 +75,7 @@ const JournalistTermConditions = ({ route }) => {
             />
           </TouchableOpacity>
           <Text style={styles.agreeText}>
-            I have read and agree to Sikiya's terms and conditions
+            {t('onboarding.agreeToTerms')}
           </Text>
         </View>
 
@@ -113,18 +87,10 @@ const JournalistTermConditions = ({ route }) => {
             auth_Style.authButtonStyle,
             { marginTop: 24, marginBottom: 20, opacity: agreed ? 1 : 0.2 }
           ]}
-          onPress={() => {
-            if (agreed) {
-              createJournalistProfile();
-            }
-          }}
-          disabled={!agreed || loading}
+          onPress={handleContinue}
+          disabled={!agreed}
         >
-          {loading ? (
-            <LottieLoad />
-          ) : (
-            <Text style={auth_Style.authButtonText}>Open Sikiya</Text>
-          )}
+          <Text style={auth_Style.authButtonText}>{t('common.continue')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

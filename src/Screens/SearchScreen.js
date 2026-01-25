@@ -1,28 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TextInput, TouchableOpacity, Keyboard, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import i18n from '../utils/i18n';
 import AppScreenBackgroundColor, { 
     main_Style, 
-    secCardBackgroundColor, 
     generalTextColor, 
     generalTextFont, 
     generalTextSize,
     generalTextFontWeight,
     generalLineHeight,
-    lightBannerBackgroundColor, 
     MainSecondaryBlueColor, 
     MainBrownSecondaryColor,
-    genBtnBackgroundColor,
     withdrawnTitleColor,
-    generalActiveOpacity
+    generalActiveOpacity,
+    mainBrownColor
 } from '../styles/GeneralAppStyle';
-import { mainBrownColor } from '../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import ToggleBlock from '../../NavComponents/ToggleBlock';
 import PeopleDisplay from '../Components/PeopleDisplay';
 import SecondaryNewsCart from '../Components/SecondaryNewscart';
 import SikiyaAPI from '../../API/SikiyaAPI';
-import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 
 const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles }) => {
@@ -388,23 +385,24 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                             <TextInput
                                 ref={searchInputRef}
                                 style={styles.searchInput}
-                                placeholder="Search here..."
+                                placeholder={i18n.t('search.searchPlaceholder') || 'Search here...'}
                                 placeholderTextColor="#aaa"
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
-                                returnKeyType="done"
-                                onSubmitEditing={() => Keyboard.dismiss()}
+                                returnKeyType="search"
+                                onSubmitEditing={handleSearch}
                                 onFocus={() => {
                                     setIsSearchFocused(true);
                                 }}
                                 onBlur={() => {
                                     setIsSearchFocused(false);
                                 }}
-                                blurOnSubmit={true}
+                                blurOnSubmit={false}
                                 autoCorrect={false}
                                 autoCapitalize="none"
                                 editable={!isSearching}
                                 selectTextOnFocus={false}
+                                accessibilityLabel={i18n.t('search.searchInput')}
                             />
                             {searchQuery.length > 0 && (
                                 <TouchableOpacity
@@ -451,7 +449,22 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                 </View>
             ) : error ? (
                 <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={48} color="#FF6B6B" style={{ marginBottom: 12 }} />
                     <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity 
+                        style={styles.retryButton}
+                        onPress={() => {
+                            setError(null);
+                            if (selected === 'People') {
+                                fetchRandomJournalists();
+                            } else {
+                                fetchRandomArticles();
+                            }
+                        }}
+                        activeOpacity={generalActiveOpacity}
+                    >
+                        <Text style={styles.retryButtonText}>{i18n.t('common.retry')}</Text>
+                    </TouchableOpacity>
                 </View>
             ) : (
                 <ScrollView
@@ -482,7 +495,15 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                             ))
                         ) : (
                             <View style={styles.noResultsContainer}>
-                                <Text style={styles.noResultsText}>No journalists found</Text>
+                                <Ionicons name="people-outline" size={56} color={withdrawnTitleColor} style={{ opacity: 0.4, marginBottom: 12 }} />
+                                <Text style={styles.noResultsText}>
+                                    {i18n.t('search.noJournalistsFound')}
+                                </Text>
+                                {hasSearched && (
+                                    <Text style={styles.noResultsSubtext}>
+                                        {i18n.t('search.tryDifferentSearch')}
+                                    </Text>
+                                )}
                             </View>
                         )
                     ) : (
@@ -495,14 +516,24 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                             ))
                         ) : (
                             <View style={styles.noResultsContainer}>
-                                <Text style={styles.noResultsText}>No articles found</Text>
+                                <Ionicons name="document-text-outline" size={56} color={withdrawnTitleColor} style={{ opacity: 0.4, marginBottom: 12 }} />
+                                <Text style={styles.noResultsText}>
+                                    {i18n.t('article.noArticles')}
+                                </Text>
+                                {hasSearched && (
+                                    <Text style={styles.noResultsSubtext}>
+                                        {i18n.t('search.tryDifferentSearch')}
+                                    </Text>
+                                )}
                             </View>
                         )
                     )}
                     {loadingMore && (
                         <View style={styles.loadingMoreContainer}>
                             <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
-                            <Text style={styles.loadingMoreText}>Loading more...</Text>
+                            <Text style={styles.loadingMoreText}>
+                                {i18n.t('common.loadMore')}
+                            </Text>
                         </View>
                     )}
                 </ScrollView>
@@ -513,21 +544,27 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
 
 const styles = StyleSheet.create({
     searchSectionContainer: {
-        //backgroundColor: '#F0EBE5',
-        paddingBottom: 0,
+        backgroundColor: AppScreenBackgroundColor,
+        paddingBottom: 8,
         width: '100%',
         alignSelf: 'center',
-        borderBottomWidth: 0.6,
-        borderBottomColor: '#E0E0E0',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        elevation: 2,
     },
     searchBarContainer: {
-        paddingHorizontal: 8,
-        paddingTop: 0,
+        paddingHorizontal: 12,
+        paddingTop: 4,
         paddingBottom: 4,
     },
     toggleBlockContainer: {
-        paddingHorizontal: 8,
-        paddingBottom: 4,
+        paddingHorizontal: 12,
+        paddingTop: 4,
+        paddingBottom: 8,
     },
     searchRow: {
         flexDirection: 'row',
@@ -539,20 +576,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderRadius: 8,
+        borderRadius: 12,
         paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderWidth: 0.8,
-        borderColor: '#E0E0E0',
-       
+        paddingVertical: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.08)',
     },
     searchInputFocused: {
-        borderColor: '#2BA1E6',
+        borderColor: MainBrownSecondaryColor,
         borderWidth: 1.5,
-        backgroundColor: '#F0F6FA',
-        shadowColor: '#2BA1E6',
-        shadowOpacity: 0.15,
+        backgroundColor: '#FFFFFF',
+        shadowColor: MainBrownSecondaryColor,
+        shadowOpacity: 0.12,
         shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
         elevation: 3,
     },
     searchIcon: {
@@ -563,13 +600,13 @@ const styles = StyleSheet.create({
         fontSize: generalTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        fontWeight: '400',
         paddingVertical: 0,
         lineHeight: generalLineHeight,
     },
     searchButton: {
-        width: 52,
-        height: 42,
+        width: 48,
+        height: 48,
         borderRadius: 12,
         backgroundColor: MainBrownSecondaryColor,
         justifyContent: 'center',
@@ -608,26 +645,56 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: 50,
+        paddingTop: 60,
+        paddingHorizontal: 32,
     },
     errorText: {
-        fontSize: 16,
-        color: 'red',
+        fontSize: generalTextSize,
+        color: '#FF6B6B',
         textAlign: 'center',
         fontFamily: generalTextFont,
+        fontWeight: '500',
+        marginBottom: 20,
+    },
+    retryButton: {
+        backgroundColor: MainBrownSecondaryColor,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    retryButtonText: {
+        color: AppScreenBackgroundColor,
+        fontSize: generalTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: '600',
     },
     noResultsContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: 50,
+        paddingTop: 80,
+        paddingHorizontal: 32,
     },
     noResultsText: {
-        fontSize: 15,
-        color: '#666',
+        fontSize: generalTextSize + 1,
+        color: generalTextColor,
         textAlign: 'center',
         fontFamily: generalTextFont,
-        fontWeight: '500',
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    noResultsSubtext: {
+        fontSize: generalTextSize - 1,
+        color: withdrawnTitleColor,
+        textAlign: 'center',
+        fontFamily: generalTextFont,
+        fontWeight: '400',
+        opacity: 0.8,
     },
     loadingMoreContainer: {
         paddingVertical: 20,

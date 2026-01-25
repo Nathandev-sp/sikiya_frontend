@@ -10,6 +10,7 @@ import GoBackButton from "../../../NavComponents/GoBackButton";
 import BigLoaderAnim from "../../Components/LoadingComps/BigLoaderAnim";
 import ArticleLoadingState from "../../Components/LoadingComps/ArticleLoading";
 import { getImageUrl } from "../../utils/imageUrl";
+import i18n from "../../utils/i18n";
 
 const AuthorProfileScreen = ({ route }) => {
     const { userId } = route.params;
@@ -92,7 +93,7 @@ const AuthorProfileScreen = ({ route }) => {
                 <StatusBar barStyle="dark-content" />
                 <GoBackButton />
                 <BigLoaderAnim />
-                <Text style={styles.loadingText}>Loading user profile...</Text>
+                <Text style={styles.loadingText}>{i18n.t('profile.loadingUserProfile')}</Text>
             </View>
         );
     }
@@ -116,11 +117,11 @@ const AuthorProfileScreen = ({ route }) => {
 
                     {/* Not Premium User Card */}
                     <View style={styles.notPremiumCard}>
-                        <View style={styles.notPremiumIconContainer}>
-                            <Ionicons name="person-outline" size={56} color={MainBrownSecondaryColor} />
+                        <View style={styles.notPremiumIconCircle}>
+                            <Ionicons name="person-outline" size={56} color={withdrawnTitleColor} />
                         </View>
                         <Text style={styles.notPremiumText}>
-                            The user you selected is not a Sikiya premium user
+                            {i18n.t('profile.notPremiumUser')}
                         </Text>
                     </View>
                 </View>
@@ -131,7 +132,14 @@ const AuthorProfileScreen = ({ route }) => {
     if (!user) {
         return (
             <SafeAreaView style={main_Style.safeArea}>
-                <Text>User not found.</Text>
+                <StatusBar barStyle="dark-content" />
+                <GoBackButton />
+                <View style={styles.errorContainer}>
+                    <View style={styles.errorIconContainer}>
+                        <Ionicons name="person-outline" size={48} color={withdrawnTitleColor} />
+                    </View>
+                    <Text style={styles.errorText}>{i18n.t('profile.userNotFound')}</Text>
+                </View>
             </SafeAreaView>
         );
     }
@@ -147,13 +155,13 @@ const AuthorProfileScreen = ({ route }) => {
 
     // Format role for display
     const formatRole = (role) => {
-        if (!role) return 'Not specified';
+        if (!role) return i18n.t('profile.notSpecified');
         const roleMap = {
-            'journalist': 'Journalist',
-            'thoughtleader': 'Thought Leader',
-            'contributor': 'Contributor',
-            'general': 'General User',
-            'needID': 'Pending Verification'
+            'journalist': i18n.t('profile.journalist'),
+            'thoughtleader': i18n.t('profile.thoughtLeader'),
+            'contributor': i18n.t('profile.contributor'),
+            'general': i18n.t('profile.generalUser'),
+            'needID': i18n.t('profile.pendingVerification')
         };
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
@@ -203,7 +211,7 @@ const AuthorProfileScreen = ({ route }) => {
                                 <View style={styles.statContent}>
                                     <Ionicons name="shield-checkmark" size={18} color="#4CAF50" />
                                     <Text style={styles.statLabel}>
-                                        {user.role === 'journalist' ? 'Trust Score' : 'Respect Score'}
+                                        {user.role === 'journalist' ? i18n.t('profile.trustScore') : i18n.t('profile.respectScore')}
                                     </Text>
                                     <Text style={styles.statText}>
                                         {user.role === 'journalist' 
@@ -216,7 +224,7 @@ const AuthorProfileScreen = ({ route }) => {
                             <View style={styles.statItem}>
                                 <View style={styles.statContent}>
                                     <Ionicons name="people" size={18} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.statLabel}>Followers</Text>
+                                    <Text style={styles.statLabel}>{i18n.t('profile.followers')}</Text>
                                     <Text style={styles.statText}>{formatFollowers(user.number_of_followers)}</Text>
                                 </View>
                             </View>
@@ -232,7 +240,7 @@ const AuthorProfileScreen = ({ route }) => {
                                     activeOpacity={0.8}
                                     disabled
                                 >
-                                    <Text style={styles.selfProfileText}>Self Profile</Text>
+                                    <Text style={styles.selfProfileText}>{i18n.t('profile.selfProfile')}</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <FollowButton 
@@ -256,7 +264,7 @@ const AuthorProfileScreen = ({ route }) => {
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
                                     <Ionicons name="person" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>Full Name</Text>
+                                    <Text style={styles.infoTitle}>{i18n.t('profile.fullName')}</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
                                     {user.firstname} {user.lastname}
@@ -265,7 +273,7 @@ const AuthorProfileScreen = ({ route }) => {
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
                                     <Ionicons name="medal" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>Role</Text>
+                                    <Text style={styles.infoTitle}>{i18n.t('profile.role')}</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
                                     {formatRole(user.role)}
@@ -278,7 +286,7 @@ const AuthorProfileScreen = ({ route }) => {
                                 <View style={styles.infoItem}>
                                     <View style={styles.infoHeader}>
                                         <Ionicons name="business" size={16} color={MainBrownSecondaryColor} />
-                                        <Text style={styles.infoTitle}>Affiliation</Text>
+                                        <Text style={styles.infoTitle}>{i18n.t('profile.affiliation')}</Text>
                                     </View>
                                     <Text style={styles.infoText} numberOfLines={2}>
                                         {user.journalist_affiliation}
@@ -288,10 +296,10 @@ const AuthorProfileScreen = ({ route }) => {
                             <View style={styles.infoItem}>
                                 <View style={styles.infoHeader}>
                                     <Ionicons name="megaphone" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>Area of Focus</Text>
+                                    <Text style={styles.infoTitle}>{i18n.t('profile.areaOfFocus')}</Text>
                                 </View>
                                 <Text style={styles.infoText} numberOfLines={2}>
-                                    {user.area_of_expertise || 'Not specified'}
+                                    {user.area_of_expertise || i18n.t('profile.notSpecified')}
                                 </Text>
                             </View>
                         </View>
@@ -301,10 +309,10 @@ const AuthorProfileScreen = ({ route }) => {
                     <View style={styles.descriptionSection}>
                         <View style={styles.sectionHeader}>
                             <Ionicons name="document-text" size={18} color={MainBrownSecondaryColor} />
-                            <Text style={styles.sectionTitle}>About</Text>
+                            <Text style={styles.sectionTitle}>{i18n.t('profile.about')}</Text>
                         </View>
                         <Text style={styles.description}>
-                            {user.journalist_description || user.bio || 'No description available.'}
+                            {user.journalist_description || user.bio || i18n.t('profile.noDescriptionAvailable')}
                         </Text>
                     </View>
                 
@@ -317,9 +325,11 @@ const AuthorProfileScreen = ({ route }) => {
                             <View style={styles.sectionHeaderRow}>
                                 <View style={styles.sectionHeader}>
                                     <Ionicons name="newspaper-outline" size={20} color={generalTitleColor} />
-                                    <Text style={styles.recentArticleText}>Recent Articles</Text>
+                                    <Text style={styles.recentArticleText}>{i18n.t('profile.recentArticles')}</Text>
                                 </View>
-                                <Text style={styles.articleCount}>{user.articles.length} {user.articles.length === 1 ? 'article' : 'articles'}</Text>
+                                <Text style={styles.articleCount}>
+                                    {user.articles.length} {user.articles.length === 1 ? i18n.t('profile.article') : i18n.t('profile.articles_plural')}
+                                </Text>
                             </View>
                             <SecNewsCartMap articles={user.articles}/>
                         </View>
@@ -342,6 +352,29 @@ const styles = StyleSheet.create({
         fontWeight: generalTextFontWeight,
         color: generalTextColor,
         fontFamily: generalTextFont,
+        marginTop: 16,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: lightBannerBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    errorText: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        textAlign: 'center',
     },
     scrollViewContainer: {
         flex: 1,
@@ -599,6 +632,15 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    notPremiumIconCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: lightBannerBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 24,
     },
     notPremiumText: {
         fontSize: generalTextSize,

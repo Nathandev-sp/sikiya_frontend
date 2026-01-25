@@ -1,47 +1,85 @@
-import React from "react";
-import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Alert} from 'react-native';
+import React, { useState } from "react";
+import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Alert, ActivityIndicator} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import TextSlicer from "../Helpers/TextSlicer";
-import AppScreenBackgroundColor, { articleTitleColor, articleTitleFont, cardBackgroundColor, generalLineHeight, generalSmallLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainborderColor, mainBrownColor, widrawnTitleColor, withdrawnTitleColor, withdrawnTitleSize } from "../styles/GeneralAppStyle";
+import i18n from '../utils/i18n';
+import AppScreenBackgroundColor, { 
+    articleTitleColor, 
+    articleTitleFont, 
+    cardBackgroundColor, 
+    generalLineHeight, 
+    generalSmallLineHeight, 
+    generalSmallTextSize,
+    generalTextColor, 
+    generalTextFont, 
+    generalTextSize, 
+    generalTitleColor, 
+    generalTitleFont, 
+    generalTitleFontWeight, 
+    lightBannerBackgroundColor, 
+    main_Style,
+    mainborderColor, 
+    mainBrownColor, 
+    secCardBackgroundColor,
+    withdrawnTitleColor, 
+    withdrawnTitleSize 
+} from "../styles/GeneralAppStyle";
 import BookmarkIcon from "./BookmarkIcon";
 import DateConverter from "../Helpers/DateConverter";
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
 const SecondaryNewsCart = ({article}) => {
-    const {width, height} = useWindowDimensions()
-    const navigation = useNavigation()
-
-    //console.log("Article in SecondaryNewsCart:", article);
+    const {width, height} = useWindowDimensions();
+    const navigation = useNavigation();
+    const [imageLoading, setImageLoading] = useState(true);
 
     const goToNewsHome = () => {
         if (article && article._id) {
             navigation.navigate('NewsHome', {article: article});
         } else {
             console.error('Cannot navigate: article ID is missing', article);
-            // Optional: Show an alert to the user
-            Alert.alert('Error', 'Cannot open this article');
+            Alert.alert(i18n.t('common.error'), i18n.t('article.cannotOpen') || 'Cannot open this article');
         }
-    }
+    };
 
     return(
-        <TouchableOpacity activeOpacity={0.8} onPress={goToNewsHome}>
-            <View style = {[styles.container, {width: width * 0.98}]}>
-                <View style = {styles.introContainer}>
-                    <View style = {styles.imageContainer}>
+        <TouchableOpacity 
+            activeOpacity={0.75} 
+            onPress={goToNewsHome}
+            accessibilityRole="button"
+            accessibilityLabel={`${i18n.t('article.readArticle')}: ${article.article_title}`}
+            accessibilityHint={i18n.t('article.tapToRead') || 'Tap to read full article'}
+        >
+            <View style={[styles.container, main_Style.genContentElevation, {width: width * 0.96}]}>
+                <View style={styles.introContainer}>
+                    {/* Image Container with Loading State */}
+                    <View style={styles.imageContainer}>
                         <Image 
                             style={contentstyle.frontImage}
                             defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
                             source={{ uri: getImageUrl(article.article_front_image) }}
+                            resizeMode="cover"
+                            onLoadStart={() => setImageLoading(true)}
+                            onLoadEnd={() => setImageLoading(false)}
+                            onError={() => setImageLoading(false)}
                         />
-                        {/* Light Dark Overlay */}
-                        <View style={styles.imageOverlay} pointerEvents="none" />
+                        
+                        {/* Loading Indicator */}
+                        {imageLoading && (
+                            <View style={styles.imageLoadingOverlay}>
+                                <ActivityIndicator size="small" color={mainBrownColor} />
+                            </View>
+                        )}
                     </View>
                     
                     <View style={styles.contentContainer}>
-                        {/* Category */}
+                        {/* Category Badge */}
                         {article.category && (
-                            <Text style={styles.categoryText}>{article.category}</Text>
+                            <View style={styles.categoryBadge}>
+                                <Text style={styles.categoryText}>
+                                    {article.category.toUpperCase()}
+                                </Text>
+                            </View>
                         )}
                         
                         {/* Title */}
@@ -57,23 +95,23 @@ const SecondaryNewsCart = ({article}) => {
                         
                         {/* Author Info */}
                         <View style={styles.authorContainer}>
-                            <Image 
-                                style={styles.authorImage}
-                                defaultSource={require('../../assets/functionalImages/ProfilePic.png')} 
-                                source={{ uri: getImageUrl(article.journalist?.profile_picture) }}
-                            />
+                            <View style={styles.authorImageContainer}>
+                                <Image 
+                                    style={styles.authorImage}
+                                    defaultSource={require('../../assets/functionalImages/ProfilePic.png')} 
+                                    source={{ uri: getImageUrl(article.journalist?.profile_picture) }}
+                                    resizeMode="cover"
+                                />
+                            </View>
                             <View style={styles.authorInfo}>
                                 <Text style={styles.authorName} numberOfLines={1}>
                                     {(() => {
-                                        // Try different possible structures for displayName
                                         if (article.journalist?.displayName) {
                                             return article.journalist.displayName;
                                         }
-                                        // Check nested structure
                                         if (article.journalist?.journalist?.displayName) {
                                             return article.journalist.journalist.displayName;
                                         }
-                                        // Fallback to firstname + lastname
                                         const firstname = article.journalist?.firstname || article.journalist?.journalist?.firstname || '';
                                         const lastname = article.journalist?.lastname || article.journalist?.journalist?.lastname || '';
                                         if (firstname || lastname) {
@@ -82,7 +120,12 @@ const SecondaryNewsCart = ({article}) => {
                                         return 'Unknown';
                                     })()}
                                 </Text>
-                                <Text style={contentstyle.DatePosted}>{DateConverter(article.published_on)}</Text>
+                                <View style={styles.dateRow}>
+                                    <Ionicons name="time-outline" size={10} color={withdrawnTitleColor} style={{marginTop: 1}} />
+                                    <Text style={contentstyle.DatePosted}>
+                                        {DateConverter(article.published_on)}
+                                    </Text>
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -97,76 +140,99 @@ const SecondaryNewsCart = ({article}) => {
 
 const styles = StyleSheet.create({
     container: {
-        //backgroundColor: 'red',
-        borderRadius: 10,
-        marginVertical: 4,
+        backgroundColor: cardBackgroundColor,
+        borderRadius: 8,
+        marginVertical: 6,
         alignSelf: 'center',
-        padding: 4,
+        padding: 6,
         zIndex: 10,
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
+        borderWidth: 0.8,
+        borderColor: "#ccc",
+        //shadowColor: '#000',
+        //shadowOffset: { width: 0, height: 2 },
+        //shadowOpacity: 0.1,
+        //shadowRadius: 4,
+        //elevation: 3,
+        ...main_Style.genButtonElevation
     },
     introContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        //backgroundColor: 'yellow',
     },
     imageContainer: {
         width: 160,
         height: 120,
-        borderRadius: 8,
-        backgroundColor: mainBrownColor,
+        borderRadius: 4,
+        backgroundColor: '#E8E8E8',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
         marginRight: 12,
         position: 'relative',
+        borderWidth: 0.8,
+        borderColor: "#ccc",
+        ...main_Style.genButtonElevation
     },
-    imageOverlay: {
+    imageLoadingOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        borderRadius: 8,
-        zIndex: 1,
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 2,
     },
     contentContainer: {
         flex: 1,
         justifyContent: 'space-between',
-        //paddingRight: 32,
         minHeight: 110,
-        paddingLeft: 0,
-        paddingRight: 4,
-        paddingTop: 6,
-        paddingBottom: 6,
+        paddingRight: 8,
+        paddingTop: 2,
+        paddingBottom: 2,
+        //backgroundColor: 'red',
+    },
+    categoryBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(157, 115, 64, 0.12)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginBottom: 6,
     },
     categoryText: {
-        fontSize: 11,
-        color: withdrawnTitleColor,
+        fontSize: 10,
+        color: mainBrownColor,
         fontFamily: generalTextFont,
-        fontWeight: '500',
-        marginBottom: 4,
-        textTransform: 'capitalize',
+        fontWeight: '600',
+        letterSpacing: 0.3,
     },
     ArticleTitleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
         marginBottom: 8,
-        minHeight: 60,
-        //backgroundColor: 'red',
+        minHeight: 54,
     },
     authorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 4,
     },
+    authorImageContainer: {
+        borderRadius: 17,
+        borderWidth: 1.2,
+        borderColor: "#ccc",
+        padding: 0.4,
+        marginRight: 8,
+        backgroundColor: '#FFF',
+    },
     authorImage: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        marginRight: 10,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
     },
     authorInfo: {
         flex: 1,
@@ -174,10 +240,15 @@ const styles = StyleSheet.create({
     },
     authorName: {
         fontSize: withdrawnTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: withdrawnTitleColor,
+        fontWeight: '600',
+        color: generalTextColor,
         fontFamily: generalTitleFont,
         marginBottom: 2,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
     },
 });
 
@@ -185,21 +256,23 @@ const contentstyle = StyleSheet.create({
     frontImage: {
         width: "100%",
         height: '100%',
-        borderRadius: 8,
+        borderRadius: 0,
     },
     cardTitle: {
         fontSize: generalTextSize,
-        fontWeight: generalTitleFontWeight,
+        fontWeight: '600',
         color: generalTextColor,
-        lineHeight: generalSmallLineHeight,
+        lineHeight: generalSmallLineHeight * 1.15,
         fontFamily: articleTitleFont,
+        letterSpacing: 0.2,
     },
     DatePosted: {
-        fontSize: withdrawnTitleSize,
+        fontSize: withdrawnTitleSize - 0.5,
         color: withdrawnTitleColor,
         fontFamily: generalTitleFont,
-        fontWeight: generalTitleFontWeight,
+        fontWeight: '500',
+        marginLeft: 1,
     },
-})
+});
 
 export default SecondaryNewsCart;

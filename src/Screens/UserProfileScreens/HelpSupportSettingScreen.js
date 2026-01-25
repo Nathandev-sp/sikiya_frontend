@@ -1,40 +1,42 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, TextInput, Switch, Linking, StatusBar} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleTextSize, cardBackgroundColor, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, generalTitleFontWeight, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTextSize, cardBackgroundColor, commentTextSize, generalActiveOpacity, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, generalTitleFontWeight, genBtnBackgroundColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor } from '../../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useRoute } from '@react-navigation/native';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const HelpSupportSettingScreen = () => {
+    const { t } = useLanguage();
     const [expandedFAQ, setExpandedFAQ] = useState(null);
 
     const faqData = [
         {
             id: 1,
-            question: "How do I reset my password?",
-            answer: "Go to Settings > Profile > Account Security and click 'Change Password'. You'll receive a verification code via email to complete the process."
+            question: t('helpSupport.faq1Question'),
+            answer: t('helpSupport.faq1Answer')
         },
         {
             id: 2,
-            question: "How do I upgrade my membership?",
-            answer: "Navigate to Settings > Membership and select your desired plan. You can upgrade anytime, and changes take effect on your next billing cycle."
+            question: t('helpSupport.faq2Question'),
+            answer: t('helpSupport.faq2Answer')
         },
         {
             id: 3,
-            question: "Can I save articles for offline reading?",
-            answer: "Yes! Tap the bookmark icon on any article to save it. Premium members get unlimited saves, while free users can save up to 10 articles."
+            question: t('helpSupport.faq3Question'),
+            answer: t('helpSupport.faq3Answer')
         },
         {
             id: 4,
-            question: "How do I report inappropriate content?",
-            answer: "Tap the three-dot menu on any article or comment and select 'Report'. Our moderation team reviews all reports within 24 hours."
+            question: t('helpSupport.faq4Question'),
+            answer: t('helpSupport.faq4Answer')
         },
         {
             id: 5,
-            question: "What payment methods do you accept?",
-            answer: "We accept all major credit cards (Visa, Mastercard, Amex), PayPal, and Apple Pay. All transactions are secured with 256-bit encryption."
+            question: t('helpSupport.faq5Question'),
+            answer: t('helpSupport.faq5Answer')
         }
     ];
 
@@ -61,13 +63,13 @@ const HelpSupportSettingScreen = () => {
                 
                 {/* Header Section */}
                 <View style={settingsStyles.headerSection}>
-                    <Ionicons name="help-circle-outline" style={settingsStyles.headerIcon} />
-                    <Text style={settingsStyles.headerTitle}>Help & Support</Text>
+                    <Ionicons name="help-circle" style={settingsStyles.headerIcon} />
+                    <Text style={settingsStyles.headerTitle}>{t('helpSupport.helpAndSupport')}</Text>
                 </View>
 
                 {/* Contact Us Section */}
                 <View style={[styles.formContainer, main_Style.genButtonElevation]}>
-                    <Text style={styles.sectionTitle}>Contact Us</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.contactUs')}</Text>
                     
                     {/* Email */}
                     <TouchableOpacity 
@@ -76,13 +78,13 @@ const HelpSupportSettingScreen = () => {
                         activeOpacity={generalActiveOpacity}
                     >
                         <View style={styles.iconContainer}>
-                            <Ionicons name="mail-outline" size={16} color={MainBrownSecondaryColor} />
+                            <Ionicons name="mail" size={20} color={MainBrownSecondaryColor} />
                         </View>
                         <View style={styles.contactTextContainer}>
-                            <Text style={styles.contactLabel}>Email</Text>
+                            <Text style={styles.contactLabel}>{t('helpSupport.email')}</Text>
                             <Text style={styles.contactValue}>nathan.cibonga@sikiya.org</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={withdrawnTitleColor} />
+                        <Ionicons name="chevron-forward" size={22} color={withdrawnTitleColor} />
                     </TouchableOpacity>
 
                     {/* Phone */}
@@ -92,13 +94,13 @@ const HelpSupportSettingScreen = () => {
                         activeOpacity={generalActiveOpacity}
                     >
                         <View style={styles.iconContainer}>
-                            <Ionicons name="call-outline" size={16} color={MainBrownSecondaryColor} />
+                            <Ionicons name="call" size={20} color={MainBrownSecondaryColor} />
                         </View>
                         <View style={styles.contactTextContainer}>
-                            <Text style={styles.contactLabel}>Phone</Text>
+                            <Text style={styles.contactLabel}>{t('helpSupport.phone')}</Text>
                             <Text style={styles.contactValue}>+27 67 875 1255</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={withdrawnTitleColor} />
+                        <Ionicons name="chevron-forward" size={22} color={withdrawnTitleColor} />
                     </TouchableOpacity>
                 </View>
 
@@ -106,7 +108,7 @@ const HelpSupportSettingScreen = () => {
 
                 {/* FAQ Section */}
                 <View style={[styles.formContainer, main_Style.genButtonElevation]}>
-                    <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+                    <Text style={styles.sectionTitle}>{t('helpSupport.frequentlyAskedQuestions')}</Text>
                     
                     {faqData.map((faq, index) => (
                         <View key={faq.id}>
@@ -115,13 +117,6 @@ const HelpSupportSettingScreen = () => {
                                 onPress={() => toggleFAQ(faq.id)}
                                 activeOpacity={generalActiveOpacity}
                             >
-                                <View style={styles.iconContainer}>
-                                    <Ionicons 
-                                        name="help-circle-outline" 
-                                        size={20} 
-                                        color={MainBrownSecondaryColor} 
-                                    />
-                                </View>
                                 <View style={styles.faqTextContainer}>
                                     <Text style={styles.faqQuestion}>{faq.question}</Text>
                                     {expandedFAQ === faq.id && (
@@ -129,9 +124,9 @@ const HelpSupportSettingScreen = () => {
                                     )}
                                 </View>
                                 <Ionicons 
-                                    name={expandedFAQ === faq.id ? "chevron-up" : "chevron-down"} 
-                                    size={20} 
-                                    color={withdrawnTitleColor} 
+                                    name={expandedFAQ === faq.id ? "chevron-up-circle" : "chevron-down-circle"} 
+                                    size={24} 
+                                    color={MainBrownSecondaryColor} 
                                 />
                             </TouchableOpacity>
                             {index < faqData.length - 1 && <View style={styles.divider} />}
@@ -148,77 +143,88 @@ const HelpSupportSettingScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     formContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginHorizontal: 8,
-        padding: 16,
+        backgroundColor: genBtnBackgroundColor,
+        borderRadius: 16,
+        marginHorizontal: 12,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     sectionTitle: {
-        fontSize: articleTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: withdrawnTitleColor,
-        marginBottom: 12,
+        fontSize: generalTextSize,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        marginBottom: 16,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.3,
     },
     contactItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        paddingVertical: 14,
+        paddingHorizontal: 4,
+        borderBottomWidth: 1.5,
+        borderBottomColor: '#E5E7EB',
     },
     iconContainer: {
-        width: 35,
-        height: 35,
-        borderRadius: 20,
-        backgroundColor: secCardBackgroundColor,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: lightBannerBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 14,
     },
     contactTextContainer: {
         flex: 1,
     },
     contactLabel: {
-        fontSize: commentTextSize,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        marginBottom: 2,
+        marginBottom: 4,
+        letterSpacing: 0.2,
     },
     contactValue: {
         fontSize: generalTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        fontWeight: '500',
+        fontWeight: '600',
+        letterSpacing: 0.2,
     },
     faqItem: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
+        alignItems: 'flex-start',
+        paddingVertical: 14,
+        paddingHorizontal: 4,
     },
     faqTextContainer: {
         flex: 1,
+        marginRight: 8,
     },
     faqQuestion: {
-        fontSize: commentTextSize,
+        fontSize: generalTextSize,
         color: generalTextColor,
-        fontFamily: generalTextFont,
-        fontWeight: '500',
+        fontFamily: generalTitleFont,
+        fontWeight: '600',
         marginBottom: 0,
+        letterSpacing: 0.2,
+        lineHeight: 20,
     },
     faqAnswer: {
-        fontSize: generalTextSize,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        lineHeight: 18,
-        marginTop: 8,
+        lineHeight: 20,
+        marginTop: 10,
+        paddingRight: 4,
     },
     divider: {
-        height: 1,
-        backgroundColor: '#f0f0f0',
+        height: 1.5,
+        backgroundColor: '#E5E7EB',
         marginVertical: 4,
     },
 });

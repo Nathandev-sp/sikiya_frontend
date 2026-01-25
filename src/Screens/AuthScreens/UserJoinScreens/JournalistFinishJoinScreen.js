@@ -1,79 +1,211 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, StatusBar } from "react-native";
+import React, { useEffect, useState, useContext } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, StatusBar, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from 'lottie-react-native';
-import { auth_Style, bannerBackgroundColor, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, MainBrownSecondaryColor } from "../../../styles/GeneralAppStyle";
+import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../../Components/AuthScreenMiniHeader";
-import BigLoaderAnim from "../../../Components/LoadingComps/BigLoaderAnim";
-import {Context as AuthContext} from "../../../Context/AuthContext";
+import LottieLoad from "../../../Helpers/LottieLoad";
+import SikiyaAPI from "../../../../API/SikiyaAPI";
+import { Context as AuthContext } from "../../../Context/AuthContext";
+import { useLanguage } from "../../../Context/LanguageContext";
+import { Ionicons } from "@expo/vector-icons";
 
 const animation = require("../../../../assets/LottieView/JournalistWorkingLottie.json");
 
-const welcomeMessage = "Thank you for your interest in joining Sikiya as a journalist. Be part of our mission to publish articles that inspire thoughtful and constructive discussions about Africa. You will be assigned a publisher who will contact you via email with further details.";
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const nextSteps = [
-  "Enjoy Sikiya as a user",
-  "Wait for an email from your publisher",
-  "Complete journalist training",
-  "Start posting",
-];
-
-const JournalistFinishJoinScreen = ({ navigation }) => {
+const JournalistFinishJoinScreen = ({ navigation, route }) => {
   const { height } = useWindowDimensions();
-  const { state, updateRole } = useContext(AuthContext);
+  const { updateRole } = useContext(AuthContext);
+  const { appLanguage, contentLanguage, t } = useLanguage();
+  const { journalistInfo, journalistInfo2, profileImageKey } = route.params;
 
+  const [loading, setLoading] = useState(true);
+  const [profileCreated, setProfileCreated] = useState(false);
+  const [timer, setTimer] = useState(15);
+
+  // Disable back button
   useEffect(() => {
-    const timer = setTimeout(() => {
-      updateRole('general');
-    }, 5000); // 5 seconds
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Prevent going back
+      if (!profileCreated) {
+        e.preventDefault();
+      }
+    });
 
-    return () => clearTimeout(timer);
+    return unsubscribe;
+  }, [navigation, profileCreated]);
+
+  // Create journalist profile on mount
+  useEffect(() => {
+    createJournalistProfile();
   }, []);
+
+  // Start timer once profile is created and auto-navigate when done
+  useEffect(() => {
+    if (!profileCreated) return;
+
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          // Auto-navigate when timer reaches 0
+          updateRole({ role: 'general' });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [profileCreated]);
+
+  const createJournalistProfile = async () => {
+    setLoading(true);
+
+    try {
+      const payload = {
+        firstname: journalistInfo.firstName,
+        lastname: journalistInfo.lastName,
+        date_of_birth: journalistInfo.dob,
+        city_of_residence: journalistInfo.city,
+        country_of_residence: journalistInfo.country,
+        interested_african_country: journalistInfo.countryOfInterest,
+        signed_agreement: true,
+        displayName: journalistInfo2.nickname || `${journalistInfo.firstName} ${journalistInfo.lastName}`,
+        journalist_affiliation: journalistInfo2.mediaCompany.trim() || 'Independent Journalist',
+        journalist_description: journalistInfo2.description,
+        area_of_expertise: journalistInfo2.areaOfExpertise,
+        profile_picture: profileImageKey,
+        phone_country_code: journalistInfo.phoneCountryCode?.code || journalistInfo.phoneCountryCode,
+        phone_number: journalistInfo.phoneNumber,
+        appLanguage: appLanguage,
+        contentLanguage: contentLanguage
+      };
+
+      await SikiyaAPI.post('/signup/journalist', payload);
+      await sleep(500);
+      setProfileCreated(true);
+    } catch (error) {
+      console.log("Error creating journalist profile:", error);
+      Alert.alert(
+        t('errors.serverError'),
+        error.response?.data?.error || t('errors.unknownError'),
+        [
+          { text: t('common.tryAgain'), onPress: () => createJournalistProfile() },
+          { text: t('common.cancel'), onPress: () => navigation.goBack() }
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    // Allow user to skip the timer by clicking
+    await updateRole({ role: 'general' });
+  };
+
+  const nextSteps = [
+    { icon: "mail-outline", text: t('onboarding.expectEmailFromSikiya') },
+    { icon: "document-text-outline", text: t('onboarding.fillOutAdminPaperwork') },
+    { icon: "checkmark-circle-outline", text: t('onboarding.getAccessAndStartReporting') },
+  ];
 
   return (
     <SafeAreaView style={auth_Style.authSafeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={"dark-content"} />
-      <AuthScreenMiniHeader title="Welcome to Sikiya" />
+      <AuthScreenMiniHeader title={t('onboarding.welcomeToSikiya')} />
 
-      <View style={[auth_Style.onboardingContainer, { height: height * 0.60, width: '96%', marginTop: 16 }, auth_Style.authElevation]}>
-        <View style={styles.mainContainer}>
-          {/* Lottie Animation Section */}
-          <View style={styles.ImageGridContainer}>
-            <LottieView
-              source={animation}
-              style={styles.singleAnimation}
-              autoPlay
-              loop
-            />
+      <View style={[auth_Style.onboardingContainer, { height: height * 0.55, width: '94%', marginTop: 4 }, auth_Style.authElevation]}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <LottieLoad />
+            <Text style={styles.loadingText}>{t('onboarding.creatingYourProfile')}</Text>
           </View>
+        ) : (
+          <View style={styles.mainContainer}>
+            {/* Lottie Animation Section */}
+            <View style={styles.ImageGridContainer}>
+              <LottieView
+                source={animation}
+                style={styles.singleAnimation}
+                autoPlay
+                loop
+              />
+            </View>
 
-          {/* Text Content Section */}
-          <View style={styles.TextGridContainer}>
-            <Text style={styles.introParagraph}>
-              {welcomeMessage}
-            </Text>
-            
-            <Text style={styles.introMissionParagraph}>
-              Next Steps:
-            </Text>
-            
-            <View style={{ marginBottom: 12, width: '95%', alignSelf: 'center' }}>
-              {nextSteps.map((item, idx) => (
-                <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <Text style={{ fontSize: 13.5, color: MainBrownSecondaryColor, marginRight: 8 }}>{'\u2022'}</Text>
-                  <Text style={{ fontFamily: generalTextFont, fontSize: 13.5, color: 'black', flex: 1 }}>{item}</Text>
-                </View>
-              ))}
+            {/* Text Content Section */}
+            <View style={styles.TextGridContainer}>
+              
+              
+              <Text style={styles.introMissionParagraph}>
+                {t('onboarding.nextSteps')}:
+              </Text>
+              
+              <View style={styles.nextStepsContainer}>
+                {nextSteps.map((item, idx) => (
+                  <View key={idx} style={styles.stepItem}>
+                    <View style={styles.stepIconContainer}>
+                      <Ionicons name={item.icon} size={20} color={MainBrownSecondaryColor} />
+                    </View>
+                    <Text style={styles.stepText}>{item.text}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={[styles.inTheMeantimeContainer, main_Style.genContentElevation]}>
+                <Ionicons name="heart-outline" size={24} color={MainSecondaryBlueColor} style={styles.heartIcon} />
+                <Text style={styles.inTheMeantimeText}>
+                  {t('onboarding.inTheMeantime')}
+                </Text>
+              </View>
+
+              {/* In the meantime message */}
+              
             </View>
           </View>
-        </View>
+        )}
       </View>
-      <BigLoaderAnim />
+
+      {/* Continue Button with Timer - Auto-navigates or tap to skip */}
+      {profileCreated && (
+        <TouchableOpacity
+          hitSlop={defaultButtonHitslop}
+          style={[
+            auth_Style.authButtonStyle,
+            styles.continueButton,
+          ]}
+          activeOpacity={generalActiveOpacity}
+          onPress={handleContinue}
+        >
+          <Text style={auth_Style.authButtonText}>
+            {timer > 0 
+              ? `${t('onboarding.openSikiya')} (${timer}s)`
+              : t('onboarding.openSikiya')
+            }
+          </Text>
+          <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.arrowIcon} />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    fontFamily: generalTextFont,
+    fontSize: 16,
+    color: generalTitleColor,
+    marginTop: 16,
+    textAlign: 'center',
+  },
   mainContainer: {
     flex: 1,
     padding: 0,
@@ -81,47 +213,104 @@ const styles = StyleSheet.create({
   },
   ImageGridContainer: {
     width: '100%',
-    height: '50%',
+    height: '42%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
     marginTop: 0,
     backgroundColor: '#F6F3EF',
-    borderRadius: 4,
-    padding: 2,
+    borderRadius: 8,
+    padding: 4,
   },
   singleAnimation: {
-    width: '80%',
-    height: '90%',
+    width: '85%',
+    height: '95%',
     alignSelf: 'center',
   },
   TextGridContainer: {
     width: '100%',
-    height: '48%',
-    justifyContent: 'center',
-    padding: 8,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    flex: 1,
+    justifyContent: 'flex-start',
+    padding: 16,
+    paddingTop: 8,
   },
   introParagraph: {
     fontFamily: generalTextFont,
     fontSize: 13.5,
-    color: 'black',
+    color: generalTextColor,
     marginBottom: 16,
-    alignSelf: 'center',
-    textAlign: 'justify',
+    textAlign: 'center',
+    lineHeight: 19,
   },
   introMissionParagraph: {
     fontFamily: generalTitleFont,
-    fontSize: 16,
+    fontSize: generalTitleSize,
     fontWeight: 'bold',
     color: generalTitleColor,
-    textAlign: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  nextStepsContainer: {
+    marginBottom: 12,
+    width: '100%',
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 8,
+  },
+  stepIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: secCardBackgroundColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: MainBrownSecondaryColor + '40',
+  },
+  stepText: {
+    fontFamily: generalTextFont,
+    fontSize: generalTextSize,
+    color: generalTextColor,
+    flex: 1,
+    lineHeight: 18,
+  },
+  inTheMeantimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: secCardBackgroundColor,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+  },
+  heartIcon: {
+    marginRight: 6,
+  },
+  inTheMeantimeText: {
+    fontFamily: generalTextFont,
+    fontSize: generalTextSize,
+    color: generalTextColor,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    flex: 1,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 300,
+    marginTop: 40,
+    marginBottom: 24,
+    minHeight: 54,
+  },
+  arrowIcon: {
+    marginLeft: 8,
   },
 });
 

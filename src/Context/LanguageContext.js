@@ -17,8 +17,8 @@ export const useLanguage = () => {
 
 // Language Provider Component
 export const LanguageProvider = ({ children }) => {
-  const [appLanguage, setAppLanguage] = useState('en');
-  const [contentLanguage, setContentLanguage] = useState('english');
+  const [appLanguage, setAppLanguage] = useState('fr');
+  const [contentLanguage, setContentLanguage] = useState('french');
   const [isLoading, setIsLoading] = useState(true);
 
   // Load saved language preferences on mount

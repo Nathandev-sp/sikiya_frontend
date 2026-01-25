@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Modal, FlatList, StyleSheet, useWindowDimensions, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth_Style, authScrreenBackgroundColor, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, MainBrownSecondaryColor, withdrawnTitleColor, articleTextSize, generalActiveOpacity } from "../styles/GeneralAppStyle";
+import { useLanguage } from "../Context/LanguageContext";
 
 const ARTICLE_GROUPS = ['Politics', 'Economy', 'Social', 'Tech', 'Sports', 'Business', 'Entertainment', 'Culture', 'World'];
 
@@ -17,6 +18,7 @@ const ArticleGroupPicker = ({
 }) => {
   const { height } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
+  const { t } = useLanguage();
 
   const handleCancel = () => {
     setVisible(false);
@@ -61,7 +63,7 @@ const ArticleGroupPicker = ({
             {/* Header */}
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={handleCancel} style={styles.headerButton} hitslop={{top: 10, bottom: 10, left: 10, right: 10}} activeOpacity={generalActiveOpacity}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <Text style={styles.modalTitle}>{label}</Text>
               <View style={styles.headerButton} />
@@ -128,8 +130,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#D1D1D6",
   },
   headerButton: {
-    width: 60,
-    paddingHorizontal: 4,
+    width: 75,
+    paddingHorizontal: 2,
     paddingVertical: 4,
   },
   modalTitle: {

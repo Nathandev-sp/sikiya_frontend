@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, TextInput, Switch, Linking, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleTextSize, articleTitleSize, auth_Style, cardBackgroundColor, commentTextSize, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, largeTextSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTextSize, articleTitleSize, auth_Style, cardBackgroundColor, commentTextSize, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, largeTextSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize, lightBannerBackgroundColor, genBtnBackgroundColor, mainBrownColor } from '../../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -14,6 +14,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SmallLoadingState from '../../Components/LoadingComps/SmallLoadingState';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Context as AuthContext } from '../../Context/AuthContext';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const ProfileSettingScreen = () => {
     const route = useRoute();
@@ -42,6 +43,7 @@ const ProfileSettingScreen = () => {
     const [profileImageVersion, setProfileImageVersion] = useState(Date.now()); // Cache-busting version
     const [uploadingImage, setUploadingImage] = useState(false);
     const [userRole, setUserRole] = useState(null);
+    const { t } = useLanguage();
     
     // Focus states for inputs
     const [displayNameFocused, setDisplayNameFocused] = useState(false);
@@ -110,7 +112,7 @@ const ProfileSettingScreen = () => {
             console.log('Image upload error:', error);
             console.log('Error response:', error.response?.data);
             console.log('Error status:', error.response?.status);
-            Alert.alert('Upload failed', 'Failed to upload profile image. Please try again.');
+            Alert.alert(t('alerts.uploadFailed'), t('alerts.uploadFailedDescription'));
             setProfileImageKey(null);
         } finally {
             setUploadingImage(false);
@@ -120,15 +122,15 @@ const ProfileSettingScreen = () => {
     // Pick image from gallery or camera
     const pickImage = async () => {
         Alert.alert(
-            "Change Profile Photo",
-            "Choose an option",
+            t('alerts.changeProfilePhoto'),
+            t('alerts.chooseOption'),
             [
                 {
-                    text: "Camera",
+                    text: t('alerts.camera'),
                     onPress: async () => {
                         const { status } = await ImagePicker.requestCameraPermissionsAsync();
                         if (status !== 'granted') {
-                            Alert.alert('Permission needed', 'Camera permission is required to take a photo.');
+                            Alert.alert(t('alerts.permissionNeeded'), t('alerts.cameraPermissionDescription'));
                             return;
                         }
                         const result = await ImagePicker.launchCameraAsync({
@@ -143,11 +145,11 @@ const ProfileSettingScreen = () => {
                     }
                 },
                 {
-                    text: "Gallery",
+                    text: t('alerts.gallery'),
                     onPress: async () => {
                         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
                         if (status !== 'granted') {
-                            Alert.alert('Permission needed', 'Gallery permission is required to select a photo.');
+                            Alert.alert(t('alerts.permissionNeeded'), t('alerts.galleryPermissionDescription'));
                             return;
                         }
                         const result = await ImagePicker.launchImageLibraryAsync({
@@ -161,7 +163,7 @@ const ProfileSettingScreen = () => {
                         }
                     }
                 },
-                { text: "Cancel", style: "cancel" }
+                { text: t('common.cancel'), style: "cancel" }
             ]
         );
     };
@@ -208,7 +210,7 @@ const ProfileSettingScreen = () => {
             }
         } catch (error) {
             console.error('Error saving profile:', error);
-            Alert.alert('Error', 'Failed to update profile');
+            Alert.alert(t('alerts.error'), t('alerts.errorDescription'));
         } finally {
             setIsLoading(false);
         }
@@ -347,7 +349,7 @@ const ProfileSettingScreen = () => {
                     <View style={styles.scoreContainer}>
                         <View style={styles.scoreTitleContainer}>
                             <Ionicons name="trophy-outline" size={24} color={MainSecondaryBlueColor} />
-                            <Text style={styles.sectionTitle}>Trust Score</Text>
+                            <Text style={styles.sectionTitle}>{t('profile.trustScore')}</Text>
                         </View>
                         <View style={styles.scoreValueContainer}>
                             <Text style={styles.scorePercentage}>{respectScore}%</Text>
@@ -364,12 +366,7 @@ const ProfileSettingScreen = () => {
                     {/* Toggle for display name format */}
                     <View style={styles.toggleGroup}>
                         <View style={styles.toggleTextContainer}>
-                            <Text style={styles.toggleLabel}>Use First & Last Name as Display Name</Text>
-                            <Text style={styles.toggleDescription}>
-                                {useFullNameAsDisplay 
-                                    ? 'Shows "First Last"' 
-                                    : 'Use custom display name'}
-                            </Text>
+                            <Text style={styles.toggleLabel}>{t('profileSettings.useFullNameAsDisplay')}</Text>
                         </View>
                         <Switch
                             value={useFullNameAsDisplay}
@@ -383,7 +380,10 @@ const ProfileSettingScreen = () => {
 
                     {/* Display Name (editable when toggle is OFF) */}
                     <View style={styles.inputGroup} ref={displayNameContainerRef}>
-                        <Text style={styles.label}>Display Name</Text>
+                        <View style={styles.labelContainer}>
+                           
+                            <Text style={styles.label}>{t('profile.displayName')}</Text>
+                        </View>
                         {useFullNameAsDisplay ? (
                             <View style={[styles.input, styles.disabledInput]}>
                                 <Text style={styles.disabledInputText}>{displayName || 'Not set'}</Text>
@@ -399,7 +399,7 @@ const ProfileSettingScreen = () => {
                                     style={styles.inputText}
                                     value={customDisplayName}
                                     onChangeText={setCustomDisplayName}
-                                    placeholder="Enter custom display name"
+                                    placeholder={t('profileSettings.displayNamePlaceholder')}
                                     placeholderTextColor="#aaa"
                                     autoCapitalize="none"
                                     hitSlop={defaultButtonHitslop}
@@ -416,29 +416,36 @@ const ProfileSettingScreen = () => {
                         )}
                         <Text style={styles.helperText}>
                             {useFullNameAsDisplay 
-                                ? 'This is generated from your first and last name' 
-                                : 'This is how your name appears to others'}
+                                ? t('profileSettings.thisIsGeneratedFromYourFirstLastName') 
+                                : t('profileSettings.thisIsHowYourNameAppearsToOthers')}
                         </Text>
                     </View>
 
                      {/* Interested African Country */}
                      <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Interested African Country</Text>
+                        <View style={styles.labelContainer}>
+                            
+                            <Text style={styles.label}>{t('profile.africanCountryOfInterest')}</Text>
+                        </View>
                         <CountryPicker
                             value={interestedCountry}
                             onSelect={country => setInterestedCountry(country)}
                             countryList={AfricanCountries}
                             error={false}
-                            label="Select country"
+                            label={t('profile.africanCountryOfInterest')}
+                            placeholder={t('profile.africanCountryOfInterestPlaceholder')}
                         />
                         <Text style={styles.helperText}>
-                            Which African country's news interests you most?
+                            {t('profile.africanCountryOfInterestPlaceholder')}
                         </Text>
                     </View>
 
                     {/* Biography */}
                     <View style={styles.inputGroup} ref={biographyContainerRef}>
-                        <Text style={styles.label}>Biography</Text>
+                        <View style={styles.labelContainer}>
+                            
+                            <Text style={styles.label}>{t('profile.bio')}</Text>
+                        </View>
                         <TextInput
                             ref={biographyInputRef}
                             style={[
@@ -448,7 +455,7 @@ const ProfileSettingScreen = () => {
                             ]}
                             value={biography}
                             onChangeText={setBiography}
-                            placeholder="Tell us about yourself..."
+                            placeholder={t('profile.bioPlaceholder')}
                             placeholderTextColor="#999"
                             multiline
                             numberOfLines={4}
@@ -463,7 +470,7 @@ const ProfileSettingScreen = () => {
                             onBlur={() => setBiographyFocused(false)}
                         />
                         <Text style={styles.helperText}>
-                            Share your story, interests, or background ({biography.length}/500)
+                            {t('onboarding.descriptionPlaceholder')} ({biography.length}/500)
                         </Text>
                     </View>
 
@@ -471,7 +478,10 @@ const ProfileSettingScreen = () => {
 
                     {/* Area of Expertise */}
                     <View style={styles.inputGroup} ref={areaOfExpertiseContainerRef}>
-                        <Text style={styles.label}>Area of Expertise</Text>
+                        <View style={styles.labelContainer}>
+                            
+                            <Text style={styles.label}>{t('profile.areaOfExpertise')}</Text>
+                        </View>
                         <TextInput
                             ref={areaOfExpertiseInputRef}
                             style={[
@@ -481,7 +491,7 @@ const ProfileSettingScreen = () => {
                             ]}
                             value={areaOfExpertise}
                             onChangeText={setAreaOfExpertise}
-                            placeholder="What are your areas of expertise?"
+                            placeholder={t('onboarding.areaOfExpertisePlaceholder')}
                             placeholderTextColor="#999"
                             multiline
                             numberOfLines={3}
@@ -496,7 +506,7 @@ const ProfileSettingScreen = () => {
                             onBlur={() => setAreaOfExpertiseFocused(false)}
                         />
                         <Text style={styles.helperText}>
-                            List your professional skills, knowledge areas, or interests ({areaOfExpertise.length}/300)
+                            {t('profileSettings.listYourProfessionalSkillsKnowledgeAreasOrInterests')} ({areaOfExpertise.length}/300)
                         </Text>
                     </View>
 
@@ -507,7 +517,7 @@ const ProfileSettingScreen = () => {
                         activeOpacity={generalActiveOpacity}
                     >
                         <Ionicons name="save-outline" size={18} color={AppScreenBackgroundColor} />
-                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                        <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -521,7 +531,7 @@ const ProfileSettingScreen = () => {
                         activeOpacity={generalActiveOpacity}
                     >
                         <View style={styles.verificationTitleContainer}>
-                            <Text style={styles.sectionTitle}>Verified User</Text>
+                            <Text style={styles.sectionTitle}>{t('profileSettings.verifiedUser')}</Text>
                             {isVerified ? (
                                 <Ionicons name="checkmark-circle" size={20} color="#49A078" />
                             ) : (
@@ -542,15 +552,15 @@ const ProfileSettingScreen = () => {
                             {isVerified ? (
                                 <View style={styles.verifiedBadge}>
                                     <Ionicons name="shield-checkmark" size={40} color="#49A078" />
-                                    <Text style={styles.verifiedText}>Your account is verified!</Text>
+                                    <Text style={styles.verifiedText}>{t('profileSettings.yourAccountIsVerified')}</Text>
                                     <Text style={styles.verifiedSubtext}>
-                                        You have been verified as a trusted member of the Sikiya community.
+                                        {t('profileSettings.haveBeenSikiyaVerified')}
                                     </Text>
                                 </View>
                             ) : (
                                 <>
                                     <Text style={styles.verificationText}>
-                                        Send us a piece of legal ID with the first name and last name matching your account at the following email:
+                                        {t('profileSettings.sendUsID')}
                                     </Text>
                                     
                                     <TouchableOpacity 
@@ -564,7 +574,7 @@ const ProfileSettingScreen = () => {
 
                                     <Text style={styles.verificationFooter}>
                                         <Ionicons name="time-outline" size={12} color={withdrawnTitleColor} />
-                                        {' '}We should get you verified within 3 business days
+                                        {' '}{t('profileSettings.getVerifiedWithin')}
                                     </Text>
                                 </>
                             )}
@@ -572,28 +582,8 @@ const ProfileSettingScreen = () => {
                     )}
                 </View>
 
-                <VerticalSpacer height={20} />
+                <VerticalSpacer height={35} />
 
-                {/* Password Section */}
-                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
-                    <Text style={styles.sectionTitle}>Password</Text>
-                    
-                    <TouchableOpacity 
-                        style={[styles.resetPasswordButton, main_Style.genButtonElevation]}
-                        onPress={handleResetPassword}
-                        activeOpacity={generalActiveOpacity}
-                    >
-                        <Ionicons name="key-outline" size={18} color="#fff" />
-                        <Text style={styles.resetPasswordText}>Request Password Reset</Text>
-                    </TouchableOpacity>
-
-                    <Text style={styles.passwordHelperText}>
-                        <Ionicons name="information-circle-outline" size={12} color={withdrawnTitleColor} />
-                        {' '}We'll send a password reset link to your email address
-                    </Text>
-                </View>
-
-                <VerticalSpacer height={30} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -662,21 +652,23 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     formContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginHorizontal: 8,
-        padding: 12,
+        backgroundColor: genBtnBackgroundColor,
+        borderRadius: 16,
+        marginHorizontal: 12,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     nameTitleSection: {
         marginBottom: 20,
         paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: generalTextColor,
     },
     nameTitle: {
         fontSize: articleTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
+        color: generalTextColor,
         fontFamily: generalTitleFont,
         textAlign: 'center',
     },
@@ -702,7 +694,7 @@ const styles = StyleSheet.create({
     },
     scoreBarBackground: {
         height: 8,
-        backgroundColor: '#E5E7EB',
+        backgroundColor: AppScreenBackgroundColor,
         borderRadius: 6,
         overflow: 'hidden',
     },
@@ -712,25 +704,36 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     inputGroup: {
-        marginBottom: 20,
+        marginBottom: 24,
+    },
+    labelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        gap: 8,
     },
     label: {
-        fontSize: commentTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        marginBottom: 8,
-        fontFamily: generalTextFont,
+        fontSize: generalTextSize,
+        fontWeight: '600',
+        color: generalTextColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 0.3,
     },
     input: {
         backgroundColor: "#FFFFFF",
         borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
         color: generalTextColor,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#ccc',
+        zIndex: 8,
+        shadowColor: '#000000', // iOS shadow properties
+        shadowOffset: { width: 0, height: 0.2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 0.3,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -738,90 +741,122 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFFFFF",
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#ccc',
         paddingHorizontal: 12,
-        minHeight: 44, // Match the height of regular input (10px padding top + 10px bottom + text height)
+        //paddingVertical: 10,
+        zIndex: 8,
+        shadowColor: '#000000', // iOS shadow properties
+        shadowOffset: { width: 0, height: 0.2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 0.3,
     },
     inputIcon: {
-        fontSize: 18,
-        color: withdrawnTitleColor,
-        marginRight: 8,
+        fontSize: 20,
+        color: MainBrownSecondaryColor,
+        marginRight: 10,
     },
     inputText: {
         flex: 1,
-        paddingVertical: 8,
+        paddingVertical: 10,
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
+        color: generalTextColor,
     },
     textArea: {
-        minHeight: 100,
-        maxHeight: 150,
-        paddingTop: 10,
+        minHeight: 110,
+        maxHeight: 160,
+        paddingTop: 12,
+        paddingBottom: 12,
     },
     inputFocused: {
         borderColor: '#2BA1E6',
-        borderWidth: 1.5,
+        borderWidth: 1.2,
         backgroundColor: '#F0F6FA',
+        shadowColor: '#2BA1E6',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     disabledInput: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: secCardBackgroundColor,
+        borderColor: '#ccc',
     },
     disabledInputText: {
-        color: '#666',
-        fontSize: 15,
+        color: generalTextColor,
+        fontSize: generalTextSize,
         fontFamily: generalTextFont,
     },
     helperText: {
         fontSize: withdrawnTitleSize,
         color: withdrawnTitleColor,
-        marginTop: 4,
+        marginTop: 6,
         fontFamily: generalTextFont,
+        lineHeight: 16,
+        fontStyle: 'italic',
     },
     toggleGroup: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        paddingVertical: 16,
+        paddingHorizontal: 4,
+        borderBottomWidth: 1.5,
+        borderBottomColor: '#E5E7EB',
+        marginBottom: 4,
     },
     toggleTextContainer: {
         flex: 1,
-        marginRight: 15,
+        marginRight: 16,
     },
     toggleLabel: {
-        fontSize: commentTextSize,
-        fontWeight: '500',
-        color: generalTextColor,
-        fontFamily: generalTextFont,
+        fontSize: generalTextSize,
+        fontWeight: '600',
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 0.2,
     },
     toggleDescription: {
         fontSize: withdrawnTitleSize,
         color: withdrawnTitleColor,
-        marginTop: 3,
+        marginTop: 4,
         fontFamily: generalTextFont,
+        lineHeight: 16,
     },
     saveButton: {
         backgroundColor: MainBrownSecondaryColor,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        marginTop: 8,
+        gap: 10,
+        marginTop: 12,
+        shadowColor: MainBrownSecondaryColor,
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 4,
     },
     saveButtonText: {
         color: AppScreenBackgroundColor,
         fontSize: generalTextSize,
-        fontWeight: '600',
+        fontWeight: '700',
         fontFamily: generalTitleFont,
+        letterSpacing: 0.5,
     },
     sectionTitle: {
         fontSize: generalTextSize,
-        fontWeight: 'bold',
-        color: generalTextColor,
+        fontWeight: '700',
+        color: generalTitleColor,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.3,
     },
     verificationHeader: {
         flexDirection: 'row',

@@ -1,29 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import FollowButton from '../Components/FollowButton';
-import { articleTitleColor, articleTitleFont, cardBackgroundColor, genBtnBackgroundColor, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, mainBrownColor, secCardBackgroundColor, withdrawnTitleColor, MainBrownSecondaryColor, articleTextSize } from "../styles/GeneralAppStyle";
+import i18n from '../utils/i18n';
+import { 
+    articleTitleFont, 
+    cardBackgroundColor, 
+    genBtnBackgroundColor, 
+    generalSmallTextSize, 
+    generalTextColor, 
+    generalTextFont, 
+    generalTextFontWeight, 
+    generalTitleFont, 
+    generalTitleFontWeight, 
+    main_Style,
+    mainBrownColor, 
+    withdrawnTitleColor, 
+    withdrawnTitleSize,
+    MainBrownSecondaryColor, 
+    articleTextSize 
+} from "../styles/GeneralAppStyle";
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../utils/imageUrl';
-import SikiyaAPI from '../../API/SikiyaAPI';
 
 const PeopleDisplay = ({ journalist, onFollowToggle }) => {
-    const { width, height } = useWindowDimensions();
+    const { width } = useWindowDimensions();
 
-    // Format role for display
+    // Format role for display with translations
     const formatRole = (role) => {
-        if (!role) return 'General User';
+        if (!role) return i18n.t('profile.generalUser') || 'General User';
         const roleMap = {
-            'journalist': 'Journalist',
-            'thoughtleader': 'Thought Leader',
-            'contributor': 'Contributor',
-            'general': 'General User',
-            'needID': 'Pending Verification'
+            'journalist': i18n.t('journalist.journalist') || 'Journalist',
+            'thoughtleader': i18n.t('profile.thoughtLeader') || 'Thought Leader',
+            'contributor': i18n.t('onboarding.contributors') || 'Contributor',
+            'general': i18n.t('profile.generalUser') || 'General User',
+            'needID': i18n.t('profile.pendingVerification') || 'Pending Verification'
         };
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
 
-    const firstname = journalist.firstname || "Unknown";
+    const firstname = journalist.firstname || i18n.t('profile.unknown') || "Unknown";
     const lastname = journalist.lastname || "";
     const role = formatRole(journalist.role);
     const isFollowing = journalist.isFollowing || false;
@@ -34,41 +50,54 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
         ? getImageUrl(journalist.profile_picture) 
         : null;
 
-    const navigation = useNavigation()
+    const navigation = useNavigation();
 
     const goToAuthorProfile = () => {
-        navigation.navigate('AuthorProfile', { userId: journalist._id })
-    }
+        navigation.navigate('AuthorProfile', { userId: journalist._id });
+    };
 
     const handleFollowToggle = () => {
         if (onFollowToggle && !isOwnProfile) {
             onFollowToggle(journalist._id, isFollowing);
         }
-    }
+    };
 
     return (
         <TouchableOpacity 
-            activeOpacity={0.8} 
+            activeOpacity={0.75} 
             onPress={goToAuthorProfile}
+            accessibilityRole="button"
+            accessibilityLabel={`${i18n.t('profile.profile')}: ${firstname} ${lastname}`}
+            accessibilityHint={i18n.t('profile.viewProfile') || 'Tap to view profile'}
             style={[
                 styles.container,
-                { width: width * 0.95 }
+                main_Style.genContentElevation,
+                { width: width * 0.96 }
             ]}>
             <View style={styles.mainRow}>
-                {/* Profile Picture - Left */}
-                <Image
-                    source={profilePicture 
-                        ? { uri: profilePicture } 
-                        : require('../../assets/functionalImages/ProfilePic.png')
-                    }
-                    style={styles.profilePic}
-                    resizeMode="cover"
-                />
+                {/* Profile Picture with Border Frame - Left */}
+                <View style={styles.profilePicContainer}>
+                    <Image
+                        source={profilePicture 
+                            ? { uri: profilePicture } 
+                            : require('../../assets/functionalImages/ProfilePic.png')
+                        }
+                        style={styles.profilePic}
+                        resizeMode="cover"
+                    />
+                </View>
                 
                 {/* Profile Info - Middle */}
                 <View style={styles.profileInfoContainer}>
                     <Text style={styles.name} numberOfLines={1}>{firstname} {lastname}</Text>
-                    <View style={styles.roleInfo}>
+                    
+                    {/* Role Badge */}
+                    <View style={styles.roleBadge}>
+                        <Ionicons 
+                            name={journalist.role === 'journalist' ? 'newspaper' : 'person'} 
+                            size={10} 
+                            color={withdrawnTitleColor} 
+                        />
                         <Text style={styles.roleText} numberOfLines={1}>{role}</Text>
                     </View>
                 </View>
@@ -76,13 +105,11 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
                 {/* Follow Button - Far Right */}
                 <View style={styles.rightSection}>
                     {isOwnProfile ? (
-                        <TouchableOpacity 
-                            style={styles.selfProfileButton}
-                            activeOpacity={0.8}
-                            disabled
-                        >
-                            <Text style={styles.selfProfileText}>Self Profile</Text>
-                        </TouchableOpacity>
+                        <View style={styles.selfProfileButton}>
+                            <Text style={styles.selfProfileText}>
+                                {i18n.t('profile.you') || 'You'}
+                            </Text>
+                        </View>
                     ) : (
                         <FollowButton 
                             initialFollowed={isFollowing}
@@ -97,18 +124,35 @@ const PeopleDisplay = ({ journalist, onFollowToggle }) => {
 
 const styles = StyleSheet.create({
     container: {
-        //backgroundColor: '#F8F8F8',
-        //borderRadius: 12,
+        backgroundColor: cardBackgroundColor,
+        borderRadius: 8,
         marginVertical: 6,
         alignSelf: 'center',
-        padding: 6,
-        paddingHorizontal: 16,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         zIndex: 10,
-        overflow: 'hidden',
+        overflow: 'visible',
+        borderWidth: 0.8,
+        borderColor: "#ccc",
+        //shadowColor: '#000',
+        //shadowOffset: { width: 0, height: 2 },
+        //shadowOpacity: 0.1,
+        //shadowRadius: 4,
+        //elevation: 3,
+        ...main_Style.genButtonElevation
     },
     mainRow: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    profilePicContainer: {
+        borderRadius: 32,
+        borderWidth: 1.2,
+        borderColor: "#ccc",
+        padding: 1,
+        backgroundColor: '#FFF',
+        position: 'relative',
+        ...main_Style.genButtonElevation
     },
     profilePic: {
         width: 60,
@@ -118,70 +162,56 @@ const styles = StyleSheet.create({
     },
     profileInfoContainer: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: 14,
         justifyContent: 'center',
         minHeight: 52,
-        alignItems: 'flex-start',
     },
-    roleInfo: {
-        marginTop: 3,
+    roleBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(157, 115, 64, 0.1)',
         alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginTop: 6,
+        gap: 4,
     },
     rightSection: {
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 12,
     },
-    journalistLabel: {
-        fontSize: 9,
-        fontWeight: '500',
-        color: generalTextColor,
-        marginTop: 2,
-        fontFamily: generalTextFont,
-    },
     name: {
         fontSize: articleTextSize,
-        fontWeight: generalTitleFontWeight,
+        fontWeight: '600',
         color: generalTextColor,
         fontFamily: articleTitleFont,
-        alignSelf: 'flex-start',
-    },
-    sectionTitle: {
-        fontSize: generalSmallTextSize,
-        fontWeight: generalTextFontWeight,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
     },
     roleText: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        fontWeight: '600',
+        letterSpacing: 0.2,
     },
     selfProfileButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 16,
+        paddingVertical: 8,
+        paddingHorizontal: 18,
         borderRadius: 8,
-        backgroundColor: MainBrownSecondaryColor,
+        backgroundColor: 'rgba(157, 115, 64, 0.15)',
         borderWidth: 1,
-        borderColor: MainBrownSecondaryColor,
+        borderColor: 'rgba(157, 115, 64, 0.3)',
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 120,
-        shadowColor: MainBrownSecondaryColor,
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-        elevation: 1,
+        minWidth: 80,
     },
     selfProfileText: {
         fontWeight: '600',
-        fontSize: 12,
-        fontFamily: generalTextFont,
+        fontSize: withdrawnTitleSize,
+        fontFamily: generalTitleFont,
         letterSpacing: 0.3,
-        color: '#FFFFFF',
+        color: mainBrownColor,
     },
 });
 

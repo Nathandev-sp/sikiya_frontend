@@ -2,10 +2,11 @@ import React, { useState, useRef, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop, commentTextSize } from "../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { main_Style, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, generalTitleColor, withdrawnTitleColor, lightBannerBackgroundColor, MainBrownSecondaryColor, auth_Style, generalActiveOpacity, defaultButtonHitslop, commentTextSize, articleTitleFont, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
 import {Context as AuthContext} from '../../Context/AuthContext';
 import { set } from "mongoose";
 import sleep from "../../Helpers/Sleep";
+import { useLanguage } from "../../Context/LanguageContext";
 
 const EmailConfirmationScreen = ({ navigation, route }) => {
   const {state, verifyEmail, clearErrorMessage, resendVerificationCode, clearState} = useContext(AuthContext);
@@ -14,6 +15,7 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [codeFocused, setCodeFocused] = useState(false); // Add focus state
+  const { t } = useLanguage();
 
   const scrollRef = useRef(null);
   const { height } = useWindowDimensions();
@@ -65,31 +67,27 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section - Same as ForgotPasswordScreen */}
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.38 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <Image 
-                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
 
               <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeTitle}>Verify Your Email</Text>
+                <Text style={styles.welcomeTitle}>{t('auth.verifyYourEmail')}</Text>
               </View>
             </View>
 
             {/* Form Section */}
             <View style={[auth_Style.formContainer, {marginTop: 0}]}>
               <Text style={styles.emailText}>
-                We've sent a 6-digit code to <Text style={styles.emailHighlight}>{emailFromContext}</Text>. Please enter that code below to verify your account.
-              </Text>
-
-              <Text style={styles.instructionText}>
-                Please check your inbox and enter the verification code.
+                {t('auth.verificationCodeMessage1')} <Text style={styles.emailHighlight}>{emailFromContext}</Text>. {t('auth.verificationCodeMessage2')}
               </Text>
 
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Verification Code</Text>
+                <Text style={auth_Style.authLabel}>{t('auth.verificationCode')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   codeFocused && auth_Style.authInputContainerFocused,
@@ -97,7 +95,7 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
                 ]}>
                   <Ionicons name="keypad-outline" style={auth_Style.authLogo}/>
                   <TextInput
-                    style={auth_Style.input}
+                    style={[auth_Style.input, {fontSize: generalTextSize+2}]}
                     hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                     placeholder="000000"
                     placeholderTextColor="#aaa"
@@ -122,7 +120,7 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
                 hitSlop={defaultButtonHitslop}
               >
                 <Text style={auth_Style.authButtonText}>
-                  {loading ? "Verifying..." : "Confirm"}
+                  {loading ? t('auth.verifying') : t('auth.confirm')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -135,10 +133,10 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
                 activeOpacity={generalActiveOpacity}
                 hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
               >
-                <Text style={styles.actionText}>Resend Code</Text>
+                <Text style={styles.actionText}>{t('auth.resendCode')}</Text>
               </TouchableOpacity>
 
-              <Text style={styles.separatorText}>or</Text>
+              <Text style={styles.separatorText}>{t('auth.or')}</Text>
 
               <TouchableOpacity 
                 onPress={goToSignup} 
@@ -146,7 +144,7 @@ const EmailConfirmationScreen = ({ navigation, route }) => {
                 activeOpacity={generalActiveOpacity}
                 hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
               >
-                <Text style={styles.actionText}>Sign up with different email</Text>
+                <Text style={styles.actionText}>{t('auth.signUpWithDifferentEmail')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -167,7 +165,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 1,
     width: '92%',
@@ -198,17 +196,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   emailText: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize+1,
     color: withdrawnTitleColor,
     marginBottom: 12,
     textAlign: 'center',
-    paddingHorizontal: 24,
-    lineHeight: 20,
+    paddingHorizontal: 22,
+    lineHeight: 24,
+    marginBottom: 32,
   },
   emailHighlight: {
     fontWeight: 'bold',
-    color: MainBrownSecondaryColor,
+    color: MainSecondaryBlueColor,
   },
   instructionText: {
     fontFamily: generalTextFont,
@@ -222,7 +221,7 @@ const styles = StyleSheet.create({
   confirmButton: {
     width: 200,
     alignSelf: 'center',
-    marginTop: 12
+    marginTop: 16
   },
   bottomActionContainer: {
     alignItems: 'center',

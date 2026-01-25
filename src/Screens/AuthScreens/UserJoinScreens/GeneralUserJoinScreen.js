@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from 'react-native-picker-select';
 import { set } from "mongoose";
@@ -13,6 +13,7 @@ import AllCountries from "../../../../assets/Data/AllCountries.json";
 import DatePickerModal from "../../../Components/DOBPicker";
 import GoBackButton from "../../../../NavComponents/GoBackButton";
 import VerticalSpacer from "../../../Components/UI/VerticalSpacer";
+import { useLanguage } from "../../../Context/LanguageContext";
 
 
 const GeneralUserJoinScreen = ({ navigation }) => {
@@ -21,6 +22,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
   const firstNameInputRef = useRef(null);
   const lastNameInputRef = useRef(null);
   const phoneNumberInputRef = useRef(null);
+  const { t } = useLanguage();
 
   // Form input for all the data
   const [userFormData, setUserFormData] = useState({
@@ -115,7 +117,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section - Smaller than ForgotPasswordScreen */}
-            <View style={[styles.headerSection, { height: height * 0.18 }]}>
+            <View style={[styles.headerSection, { height: height * 0.35 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -124,7 +126,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -132,7 +134,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
               <View style={styles.welcomeContainer}>
                 
                 <Text style={styles.welcomeSubtitle}>
-                  Complete your profile to get started with Sikiya
+                  {t('onboarding.generalJoinMessage')}
                 </Text>
               </View>
             </View>
@@ -140,7 +142,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
             <View style={auth_Style.detailFormContainer}>
               {/* First Name */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>First Name</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.firstName')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   firstNameFocused && auth_Style.authInputContainerFocused,
@@ -151,7 +153,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                     ref={firstNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your first name"
+                    placeholder={t('profile.firstNamePlaceholder')}
                     placeholderTextColor="#aaa"
                     value={userFormData.firstName}
                     onChangeText={text => handleFormChanges('firstName', text)}
@@ -166,7 +168,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
               </View>
               {/* Last Name */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>Last Name</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.lastName')}</Text>
                 <View style={[
                   auth_Style.authInputContainer,
                   lastNameFocused && auth_Style.authInputContainerFocused,
@@ -177,7 +179,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                     ref={lastNameInputRef}
                     style={auth_Style.input}
                     hitSlop={defaultButtonHitslop}
-                    placeholder="Enter your last name"
+                    placeholder={t('profile.lastNamePlaceholder')}
                     placeholderTextColor="#aaa"
                     value={userFormData.lastName}
                     onChangeText={text => handleFormChanges('lastName', text)}
@@ -192,18 +194,19 @@ const GeneralUserJoinScreen = ({ navigation }) => {
               </View>
               {/* Date of Birth */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Date of Birth</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.dateOfBirth')}</Text>
                 <DatePickerModal
                   value={userFormData.dob}
                   onSelect={date => handleFormChanges('dob', date)}
                   error={error.dob}
-                  label="Date of Birth"
+                  label={t('profile.dateOfBirth')}
+                  placeholder={t('profile.dateOfBirthPlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
               {/* WhatsApp Phone Number */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>WhatsApp Phone Number</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.whatsAppPhoneNumber')}</Text>
                 <View style={styles.phoneContainer}>
                   <View style={styles.countryCodeContainer}>
                     <CountryCodePicker
@@ -211,6 +214,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                       onSelect={code => handleFormChanges('phoneCountryCode', code)}
                       error={error.phoneCountryCode}
                       placeholder="Code"
+                      label={t('profile.countryCode')}
                       onOpen={dismissKeyboard}
                     />
                   </View>
@@ -225,7 +229,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                       ref={phoneNumberInputRef}
                       style={auth_Style.input}
                       hitSlop={defaultButtonHitslop}
-                      placeholder="Phone number"
+                      placeholder={t('profile.whatsAppPhoneNumberPlaceholder')}
                       placeholderTextColor="#aaa"
                       value={userFormData.phoneNumber}
                       onChangeText={text => {
@@ -244,12 +248,12 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                   </View>
                 </View>
                 {error.phoneNumber && userFormData.phoneNumber && !validatePhoneNumber(userFormData.phoneNumber) && (
-                  <Text style={styles.errorText}>Phone number must be between 7 and 15 digits</Text>
+                  <Text style={styles.errorText}>{t('profile.phoneNumberError')}</Text>
                 )}
               </View>
               {/* Country of residence */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>Country of residence</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.countryOfResidence')}</Text>
                 <CountryPicker
                   value={userFormData.country}
                   onSelect={country => {
@@ -261,32 +265,34 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                   }}
                   countryList={AllCountries}
                   error={error.country}
-                  label="Country of residence"
+                  label={t('profile.countryOfResidence')}
+                  placeholder={t('profile.countryOfResidencePlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
               {/* City of residence */}
               <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>City of residence</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.cityOfResidence')}</Text>
                 <CityPicker
                   value={userFormData.city}
                   onSelect={city => handleFormChanges('city', city)}
                   selectedCountry={userFormData.country}
                   error={error.city}
-                  label="City of residence"
-                  placeholder="Select your city"
+                  label={t('profile.cityOfResidence')}
+                  placeholder={t('profile.cityOfResidencePlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
               {/* African Country of Interest */}
               <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>African Country of Interest</Text>
+                <Text style={auth_Style.authLabel}>{t('profile.africanCountryOfInterest')}</Text>
                 <CountryPicker
                   value={userFormData.countryOfInterest}
                   onSelect={country => handleFormChanges('countryOfInterest', country)}
                   countryList={AfricanCountries} // <-- pass the African list here
                   error={error.countryOfInterest}
-                  label="African Country of Interest"
+                  label={t('profile.africanCountryOfInterest')}
+                  placeholder={t('profile.africanCountryOfInterestPlaceholder')}
                   onOpen={dismissKeyboard}
                 />
               </View>
@@ -297,7 +303,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                 activeOpacity={generalActiveOpacity}
                 onPress={handleSubmit}
               >
-                <Text style={auth_Style.authButtonText}>Continue</Text>
+                <Text style={auth_Style.authButtonText}>{t('common.continue')}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#fff" style={styles.arrowIcon} />
               </TouchableOpacity>
             </View>
@@ -314,14 +320,14 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 10,
+    //paddingTop: 12,
     marginBottom: 12,
     //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
     borderWidth: 0.8,
     width: '92%',
@@ -348,6 +354,7 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
+    color: '#FFF'
   },
   companyLogo: {
     width: '95%',
@@ -364,11 +371,11 @@ const styles = StyleSheet.create({
     //backgroundColor: 'red',
   },
   welcomeSubtitle: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontFamily: articleTitleFont,
+    fontSize: generalTextSize+1,
     color: withdrawnTitleColor,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 22,
     paddingHorizontal: 24,
   },
   continueButton: {

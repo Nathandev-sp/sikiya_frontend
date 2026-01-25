@@ -12,7 +12,9 @@ import AppScreenBackgroundColor, {
     generalTitleFontWeight,
     withdrawnTitleColor,
     articleTitleSize,
-    secCardBackgroundColor
+    secCardBackgroundColor,
+    lightBannerBackgroundColor,
+    generalTextFontWeight
 } from '../../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -20,6 +22,7 @@ import PeopleDisplay from '../../Components/PeopleDisplay';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
+import i18n from '../../utils/i18n';
 
 const UserFollowScreen = ({ route }) => {
     const { follower } = route.params;
@@ -53,7 +56,7 @@ const UserFollowScreen = ({ route }) => {
                 const isFollowing = await checkFollowStatus(userId);
                 return {
                     _id: userId,
-                    firstname: item.follower_id?.firstname || 'Unknown',
+                    firstname: item.follower_id?.firstname || i18n.t('profile.unknown'),
                     lastname: item.follower_id?.lastname || '',
                     profile_picture: item.follower_id?.profile_picture || null,
                     displayName: item.follower_id?.displayName || null,
@@ -66,7 +69,7 @@ const UserFollowScreen = ({ route }) => {
             setPeopleArray(formattedFollowers);
         } catch (err) {
             console.log('Error fetching followers:', err);
-            setError('Failed to load followers');
+            setError(i18n.t('profile.failedToLoadFollowers'));
         } finally {
             setLoading(false);
         }
@@ -84,7 +87,7 @@ const UserFollowScreen = ({ route }) => {
             // For following list, we know they're all being followed, so isFollowing = true
             const formattedFollowing = following.map(item => ({
                 _id: item.following_id?._id || item._id,
-                firstname: item.following_id?.firstname || 'Unknown',
+                firstname: item.following_id?.firstname || i18n.t('profile.unknown'),
                 lastname: item.following_id?.lastname || '',
                 profile_picture: item.following_id?.profile_picture || null,
                 displayName: item.following_id?.displayName || null,
@@ -96,7 +99,7 @@ const UserFollowScreen = ({ route }) => {
             setPeopleArray(formattedFollowing);
         } catch (err) {
             console.log('Error fetching following:', err);
-            setError('Failed to load following list');
+            setError(i18n.t('profile.failedToLoadFollowing'));
         } finally {
             setLoading(false);
         }
@@ -145,7 +148,12 @@ const UserFollowScreen = ({ route }) => {
                     <GoBackButton buttonStyle={styles.backButtonOverride} />
                 </View>
                 <View style={styles.titleContainer}>
-                    <Text style={styles.headerTitle}>{follower}</Text>
+                    <Text style={styles.headerTitle}>
+                        {follower === 'Followers' 
+                            ? i18n.t('profile.followers')
+                            : i18n.t('profile.following')
+                        }
+                    </Text>
                 </View>
                 <View style={styles.rightSpacer}>
                     <Image 
@@ -162,8 +170,11 @@ const UserFollowScreen = ({ route }) => {
                 </View>
             ) : error ? (
                 <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={48} color={withdrawnTitleColor} />
-                    <Text style={styles.errorText}>{error}</Text>
+                    <View style={styles.errorIconContainer}>
+                        <Ionicons name="alert-circle-outline" size={48} color={withdrawnTitleColor} />
+                    </View>
+                    <Text style={styles.errorTitle}>{error}</Text>
+                    <Text style={styles.errorSubtext}>{i18n.t('profile.tryAgainLater')}</Text>
                 </View>
             ) : (
                 <ScrollView
@@ -181,8 +192,25 @@ const UserFollowScreen = ({ route }) => {
                         ))
                     ) : (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="person-outline" size={64} color={withdrawnTitleColor} />
-                            <Text style={styles.emptyText}>No people found</Text>
+                            <View style={styles.emptyIconContainer}>
+                                <Ionicons 
+                                    name={follower === 'Followers' ? "people-outline" : "person-add-outline"} 
+                                    size={56} 
+                                    color={withdrawnTitleColor} 
+                                />
+                            </View>
+                            <Text style={styles.emptyTitle}>
+                                {follower === 'Followers' 
+                                    ? i18n.t('profile.noFollowers')
+                                    : i18n.t('profile.noFollowing')
+                                }
+                            </Text>
+                            <Text style={styles.emptyMessage}>
+                                {follower === 'Followers'
+                                    ? i18n.t('profile.noFollowersMessage')
+                                    : i18n.t('profile.noFollowingMessage')
+                                }
+                            </Text>
                         </View>
                     )}
                 </ScrollView>
@@ -257,26 +285,61 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
         paddingTop: 50,
     },
-    errorText: {
-        fontSize: generalTextSize,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: lightBannerBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    errorTitle: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
         textAlign: 'center',
-        marginTop: 16,
+        marginBottom: 8,
+    },
+    errorSubtext: {
+        fontSize: generalTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+        textAlign: 'center',
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingTop: 100,
-        paddingHorizontal: 32,
+        paddingHorizontal: 40,
     },
-    emptyText: {
+    emptyIconContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: lightBannerBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    emptyMessage: {
         fontSize: generalTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
         textAlign: 'center',
-        marginTop: 16,
+        lineHeight: 22,
     },
 });
 

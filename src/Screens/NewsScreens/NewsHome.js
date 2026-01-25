@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from '../../utils/imageUrl';
 import BannerAdComponent from '../../Components/Ads/BannerAd';
 import { Context as AuthContext } from '../../Context/AuthContext';
+import i18n from '../../utils/i18n';
 import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 
 const createStyles = (height) => StyleSheet.create({
@@ -190,12 +191,21 @@ const createStyles = (height) => StyleSheet.create({
         alignItems: 'center',
         flex: 1,
     },
-    sourceLogo: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: MainSecondaryBlueColor,
+    sourceLogoContainer: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: cardBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 12,
+        padding: 3,
+    },
+    sourceLogo: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: MainSecondaryBlueColor,
     },
     sourceLogoText: {
         color: '#fff',
@@ -226,21 +236,21 @@ const createStyles = (height) => StyleSheet.create({
     },
     highlightSection: {
         backgroundColor: lightBannerBackgroundColor,
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: 16,
+        padding: 16,
         marginTop: 10,
         marginBottom: 20,
         borderLeftWidth: 4,
-        borderLeftColor: MainSecondaryBlueColor,
+        borderLeftColor: mainBrownColor,
     },
     highlightLabel: {
         fontSize: commentTextSize,
         fontWeight: generalTitleFontWeight,
         color: MainSecondaryBlueColor,
         fontFamily: generalTitleFont,
-        marginBottom: 4,
+        marginBottom: 8,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
     },
     highlightText: {
         fontSize: generalTextSize,
@@ -284,7 +294,36 @@ const createStyles = (height) => StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        //backgroundColor: 'red',
+        paddingHorizontal: 32,
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: generalTextSize,
+        color: generalTextColor,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 32,
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: lightBannerBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    errorText: {
+        fontSize: generalTitleSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTextColor,
+        fontFamily: generalTitleFont,
+        textAlign: 'center',
     },
 });
 
@@ -592,10 +631,10 @@ const NewsHome = ({ route }) => {
     if (isLoadingArticle) {
         return (
             <SafeAreaView style={main_Style.safeArea}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
-                    <Text style={{ marginTop: 16, fontSize: 16, color: generalTextColor }}>
-                        Loading article...
+                    <Text style={styles.loadingText}>
+                        {i18n.t('article.loadingArticle')}
                     </Text>
                 </View>
             </SafeAreaView>
@@ -605,7 +644,14 @@ const NewsHome = ({ route }) => {
     if (!article) {
         return (
             <SafeAreaView style={main_Style.safeArea}>
-                <Text>Article not found.</Text>
+                <View style={styles.errorContainer}>
+                    <View style={styles.errorIconContainer}>
+                        <Ionicons name="document-text-outline" size={40} color={withdrawnTitleColor} />
+                    </View>
+                    <Text style={styles.errorText}>
+                        {i18n.t('article.articleNotFound')}
+                    </Text>
+                </View>
             </SafeAreaView>
         );
     }
@@ -703,7 +749,7 @@ const NewsHome = ({ route }) => {
                         <View style={styles.locationDateRow}>
                             <View style={styles.locationInfo}>
                                 <Ionicons name="location" size={14} color="#fff" />
-                                <Text style={styles.locationTextOverlay}>{article.location || "Bukavu, RDC"}</Text>
+                                <Text style={styles.locationTextOverlay}>{article.location || i18n.t('flashNews.defaultLocation')}</Text>
                             </View>
                             <Text style={styles.dateTextOverlay}>
                                 {(() => {
@@ -742,18 +788,20 @@ const NewsHome = ({ route }) => {
                             activeOpacity={0.7}
                             style={styles.sourceInfo}
                         >
-                            <Image
-                                source={article.journalist?.profile_picture 
-                                    ? { uri: getImageUrl(article.journalist.profile_picture)  } 
-                                    : require('../../../assets/functionalImages/ProfilePic.png')}
-                                style={styles.sourceLogo}
-                                resizeMode="cover"
-                            />
+                            <View style={[styles.sourceLogoContainer, main_Style.genContentElevation]}>
+                                <Image
+                                    source={article.journalist?.profile_picture 
+                                        ? { uri: getImageUrl(article.journalist.profile_picture)  } 
+                                        : require('../../../assets/functionalImages/ProfilePic.png')}
+                                    style={styles.sourceLogo}
+                                    resizeMode="cover"
+                                />
+                            </View>
                             <View style={styles.sourceDetails}>
                                 <View style={styles.sourceNameRow}>
                                     <Text style={styles.sourceName}>
                                         {(() => {
-                                            if (!article.journalist) return 'Unknown Author';
+                                            if (!article.journalist) return i18n.t('article.unknownAuthor');
                                             
                                             // Try different possible structures for displayName
                                             if (article.journalist.displayName) {
@@ -773,7 +821,7 @@ const NewsHome = ({ route }) => {
                                                 return `${firstname} ${lastname}`.trim();
                                             }
                                             
-                                            return 'Unknown Author';
+                                            return i18n.t('article.unknownAuthor');
                                         })()}
                                     </Text>
                                 </View>
@@ -783,7 +831,7 @@ const NewsHome = ({ route }) => {
                                      article.journalist?.affiliation || 
                                      article.journalist?.journalist?.journalist_affiliation ||
                                      article.journalist?.journalist?.affiliation ||
-                                     'Sikiya'}
+                                     i18n.t('article.defaultAffiliation')}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -794,13 +842,13 @@ const NewsHome = ({ route }) => {
                     <BannerAdComponent position="bottom" />
                     
                     <View style={[styles.highlightSection, main_Style.genButtonElevation]}>
-                        <Text style={styles.highlightLabel}>Highlights</Text>
+                        <Text style={styles.highlightLabel}>{i18n.t('article.highlights')}</Text>
                         <Text style={styles.highlightText}>{article.article_highlight}</Text>
                     </View>
 
                     {/* Full Article Content */}
                     <View style={styles.fullContentSection}>
-                        <Text style={styles.fullContentLabel}>Full Article</Text>
+                        <Text style={styles.fullContentLabel}>{i18n.t('article.fullArticle')}</Text>
                         <Text style={styles.articleContent}>{article.article_content}</Text>
                     </View>
                     
@@ -822,7 +870,7 @@ const NewsHome = ({ route }) => {
                             visible={modalVisible}
                             onClose={() => setModalVisible(false)}
                             onSend={onSendComment}
-                            placeholder="Write your comment..."
+                            placeholder={i18n.t('comment.writeCommentPlaceholder')}
                             isLoading={commentLoading}
                             quota={commentQuota}
                             quotaLoading={quotaLoading}

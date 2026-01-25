@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTitleFont, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../../styles/GeneralAppStyle";
@@ -9,12 +9,16 @@ import JournalistIntro from "../../Components/OnboardingComponents.js/Journalist
 import UserIntro from "../../Components/OnboardingComponents.js/UserIntro";
 import ApplyToBe from "../../Components/OnboardingComponents.js/ApplyToBe";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
+import { useLanguage } from "../../Context/LanguageContext";
+import { Context as AuthContext } from "../../Context/AuthContext";
 
 const OnboardingScreen = ({ navigation }) => {
   const { height, width } = useWindowDimensions();
   const [step, setStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const { t } = useLanguage();
+  const { signout } = useContext(AuthContext);
 
   const onboardingComponents = [
     <SikiyaIntro key="intro" />,
@@ -57,10 +61,14 @@ const OnboardingScreen = ({ navigation }) => {
     }
   };
 
+  const handleLogout = async () => {
+    await signout();
+  };
+
   return (
     <SafeAreaView style={auth_Style.authSafeArea} >
       <StatusBar barStyle={"dark-content"} />
-      <AuthScreenMiniHeader title="Welcome to Sikiya" />
+      <AuthScreenMiniHeader title={t('onboarding.welcome')} />
       <View style={auth_Style.onboardingFormContainer}>
 
       
@@ -88,7 +96,7 @@ const OnboardingScreen = ({ navigation }) => {
                 onPress={handleNext}
                 disabled={isAnimating}
               >
-                <Text style={auth_Style.authButtonText}>Next</Text>
+                <Text style={auth_Style.authButtonText}>{t('common.next')}</Text>
               </TouchableOpacity>
             )}
             {/* Only "Back" on the last step */}
@@ -99,7 +107,7 @@ const OnboardingScreen = ({ navigation }) => {
                 onPress={handleBack}
                 disabled={isAnimating}
               >
-                <Text style={auth_Style.authButtonText}>Back</Text>
+                <Text style={auth_Style.authButtonText}>{t('common.back')}</Text>
               </TouchableOpacity>
             )}
             {/* Both "Back" and "Next" on middle steps */}
@@ -112,7 +120,7 @@ const OnboardingScreen = ({ navigation }) => {
                   onPress={handleBack}
                   disabled={isAnimating}
                 >
-                  <Text style={auth_Style.authButtonText}>Back</Text>
+                  <Text style={auth_Style.authButtonText}>{t('common.back')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   hitSlop={defaultButtonHitslop}
@@ -121,10 +129,21 @@ const OnboardingScreen = ({ navigation }) => {
                   onPress={handleNext}
                   disabled={isAnimating}
                 >
-                  <Text style={auth_Style.authButtonText}>Next</Text>
+                  <Text style={auth_Style.authButtonText}>{t('common.next')}</Text>
                 </TouchableOpacity>
               </>
             )}
+          </View>
+
+          {/* Logout Link */}
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity 
+              onPress={handleLogout} 
+              activeOpacity={generalActiveOpacity}
+              hitSlop={defaultButtonHitslop}
+            >
+              <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -184,6 +203,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: 0,
     //backgroundColor: "#699FFC" //#6989FC #587BFA
+  },
+  logoutContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  logoutText: {
+    fontFamily: generalTextFont,
+    fontSize: 14,
+    color: withdrawnTitleColor,
+    textDecorationLine: 'underline',
   },
 });
 

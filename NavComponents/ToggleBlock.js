@@ -5,19 +5,17 @@ import {
   Text,
   Animated,
   TouchableOpacity,
-  AppRegistry,
 } from 'react-native';
+import i18n from '../src/utils/i18n';
 import AppScreenBackgroundColor, {
   generalTextFont,
   generalTitleFont,
   mainBrownColor,
   MainBrownSecondaryColor,
-  lightBannerBackgroundColor,
-  bannerBackgroundColor,
   main_Style,
   generalTitleFontWeight,
   commentTextSize,
-  secCardBackgroundColor,
+  withdrawnTitleSize,
 } from '../src/styles/GeneralAppStyle';
 
 const ToggleBlock = ({ selected, setSelected }) => {
@@ -60,6 +58,9 @@ const ToggleBlock = ({ selected, setSelected }) => {
         style={styles.button}
         onPress={() => setSelected('People')}
         activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={i18n.t('search.people')}
+        accessibilityState={{ selected: selected === 'People' }}
       >
         <Text
           style={[
@@ -68,16 +69,20 @@ const ToggleBlock = ({ selected, setSelected }) => {
               color: selected === 'People'
                 ? AppScreenBackgroundColor
                 : MainBrownSecondaryColor,
+              fontWeight: selected === 'People' ? '700' : '600',
             },
           ]}
         >
-          People
+          {i18n.t('search.people')}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
         onPress={() => setSelected('Articles')}
         activeOpacity={0.9}
+        accessibilityRole="button"
+        accessibilityLabel={i18n.t('article.articles')}
+        accessibilityState={{ selected: selected === 'Articles' }}
       >
         <Text
           style={[
@@ -86,10 +91,11 @@ const ToggleBlock = ({ selected, setSelected }) => {
               color: selected === 'Articles'
                 ? AppScreenBackgroundColor
                 : MainBrownSecondaryColor,
+              fontWeight: selected === 'Articles' ? '700' : '600',
             },
           ]}
         >
-          Articles
+          {i18n.t('article.articles')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -98,18 +104,24 @@ const ToggleBlock = ({ selected, setSelected }) => {
 
 const styles = StyleSheet.create({
   toggleContainer: {
-    height: 30,
-    width: '60%',
+    height: 38,
+    width: '65%',
+    maxWidth: 320,
     backgroundColor: '#fff',
     alignSelf: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
     flexDirection: 'row',
     overflow: 'hidden',
     position: 'relative',
-    marginTop: 2,
-    marginBottom: 0,
-    borderWidth: 0.8,
-    borderColor: '#E0E0E0',
+    marginTop: 4,
+    marginBottom: 4,
+    borderWidth: 1.2,
+    borderColor: 'rgba(0,0,0,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 2,
   },
   slider: {
     position: 'absolute',
@@ -118,8 +130,13 @@ const styles = StyleSheet.create({
     left: 0,
     width: '50%',
     backgroundColor: MainBrownSecondaryColor,
-    borderRadius: 20,
+    borderRadius: 24,
     zIndex: 0,
+    shadowColor: MainBrownSecondaryColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   button: {
     flex: 1,
@@ -129,9 +146,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   text: {
-    fontSize: commentTextSize,
-    fontWeight: generalTitleFontWeight,
+    fontSize: withdrawnTitleSize + 1,
     fontFamily: generalTitleFont,
+    letterSpacing: 0.3,
   },
 });
 

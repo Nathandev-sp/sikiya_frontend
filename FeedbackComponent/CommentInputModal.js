@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback, useWindowDimensions } from 'react-native';
-import AppScreenBackgroundColor, { bannerBackgroundColor, cardBackgroundColor, commentTextSize, genBtnBackgroundColor, generalLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, MainBlueColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, genBtnBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, MainBlueColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useLanguage } from '../src/Context/LanguageContext';
 
 const CommentInputModal = ({ 
   visible, 
@@ -23,6 +24,7 @@ const CommentInputModal = ({
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const { height } = useWindowDimensions();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (visible) {
@@ -163,11 +165,11 @@ const CommentInputModal = ({
             <View style={styles.headerLeft}>
               <Text style={styles.headerText}>
                 {mode === "article"
-                  ? "Add a comment"
-                  : `Reply to${replyToName ? ` ${replyToName}` : ""}`}
+                  ? t('comments.addComment')
+                  : `${t('comments.addReply')}${replyToName ? ` ${replyToName}` : ""}`}
               </Text>
               {mode === "article" && (
-                <Text style={styles.subNote}>You can't delete main comments.</Text>
+                <Text style={styles.subNote}>{t('comments.youCantDeleteMainComments')}</Text>
               )}
             </View>
             <TouchableOpacity 
@@ -176,26 +178,18 @@ const CommentInputModal = ({
               disabled={isLoading}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="close" size={24} color={withdrawnTitleColor} />
+              <Ionicons name="close" size={24} color={MainBrownSecondaryColor} />
             </TouchableOpacity>
           </View>
 
-          {/* Quota notice */}
-          {showQuota && (
-            <View style={styles.quotaContainer}>
-              <Text style={styles.quotaText}>
-                Main comments left today: {quotaLoading ? '...' : remainingMainComments ?? '-'} of {quota?.dailyLimit ?? 2}
-              </Text>
-              
-            </View>
-          )}
+          
 
           {/* Limit reached actions */}
           {quotaExceeded && (
             <View style={[styles.limitBox, main_Style.genContentElevation]}>
-              <Text style={styles.limitTitle}>You’ve reached your daily limit for main comments.</Text>
+              <Text style={styles.limitTitle}>{t('comments.dailyCommentLimit')}</Text>
               <Text style={styles.limitSub}>
-                You can still post unlimited replies to main comments.
+                {t('comments.dailyCommentLimitDescription')}
               </Text>
               <View style={styles.limitActions}>
                 <TouchableOpacity 
@@ -205,7 +199,7 @@ const CommentInputModal = ({
                   activeOpacity={0.8}
                 >
                   <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
-                  <Text style={[styles.actionButtonText, styles.actionPrimaryText]}>Watch an ad</Text>
+                  <Text style={[styles.actionButtonText, styles.actionPrimaryText]}>{t('comments.watchAd')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.actionButton, styles.actionSecondary, main_Style.genButtonElevation]}
@@ -214,7 +208,7 @@ const CommentInputModal = ({
                   activeOpacity={0.8}
                 >
                   <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={styles.actionButtonText}>Upgrade</Text>
+                  <Text style={styles.actionButtonText}>{t('comments.upgrade')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -266,7 +260,7 @@ const CommentInputModal = ({
             {text.length > 0 && (
               <View style={styles.wordCountContainer}>
                 <Text style={[styles.charCountText, wordCount > maxWords && styles.charCountTextError]}>
-                  {wordCount}/{maxWords} words
+                  {wordCount}/{maxWords} {t('common.words')}
                 </Text>
               </View>
             )}
@@ -284,17 +278,19 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   overlayTouchable: {
     flex: 1,
   },
   bottomSheet: {
-    backgroundColor: secCardBackgroundColor,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    backgroundColor: AppScreenBackgroundColor,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    borderWidth: 0.8,
+    borderColor: '#ccc',
     paddingTop: 8,
     paddingBottom: 0,
     paddingHorizontal: 16,
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
   handleBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#D0D0D0',
+    backgroundColor: '#B0B0B0',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 6,
@@ -323,8 +319,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     paddingBottom: 12,
-    borderBottomWidth: 0.2,
-    borderBottomColor: 'gray',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   headerLeft: {
     flex: 1,
@@ -333,7 +329,7 @@ const styles = StyleSheet.create({
     fontSize: generalTitleSize,
     fontFamily: generalTitleFont,
     fontWeight: generalTitleFontWeight,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
   },
   subNote: {
     marginTop: 4,
@@ -342,11 +338,15 @@ const styles = StyleSheet.create({
     fontFamily: generalTextFont,
   },
   quotaContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginTop: 2,
     marginBottom: 12,
-    //backgroundColor: 'red',
+    backgroundColor: lightBannerBackgroundColor,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
+    marginHorizontal: 12,
   },
   quotaText: {
     fontSize: commentTextSize,
@@ -364,24 +364,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 0,
     padding: 12,
-    borderRadius: 10,
-    backgroundColor: MainSecondaryBlueColor,
+    borderWidth: 1,
+    borderColor: '#7B0D1E',
+    borderRadius: 12,
+    backgroundColor: secCardBackgroundColor, //#66101F
     //borderWidth: 1,
     //borderColor: lightBannerBackgroundColor,
   },
   limitTitle: {
-    fontSize: generalTextSize,
+    fontSize: articleTitleSize,
     fontFamily: generalTitleFont,
     fontWeight: generalTitleFontWeight,
-    color: '#fff',
+    color: '#66101F',
     marginBottom: 8,
     textAlign: 'center',
   },
   limitSub: {
-    fontSize: withdrawnTitleSize,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: generalSmallTextSize,
+    color: generalTextColor,
     fontFamily: generalTextFont,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   limitActions: {
     flexDirection: 'row',
@@ -395,7 +397,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   actionPrimary: {
     backgroundColor: '#fff',
@@ -403,7 +405,7 @@ const styles = StyleSheet.create({
     //borderColor: MainBrownSecondaryColor,
   },
   actionSecondary: {
-    backgroundColor: MainBrownSecondaryColor,
+    backgroundColor: MainSecondaryBlueColor,
   },
   actionButtonText: {
     fontSize: generalTextSize,
@@ -422,7 +424,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     marginHorizontal: -16,
     paddingHorizontal: 16,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: AppScreenBackgroundColor,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
@@ -435,10 +437,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   input: {
-    minHeight: 60,
+    minHeight: 80,
     maxHeight: 180,
-    borderColor: 'gray',
-    borderWidth: 0.8,
+    borderColor: '#ccc',
+    borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingTop: 8,
@@ -448,11 +450,12 @@ const styles = StyleSheet.create({
     color: generalTextColor,
     backgroundColor: '#FFFFFF',
     lineHeight: generalLineHeight,
+    ...main_Style.genContentElevation
   },
   inputFocused: {
-    borderColor: MainBrownSecondaryColor,
+    borderColor: '#2BA1E6', // blue #51D6FF #04698F
     borderWidth: 1.2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F0F6FA',
   },
   wordCountContainer: {
     marginTop: 8,

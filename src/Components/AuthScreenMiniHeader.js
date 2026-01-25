@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
-import { auth_Style, bannerBackgroundColor, generalTitleFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor } from "../styles/GeneralAppStyle";
+import { articleTitleSize, auth_Style, bannerBackgroundColor, generalTextColor, generalTitleFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../styles/GeneralAppStyle";
 import GoBackButton from "../../NavComponents/GoBackButton";
 
 const AuthScreenMiniHeader = ({ title }) => (
@@ -42,9 +42,9 @@ const styles = StyleSheet.create({
   },
   welcomeTitle: {
     fontFamily: generalTitleFont,
-    fontSize: 20,
+    fontSize: articleTitleSize+5,
     fontWeight: 'bold',
-    color: MainBrownSecondaryColor,
+    color: withdrawnTitleColor,
     marginBottom: 8,
     textAlign: 'center',
   },

@@ -4,11 +4,15 @@ import AppScreenBackgroundColor, {
     articleTextSize,
     articleTitleColor, 
     articleTitleFont, 
+    cardBackgroundColor, 
     commentTextSize, 
+    generalSmallTextSize,
     generalTextColor, 
     generalTextFont, 
     generalTextSize, 
+    generalTitleFont,
     generalTitleFontWeight, 
+    lightBannerBackgroundColor,
     main_Style, 
     mainBrownColor, 
     withdrawnTitleColor, 
@@ -17,9 +21,11 @@ import AppScreenBackgroundColor, {
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 import DateConverter from "../Helpers/DateConverter";
+import { useLanguage } from "../Context/LanguageContext";
 
 const JournalistSubmissionCard = ({submission}) => {
     const {width} = useWindowDimensions();
+    const { t } = useLanguage();
     const isArticle = submission.type === 'article';
     const isVideo = submission.type === 'video';
 
@@ -37,9 +43,18 @@ const JournalistSubmissionCard = ({submission}) => {
         }
     };
 
-    // Get status text with capital first letter
+    // Get status text with translation
     const getStatusText = (status) => {
-        return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Pending';
+        switch(status) {
+            case 'approved':
+                return t('submissions.approved');
+            case 'rejected':
+                return t('submissions.rejected');
+            case 'pending':
+                return t('submissions.pending');
+            default:
+                return t('submissions.pending');
+        }
     };
 
     // Get image source
@@ -59,7 +74,7 @@ const JournalistSubmissionCard = ({submission}) => {
     };
 
     return(
-        <View style={[styles.container, {width: width * 0.94}]}>
+        <View style={[styles.container, main_Style.genButtonElevation, {width: width * 0.94}]}>
             <View style={styles.introContainer}>
                 {/* Image on the left */}
                 <View style={styles.imageContainer}>
@@ -68,7 +83,6 @@ const JournalistSubmissionCard = ({submission}) => {
                         defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
                         source={getImageSource()}
                     />
-                    <View style={styles.imageOverlay} pointerEvents="none" />
                 </View>
                 
                 {/* Content on the right */}
@@ -93,7 +107,7 @@ const JournalistSubmissionCard = ({submission}) => {
                             style={styles.typeIcon}
                         />
                         <Text style={styles.typeText}>
-                            {isArticle ? 'Article' : 'Video'}
+                            {isArticle ? t('submissions.article') : t('submissions.video')}
                         </Text>
                     </View>
                 </View>
@@ -102,8 +116,8 @@ const JournalistSubmissionCard = ({submission}) => {
             {/* Approval Status Section */}
             <View style={styles.approvalSection}>
                 <View style={styles.statusRow}>
-                    <Text style={styles.statusLabel}>Approval Status:</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(submission.approval_status) + '20' }]}>
+                    <Text style={styles.statusLabel}>{t('submissions.approvalStatus')}:</Text>
+                    <View style={[styles.statusBadge]}>
                         <View style={[styles.statusDot, { backgroundColor: getStatusColor(submission.approval_status) }]} />
                         <Text style={[styles.statusText, { color: getStatusColor(submission.approval_status) }]}>
                             {getStatusText(submission.approval_status)}
@@ -114,10 +128,10 @@ const JournalistSubmissionCard = ({submission}) => {
                 {/* Date Information */}
                 <View style={styles.dateRow}>
                     <View style={styles.dateItem}>
-                        <Ionicons name="calendar-outline" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
-                        <Text style={styles.dateLabel}>Created: </Text>
+                        <Ionicons name="calendar" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
+                        <Text style={styles.dateLabel}>{t('submissions.created')}: </Text>
                         <Text style={styles.dateValue}>
-                            {submission.created_on ? DateConverter(submission.created_on) : 'N/A'}
+                            {submission.created_on ? DateConverter(submission.created_on) : t('submissions.notAvailable')}
                         </Text>
                     </View>
                 </View>
@@ -126,8 +140,8 @@ const JournalistSubmissionCard = ({submission}) => {
                 {(submission.published_on || submission.approval_date) && (
                     <View style={styles.dateRow}>
                         <View style={styles.dateItem}>
-                            <Ionicons name="checkmark-circle-outline" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
-                            <Text style={styles.dateLabel}>Decision Date: </Text>
+                            <Ionicons name="checkmark-circle" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
+                            <Text style={styles.dateLabel}>{t('submissions.decisionDate')}: </Text>
                             <Text style={styles.dateValue}>
                                 {DateConverter(submission.published_on || submission.approval_date)}
                             </Text>
@@ -138,7 +152,7 @@ const JournalistSubmissionCard = ({submission}) => {
                 {/* Approval Message - only show if not pending */}
                 {submission.approval_status !== 'pending' && submission.approval_reason && (
                     <View style={styles.messageContainer}>
-                        <Text style={styles.messageLabel}>Decision Message:</Text>
+                        <Text style={styles.messageLabel}>{t('submissions.decisionMessage')}:</Text>
                         <Text style={styles.messageText}>{submission.approval_reason}</Text>
                     </View>
                 )}
@@ -149,105 +163,98 @@ const JournalistSubmissionCard = ({submission}) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
-        marginVertical: 6,
+        backgroundColor: cardBackgroundColor,
+        borderRadius: 12,
+        marginVertical: 8,
         alignSelf: 'center',
         padding: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
+        borderWidth: 0.5,
+        borderColor: '#ccc',
     },
     introContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 6,
+        marginBottom: 10,
     },
     imageContainer: {
-        width: 100,
-        height: 75,
-        borderRadius: 8,
-        backgroundColor: mainBrownColor,
+        width: 110,
+        height: 85,
+        borderRadius: 12,
+        backgroundColor: lightBannerBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
-        marginRight: 10,
-        position: 'relative',
-    },
-    imageOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.1)',
-        borderRadius: 8,
-        zIndex: 1,
+        marginRight: 12,
     },
     frontImage: {
         width: "100%",
         height: '100%',
-        borderRadius: 8,
+        borderRadius: 12,
     },
     contentContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        minHeight: 75,
-        paddingVertical: 0,
+        minHeight: 85,
+        paddingVertical: 2,
     },
     titleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        marginBottom: 6,
-        minHeight: 40,
+        marginBottom: 8,
+        minHeight: 44,
     },
     cardTitle: {
         fontSize: generalTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: articleTitleColor,
-        fontFamily: articleTitleFont,
-        lineHeight: 18,
+        fontWeight: '600',
+        color: generalTextColor,
+        fontFamily: generalTitleFont,
+        lineHeight: 20,
+        letterSpacing: 0.2,
     },
     typeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
+        backgroundColor: lightBannerBackgroundColor,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
     },
     typeIcon: {
-        marginRight: 6,
+        marginRight: 5,
     },
     typeText: {
-        fontSize: generalTextSize,
+        fontSize: commentTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        fontWeight: '500',
+        fontWeight: '600',
+        letterSpacing: 0.3,
     },
     approvalSection: {
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        paddingTop: 8,
-        marginTop: 4,
+        borderTopWidth: 0.5,
+        borderTopColor: withdrawnTitleColor,
+        paddingTop: 12,
+        marginTop: 6,
     },
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 6,
+        marginBottom: 10,
     },
     statusLabel: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        fontWeight: '500',
+        fontSize: generalSmallTextSize,
+        color: generalTextColor,
+        fontFamily: generalTitleFont,
+        fontWeight: '600',
+        letterSpacing: 0.2,
     },
     statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 16,
     },
     statusDot: {
         width: 8,
@@ -256,51 +263,55 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     statusText: {
-        fontSize: withdrawnTitleSize,
-        fontFamily: generalTextFont,
-        fontWeight: '600',
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
     dateRow: {
-        marginTop: 6,
-        marginBottom: 3,
+        marginTop: 8,
+        marginBottom: 4,
     },
     dateItem: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     dateIcon: {
-        marginRight: 6,
+        marginRight: 8,
     },
     dateLabel: {
-        fontSize: withdrawnTitleSize,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: '500',
     },
     dateValue: {
-        fontSize: withdrawnTitleSize,
+        fontSize: generalSmallTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        fontWeight: '400',
+        fontWeight: '600',
     },
     messageContainer: {
-        marginTop: 6,
-        padding: 8,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 8,
+        marginTop: 10,
+        padding: 12,
+        backgroundColor: lightBannerBackgroundColor,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     messageLabel: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        fontWeight: '500',
-        marginBottom: 4,
+        fontSize: generalSmallTextSize,
+        color: generalTextColor,
+        fontFamily: generalTitleFont,
+        fontWeight: '600',
+        marginBottom: 6,
+        letterSpacing: 0.2,
     },
     messageText: {
-        fontSize: commentTextSize,
+        fontSize: generalSmallTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        lineHeight: 18,
+        lineHeight: 20,
     },
 });
 
