@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import LottieView from 'lottie-react-native';
-import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, main_Style, articleTitleSize, articleTitleFont, MainBrownSecondaryColor } from "../../styles/GeneralAppStyle";
 import { useLanguage } from '../../Context/LanguageContext';
 
 const Intro_message = "A News platform that inspire conversations on the political, economic, social, and cultural dimensions shaping the continent."
@@ -15,9 +15,9 @@ const SikiyaIntro = () => {
 
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.50, width: '94%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%'}]}>
       <View style={styles.mainContainer}>
-        <View style={styles.ImageGridContainer}>
+        <View style={[styles.ImageGridContainer, main_Style.genContentElevation]}>
           <LottieView
             source={animation}
             style={styles.singleAnimation}
@@ -73,17 +73,17 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   introTitle: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 2,
+    fontFamily: articleTitleFont,
+    fontSize: generalTitleSize + 3,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
     marginBottom: 12,
     letterSpacing: 0.3,
   },
   introParagraph: {
     fontFamily: generalTextFont,
-    fontSize: generalTextSize,
+    fontSize: generalTextSize+0.5,
     color: generalTextColor,
     textAlign: 'center',
     lineHeight: 23,

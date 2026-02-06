@@ -9,9 +9,6 @@ const AuthScreenMiniHeader = ({ title }) => (
       source={require("../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
       style={styles.companyLogo}
     />
-    <View style={styles.welcomeContainer}>
-      <Text style={styles.welcomeTitle}>{title}</Text>
-    </View>
   </View>
 );
 

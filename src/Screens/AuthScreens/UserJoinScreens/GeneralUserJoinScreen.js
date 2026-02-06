@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont, MainSecondaryBlueColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import RNPickerSelect from 'react-native-picker-select';
 import { set } from "mongoose";
@@ -117,7 +117,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section - Smaller than ForgotPasswordScreen */}
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.34 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -126,7 +126,7 @@ const GeneralUserJoinScreen = ({ navigation }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -321,27 +321,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     //paddingTop: 12,
-    marginBottom: 12,
+    //marginBottom: 12,
     //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: MainBrownSecondaryColor,
+    //backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
-    borderWidth: 0.8,
+    //borderWidth: 1,
     width: '92%',
-    borderRadius: 16,
-    marginBottom: 0,
-    flex: 1,
-    maxHeight: '65%',
-    position: 'relative',
+    //borderRadius: 24,
+    //marginBottom: 12,
+    //flex: 1,
+    maxHeight: '60%',
   },
   backButtonWrapper: {
     position: 'absolute',
     top: 8,
     left: 8,
     zIndex: 10,
+    //backgroundColor: cardBackgroundColor
   },
   transparentBackButton: {
     backgroundColor: 'transparent',
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
-    color: '#FFF'
+    color: MainSecondaryBlueColor,
   },
   companyLogo: {
     width: '95%',
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
   },
   welcomeSubtitle: {
     fontFamily: articleTitleFont,
-    fontSize: generalTextSize+1,
-    color: withdrawnTitleColor,
+    fontSize: generalTextSize+3,
+    color: MainSecondaryBlueColor,
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 24,
@@ -383,6 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
+    backgroundColor: MainSecondaryBlueColor,
   },
   arrowIcon: {
     marginLeft: 8,
@@ -392,10 +393,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   countryCodeContainer: {
-    flex: 0.32,
+    flex: 0.34,
   },
   phoneNumberContainer: {
-    flex: 0.68,
+    flex: 0.66,
   },
   errorText: {
     color: '#EF4444',

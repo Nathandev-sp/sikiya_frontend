@@ -71,10 +71,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section - Same as LoginScreen */}
-            <View style={[styles.headerSection, { height: height * 0.44 }]}>
+            <View style={[styles.headerSection, { height: height * 0.34 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <Image 
-                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
+                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -122,30 +122,33 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 <Text style={styles.error}>{state.errorMessage}</Text>
               ) : null}
 
-              <TouchableOpacity
-                style={[auth_Style.authButtonStyle, styles.sendButton]}
-                activeOpacity={generalActiveOpacity}
-                onPress={handleSendResetLink}
-                disabled={loading || !email}
-                hitSlop={defaultButtonHitslop}
-              >
-                {loading ? (
-                  <LottieLoad />
-                ) : (
-                  <Text style={auth_Style.authButtonText}>{t('auth.sendResetLink')}</Text>
-                )}
-              </TouchableOpacity>
+              <View style={{ alignSelf: 'center', marginTop: "auto", marginBottom: 40, width: '100%' }}>
 
-              {/* Back to Login Link */}
-              <View style={styles.backToLoginContainer}>
-                <TouchableOpacity 
-                  onPress={goBackToLogin} 
-                  disabled={loading} 
+                <TouchableOpacity
+                  style={[auth_Style.authButtonStyle, styles.sendButton]}
                   activeOpacity={generalActiveOpacity}
+                  onPress={handleSendResetLink}
+                  disabled={loading || !email}
                   hitSlop={defaultButtonHitslop}
                 >
-                  <Text style={styles.backToLoginText}>{t('auth.login')}</Text>
+                  {loading ? (
+                    <LottieLoad />
+                  ) : (
+                    <Text style={auth_Style.authButtonText}>{t('auth.sendResetLink')}</Text>
+                  )}
                 </TouchableOpacity>
+
+                {/* Back to Login Link */}
+                <View style={styles.backToLoginContainer}>
+                  <TouchableOpacity 
+                    onPress={goBackToLogin} 
+                    disabled={loading} 
+                    activeOpacity={generalActiveOpacity}
+                    hitSlop={defaultButtonHitslop}
+                  >
+                    <Text style={styles.backToLoginText}>{t('auth.login')}</Text>
+                  </TouchableOpacity>
+              </View>
               </View>
             </View>
           </View>
@@ -165,18 +168,18 @@ const styles = StyleSheet.create({
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: MainBrownSecondaryColor,
+    //backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     width: '92%',
-    borderRadius: 24,
-    marginBottom: 12,
-    flex: 1,
-    maxHeight: '70%',
+    //borderRadius: 24,
+    //marginBottom: 12,
+    //flex: 1,
+    maxHeight: '60%',
   },
   companyLogo: {
-    width: '75%',
-    height: '75%',
+    width: '95%',
+    height: '95%',
     resizeMode: 'contain',
   },
   welcomeContainer: {

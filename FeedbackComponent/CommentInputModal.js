@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, TouchableWithoutFeedback, useWindowDimensions } from 'react-native';
+import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, Keyboard, Pressable, InteractionManager } from 'react-native';
 import AppScreenBackgroundColor, { articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, genBtnBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, MainBlueColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useLanguage } from '../src/Context/LanguageContext';
@@ -20,50 +20,29 @@ const CommentInputModal = ({
 }) => {
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
   const inputRef = useRef(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const { height } = useWindowDimensions();
+  const focusTimeoutsRef = useRef([]);
+  const isClosingRef = useRef(false);
   const { t } = useLanguage();
 
-  useEffect(() => {
-    if (visible) {
-      // Animate in
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      
-      // Focus input after animation - with multiple attempts for reliability
-      const focusInput = () => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      };
-      
-      // Try focusing at different intervals to ensure it works
-      setTimeout(focusInput, 150);
-      setTimeout(focusInput, 350);
-      setTimeout(focusInput, 500);
-    } else {
-      // Reset animations
-      slideAnim.setValue(0);
-      fadeAnim.setValue(0);
-      setText('');
-      setIsFocused(false);
-    }
-  }, [visible]);
+  const clearFocusTimeouts = useCallback(() => {
+    focusTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+    focusTimeoutsRef.current = [];
+  }, []);
 
-  const handleClose = () => {
-    // Animate out
+  const runCloseAnimation = useCallback((notifyParent) => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
+    clearFocusTimeouts();
+    Keyboard.dismiss();
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -76,9 +55,58 @@ const CommentInputModal = ({
         useNativeDriver: true,
       }),
     ]).start(() => {
-      onClose();
+      setIsRendered(false);
+      setText('');
+      setIsFocused(false);
+      isClosingRef.current = false;
+      if (notifyParent) {
+        onClose();
+      }
     });
-  };
+  }, [clearFocusTimeouts, fadeAnim, onClose, slideAnim]);
+
+  const handleClose = useCallback(() => {
+    runCloseAnimation(true);
+  }, [runCloseAnimation]);
+
+  useEffect(() => {
+    if (visible && !isRendered) {
+      setIsRendered(true);
+      slideAnim.setValue(0);
+      fadeAnim.setValue(0);
+      isClosingRef.current = false;
+
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      clearFocusTimeouts();
+      const focusInput = () => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      };
+
+      InteractionManager.runAfterInteractions(() => {
+        focusTimeoutsRef.current.push(setTimeout(focusInput, 120));
+      });
+    } else if (!visible && isRendered) {
+      runCloseAnimation(false);
+    }
+
+    return () => {
+      clearFocusTimeouts();
+    };
+  }, [clearFocusTimeouts, fadeAnim, isRendered, runCloseAnimation, slideAnim, visible]);
 
   const handleSend = () => {
     if (!sendDisabled) {
@@ -120,7 +148,7 @@ const CommentInputModal = ({
     outputRange: [300, 0],
   });
 
-  if (!visible) return null;
+  if (!isRendered) return null;
 
   return (
     <Modal
@@ -140,10 +168,12 @@ const CommentInputModal = ({
             styles.overlay,
             { opacity: fadeAnim }
           ]}
+          pointerEvents="box-none"
         >
-          <TouchableWithoutFeedback onPress={handleClose}>
-            <View style={styles.overlayTouchable} />
-          </TouchableWithoutFeedback>
+          <Pressable 
+            style={styles.overlayTouchable}
+            onPress={handleClose}
+          />
         </Animated.View>
 
         <Animated.View
@@ -230,13 +260,17 @@ const CommentInputModal = ({
                       setText(newText);
                     }
                   }}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
+                  onFocus={() => {
+                    setIsFocused(true);
+                  }}
+                  onBlur={() => {
+                    setIsFocused(false);
+                  }}
                   multiline
                   keyboardAppearance='light'
                   editable={!isLoading}
                   textAlignVertical="top"
-                  autoFocus={visible}
+                  autoFocus={false}
                 />
               </View>
               
@@ -289,8 +323,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
-    borderWidth: 0.8,
-    borderColor: '#ccc',
+    borderWidth: 0.5,
+    borderColor: MainBrownSecondaryColor,
     paddingTop: 8,
     paddingBottom: 0,
     paddingHorizontal: 16,

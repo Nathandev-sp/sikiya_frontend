@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, articleTitleFont, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
 import { useLanguage } from '../../Context/LanguageContext';
 
 const journalistImage = require("../../../assets/OnboardingImages/journalistWork.png");
@@ -11,10 +11,10 @@ const JournalistIntro = () => {
   const { t } = useLanguage();
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%'}]}>
       {/* Header Section */}
       <View style={styles.headerSection}>
-        <View style={styles.imageWrapper}>
+        <View style={[styles.imageWrapper, main_Style.genContentElevation]}>
           <Image source={journalistImage} style={styles.journalistImage} />
         </View>
         <Text style={styles.headline}>{t('onboarding.ourJournalists')}</Text>
@@ -28,7 +28,7 @@ const JournalistIntro = () => {
       </View>
 
       {/* Trust Score Info Box */}
-      <View style={styles.bottomContainer}>
+      <View style={[styles.bottomContainer, main_Style.genContentElevation]}>
         <View style={styles.infoBox}>
           <View style={styles.iconContainer}>
             <Image source={box1Image} style={styles.boxImage} />
@@ -50,13 +50,13 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   imageWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#F6F3EF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 6,
@@ -64,15 +64,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   journalistImage: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   headline: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 4,
+    fontFamily: articleTitleFont,
+    fontSize: generalTitleSize + 3,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginTop: 12,
     textAlign: 'center',
     letterSpacing: 0.3,
@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   iconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
@@ -122,8 +122,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   boxImage: {
-    width: 42,
-    height: 42,
+    width: 50,
+    height: 50,
     resizeMode: 'contain',
   },
   boxTextContainer: {
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainSecondaryBlueColor,
     marginBottom: 6,
     letterSpacing: 0.2,
   },

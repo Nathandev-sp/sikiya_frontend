@@ -1,54 +1,61 @@
-import React, { useState } from "react";
-import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Alert} from 'react-native';
+import React, { useState, memo } from "react";
+import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Platform} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import TextSlicer from "../Helpers/TextSlicer";
-import AppScreenBackgroundColor, { articleTitleColor, articleTitleFont, cardBackgroundColor, generalLineHeight, generalSmallLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainborderColor, mainBrownColor, withdrawnTitleColor, withdrawnTitleFontWeight, withdrawnTitleSize } from "../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { articleTitleColor, articleTitleFont, generalLineHeight, generalSmallLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainborderColor, mainBrownColor, withdrawnTitleColor, withdrawnTitleFontWeight, withdrawnTitleSize } from "../styles/GeneralAppStyle";
 import BookmarkIcon from "./BookmarkIcon";
 import DateConverter from "../Helpers/DateConverter";
-import OverlappingCommentors from "./OverlappingCommentors";
-import NewsCartv2Loading from "./LoadingComps/NewsCartv2Loading";
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
-const NewsCartv2 = ({article}) => {
-
+const NewsCartv2 = memo(({article}) => {
     const {width, height} = useWindowDimensions();
-    const [Loading, setLoading] = useState(true);
-
-    const navigation = useNavigation()
+    const navigation = useNavigation();
 
     const goToNewsHome = () => {
-        navigation.navigate('NewsHome', {articleId: article._id, article: article})
-    }
+        navigation.navigate('NewsHome', {articleId: article._id, article: article});
+    };
+
+    // Fallback for missing data
+    const authorName = article.journalist?.displayName || 'Unknown Author';
+    const authorImage = article.journalist?.profile_picture;
+    const location = article?.location || "Unknown Location";
+    const category = article?.category;
 
     return(
-        <TouchableOpacity activeOpacity={0.75} onPress={goToNewsHome}>
-            <View style = {[styles.container, main_Style.genContentElevation, {width: width * 0.96, height: height * 0.175}]}>
-                <View style = {styles.introContainer}>
+        <TouchableOpacity 
+            activeOpacity={0.7} 
+            onPress={goToNewsHome}
+            accessible={true}
+            accessibilityLabel={`Article: ${article.article_title}`}
+            accessibilityRole="button"
+        >
+            <View style={[styles.container, main_Style.genButtonElevation, {width: width * 0.96}]}>
+                <View style={styles.introContainer}>
                     {/* Image Container - Left Side */}
-                    <View style = {styles.imageContainer}>
+                    <View style={styles.imageContainer}>
                         <Image 
-                            style={contentstyle.frontImage}
+                            style={styles.frontImage}
                             defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
                             source={{ uri: getImageUrl(article.article_front_image) }}
+                            resizeMode="cover"
                         />
-                        {/* Subtle overlay for depth */}
+                        {/* Subtle gradient overlay */}
                         <View style={styles.imageOverlay} pointerEvents="none" />
                     </View>
                     
                     {/* Content Container - Right Side */}
                     <View style={styles.contentContainer}>
                         {/* Category Badge */}
-                        {article.category && (
+                        {category && (
                             <View style={styles.categoryBadge}>
-                                <Text style={styles.categoryText}>{article.category.toUpperCase()}</Text>
+                                <Text style={styles.categoryText}>{category.toUpperCase()}</Text>
                             </View>
                         )}
                         
                         {/* Article Title */}
                         <View style={styles.titleContainer}>
                             <Text 
-                                style={contentstyle.cardTitle}
+                                style={styles.cardTitle}
                                 numberOfLines={3}
                                 ellipsizeMode="tail"
                             >
@@ -57,12 +64,14 @@ const NewsCartv2 = ({article}) => {
                         </View>
                         
                         {/* Location */}
-                        <View style={styles.locationContainer}>
-                            <Ionicons name="location-sharp" size={12} color={withdrawnTitleColor} />
-                            <Text style={styles.locationText}>
-                                {article?.location || "Bukavu, RDC"}
-                            </Text>
-                        </View>
+                        {location && (
+                            <View style={styles.locationContainer}>
+                                <Ionicons name="location-sharp" size={12} color={withdrawnTitleColor} />
+                                <Text style={styles.locationText} numberOfLines={1}>
+                                    {location}
+                                </Text>
+                            </View>
+                        )}
                         
                         {/* Author Info with Date */}
                         <View style={styles.authorContainer}>
@@ -70,16 +79,16 @@ const NewsCartv2 = ({article}) => {
                                 <Image 
                                     style={styles.authorImage}
                                     defaultSource={require('../../assets/functionalImages/ProfilePic.png')} 
-                                    source={{ uri: getImageUrl(article.journalist.profile_picture) }}
+                                    source={{ uri: getImageUrl(authorImage) }}
                                 />
                             </View>
                             <View style={styles.authorInfo}>
                                 <Text style={styles.authorName} numberOfLines={1}>
-                                    {article.journalist.displayName}
+                                    {authorName}
                                 </Text>
                                 <View style={styles.dateRow}>
-                                    <Ionicons name="time-outline" size={10} color={withdrawnTitleColor} style={{marginTop: 1}} />
-                                    <Text style={contentstyle.DatePosted}>
+                                    <Ionicons name="time-outline" size={12} color={withdrawnTitleColor} />
+                                    <Text style={styles.datePosted}>
                                         {DateConverter(article.published_on)}
                                     </Text>
                                 </View>
@@ -89,54 +98,45 @@ const NewsCartv2 = ({article}) => {
                 </View>
                 
                 {/* Bookmark Icon */}
-                <BookmarkIcon articleId={article._id} savedStatus={article.saved} />
+                <View style={styles.bookmarkContainer}>
+                    <BookmarkIcon articleId={article._id} savedStatus={article.saved} />
+                </View>
             </View>
         </TouchableOpacity>
     );
-};
+});
+
+NewsCartv2.displayName = 'NewsCartv2';
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: cardBackgroundColor,
-        borderRadius: 8,
-        marginVertical: 6,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        marginVertical: 4,
         alignSelf: 'center',
-        padding: 6,
-        zIndex: 10,
+        padding: 8,
         overflow: 'hidden',
-        borderWidth: 0.8,
-        borderColor: "#ccc",
-        //borderColor: 'rgba(0,0,0,0.05)',
-        // Enhanced shadows for better depth
-        //shadowColor: '#000',
-        //shadowOffset: {
-        //    width: 0,
-        //    height: 2,
-        //},
-        //shadowOpacity: 0.1,
-        //shadowRadius: 6,
-        // Android Elevation
-        //elevation: 3,
-        ...main_Style.genButtonElevation
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+        
     },
     introContainer: {
         width: '100%',
-        height: '100%',
         flexDirection: 'row',
+        minHeight: 140,
     },
     imageContainer: {
-        width: '46%',
-        height: '100%',
-        borderRadius: 6,
-        backgroundColor: mainBrownColor,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '45%',
+        aspectRatio: 1.1,
+        borderRadius: 8,
+        backgroundColor: '#F5F5F5',
         overflow: 'hidden',
         marginRight: 12,
         position: 'relative',
-        borderWidth: 0.8,
-        borderColor: "#ccc",
-        ...main_Style.genButtonElevation
+    },
+    frontImage: {
+        width: '100%',
+        height: '100%',
     },
     imageOverlay: {
         position: 'absolute',
@@ -144,66 +144,71 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 10,
-        zIndex: 1,
+        backgroundColor: 'rgba(0,0,0,0.02)',
     },
     contentContainer: {
-        width: '54%',
-        height: '100%',
-        justifyContent: 'space-between',
-        backgroundColor: 'transparent',
-        paddingLeft: 0,
-        paddingRight: 2,
-        paddingTop: 2,
-        paddingBottom: 4,
         flex: 1,
+        justifyContent: 'space-between',
+        paddingRight: 4,
+        paddingVertical: 2,
     },
     categoryBadge: {
         alignSelf: 'flex-start',
         backgroundColor: mainBrownColor,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 5,
-        marginBottom: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 6,
+        marginBottom: 8,
     },
     categoryText: {
         fontSize: 9,
         fontWeight: '700',
         color: '#FFF',
         fontFamily: generalTitleFont,
-        letterSpacing: 0.6,
+        letterSpacing: 0.8,
     },
     titleContainer: {
-        width: '100%',
-        justifyContent: 'flex-start',
-        marginBottom: 4,
         flex: 1,
+        justifyContent: 'flex-start',
+        marginBottom: 6,
+    },
+    cardTitle: {
+        fontSize: generalTextSize,
+        fontWeight: '600',
+        color: generalTextColor,
+        lineHeight: generalSmallLineHeight * 1.2,
+        fontFamily: articleTitleFont,
+        letterSpacing: 0.1,
     },
     locationContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
-        marginBottom: 7,
-        marginTop: 2,
+        gap: 4,
+        marginBottom: 8,
+    },
+    locationText: {
+        fontSize: withdrawnTitleSize - 0.5,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        fontWeight: '500',
+        flex: 1,
     },
     authorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 0,
     },
     authorImageContainer: {
-        borderRadius: 17,
-        borderWidth: 1.2,
-        borderColor: "#ccc",
-        padding: 0.4,
+        borderRadius: 18,
+        borderWidth: 1.5,
+        borderColor: '#E5E5E5',
+        padding: 1,
         marginRight: 8,
         backgroundColor: '#FFF',
     },
     authorImage: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
     },
     authorInfo: {
         flex: 1,
@@ -214,42 +219,24 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 2,
+        marginBottom: 3,
     },
     dateRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
+        gap: 4,
     },
-    locationText: {
-        fontSize: withdrawnTitleSize - 0.5,
+    datePosted: {
+        fontSize: withdrawnTitleSize - 1,
         color: withdrawnTitleColor,
-        fontFamily: generalTitleFont,
+        fontFamily: generalTextFont,
         fontWeight: '500',
     },
-});
-
-const contentstyle = StyleSheet.create({
-    frontImage: {
-        width: "100%",
-        height: '100%',
-        borderRadius: 0,
-    },
-    cardTitle: {
-        marginTop: 0,
-        fontSize: generalTextSize,
-        fontWeight: '600',
-        color: generalTextColor,
-        lineHeight: generalSmallLineHeight * 1.15,
-        fontFamily: articleTitleFont,
-        letterSpacing: 0.2,
-    },
-    DatePosted: {
-        fontSize: withdrawnTitleSize - 0.5,
-        color: withdrawnTitleColor,
-        fontFamily: generalTitleFont,
-        fontWeight: '500',
-        marginLeft: 1,
+    bookmarkContainer: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 10,
     },
 });
 

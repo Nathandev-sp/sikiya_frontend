@@ -146,12 +146,11 @@ const styles = StyleSheet.create({
         backgroundColor: AppScreenBackgroundColor,
     },
     formContainer: {
-        backgroundColor: genBtnBackgroundColor,
-        borderRadius: 16,
+        backgroundColor: "#FFF",
+        borderRadius: 12,
         marginHorizontal: 12,
-        padding: 18,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        padding: 12,
+        
     },
     sectionTitle: {
         fontSize: generalTextSize,

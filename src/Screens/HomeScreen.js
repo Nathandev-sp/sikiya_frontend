@@ -595,7 +595,6 @@ const HomeScreen = ({route}) => {
                     {categories.map((cat, index) => {
                         const isSelected = selectedCategory === cat.key;
                         const isExplore = cat.key === 'Explore';
-                        // Use appropriate translation namespace
                         const categoryLabel = isExplore 
                             ? t(`navigation.${cat.name}`)
                             : t(`articleCategories.${cat.name}`);
@@ -656,34 +655,46 @@ const HomeScreen = ({route}) => {
         </>
     ), [selectedCategory, categories, handleCategoryPress, filteringCategory]);
 
-    // Show BigLoaderAnim ONLY during initial app load (first time, no preloaded data)
-    // NEVER show full screen loader when switching categories - always show the screen with empty state if needed
-    const isInitialLoad = loading && !preloadedHomeArticles && articlesByCategory['Explore'].length === 0;
-    
-    if (isInitialLoad) {
-        return (
-            <SafeAreaView style={[main_Style.safeArea, styles.loadingContainer]} edges={['top', 'left', 'right']}>
-                <BigLoaderAnim />
-            </SafeAreaView>
-        );
-    }
+    // Get current category info for sticky bar
+    const currentCategory = useMemo(() => 
+        categories.find(c => c.key === selectedCategory),
+        [selectedCategory]
+    );
+
+    const currentCategoryLabel = useMemo(() => {
+        if (!currentCategory) return '';
+        return currentCategory.key === 'Explore' 
+            ? t(`navigation.${currentCategory.name}`)
+            : t(`articleCategories.${currentCategory.name}`);
+    }, [currentCategory, t]);
 
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle={"dark-content"} />
-            {/* Logo stays mounted at top with notification bell */}
             <StaticLogo 
                 onNotificationPress={handleNotificationPress} 
                 unreadCount={unreadNotificationCount}
             />
             <BannerAdComponent position="top" />
 
-            {/* Highlights at top, completely stable and not tied to category changes */}
             <StableHighlightsWrapper 
                 preloadedHeadlines={stablePreloadedHeadlines.current} 
                 headerHeight={HomeHeaderHeight}
             />
-            {/* Banner directly under the logo/flash news */}
+            
+            {/* Sticky Category Indicator Bar */}
+            <View style={styles.stickyCategory}>
+                <View style={[styles.stickyCategoryContent, { borderLeftColor: currentCategory?.color || MainSecondaryBlueColor }]}>
+                    <Ionicons 
+                        name={currentCategory?.icon || 'compass'} 
+                        size={18} 
+                        color={currentCategory?.color || MainSecondaryBlueColor} 
+                    />
+                    <Text style={[styles.stickyCategoryText, { color: currentCategory?.color || MainSecondaryBlueColor }]}>
+                        {currentCategoryLabel}
+                    </Text>
+                </View>
+            </View>
             
             <Animated.FlatList
                 data={getCategoryArticles()}
@@ -759,55 +770,47 @@ const styles = StyleSheet.create({
         fontFamily: articleTitleFont,
     },
     categoriesContainer: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
         paddingVertical: 4,
-        paddingBottom: 6,
+        gap: 10,
     },
     categoryButton: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginHorizontal: 4,
-        paddingVertical: 0,
-        paddingBottom: 12,
-        paddingHorizontal: 4,
-        flexShrink: 0,
-        
-    },
-    selectedCategoryButton: {
-        backgroundColor: 'transparent',
+        marginRight: 8,
     },
     categoryIconContainer: {
-        width: 120,
-        height: 40,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 0,
-        backgroundColor: AppScreenBackgroundColor,
         flexDirection: 'row',
-        paddingHorizontal: 8,
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 0.5,
+        borderColor: 'rgba(0,0,0,0.08)',
         gap: 8,
-        borderWidth: 1.2,
-        borderColor: 'transparent',
-        ...main_Style.genButtonElevation
+        minWidth: 110,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     selectedCategoryIconContainer: {
-        opacity: 1,
+        borderWidth: 0,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     categoryText: {
-        fontSize: commentTextSize,
-        color: generalTextColor,
-        fontFamily: articleTitleFont,
-        textAlign: 'center',
-        fontWeight: '700',
+        fontSize: commentTextSize + 0.5,
+        fontFamily: generalTextFont,
+        fontWeight: '600',
+        letterSpacing: 0.2,
     },
     selectedCategoryText: {
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
     loadMoreContainer: {
         paddingVertical: 16,
@@ -887,6 +890,26 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    stickyCategory: {
+        backgroundColor: AppScreenBackgroundColor,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    stickyCategoryContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingLeft: 12,
+        borderLeftWidth: 3,
+    },
+    stickyCategoryText: {
+        fontSize: commentTextSize + 1,
+        fontFamily: generalTextFont,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
 });
 

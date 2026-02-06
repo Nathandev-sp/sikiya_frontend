@@ -19,7 +19,10 @@ import AppScreenBackgroundColor, {
   xlargeTextSize,
   generalTitleFontWeight,
   commentTextSize,
-  generalTitleSize
+  generalTitleSize,
+  generalTextSize,
+  articleTitleFont,
+  articleTitleSize
 } from '../styles/GeneralAppStyle';
 import { StatusBar } from 'expo-status-bar';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
@@ -39,7 +42,9 @@ const JounalistPannelScreen = ({ navigation }) => {
     user_impact: 'Tier 3',
     engagement_score: 0,
     monthly_readers: 0,
-    total_articles_published: 0
+    total_articles_published: 0,
+    monthly_articles: 0,
+    monthly_videos: 0
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -174,19 +179,19 @@ const JounalistPannelScreen = ({ navigation }) => {
         {/* Stats Section - Card Style Layout */}
         <View style={styles.statsContainer}>
           <View style={styles.statsRow}>
-            {/* Total Articles Published */}
+            {/* Monthly Articles */}
             <View style={styles.statCardPurple}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.totalArticles')}</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyArticles')}</Text>
               <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : stats.total_articles_published}
+                {loadingStats ? '...' : stats.monthly_articles}
               </Text>
             </View>
             
-            {/* Monthly Readers */}
+            {/* Monthly Videos */}
             <View style={styles.statCardBlue}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyReaders')}</Text>
+              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyVideos')}</Text>
               <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : stats.monthly_readers.toLocaleString()}
+                {loadingStats ? '...' : stats.monthly_videos}
               </Text>
             </View>
           </View>
@@ -217,7 +222,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             onPress={handleAddArticle}
             activeOpacity={0.7}
           >
-            <Ionicons name="document-text" size={24} color={generalTextColor} style={styles.buttonIcon} />
+            <Ionicons name="document-text" size={20} color={AppScreenBackgroundColor} style={styles.buttonIcon} />
             <Text style={styles.buttonText}>{t('journalistPanel.newArticle')}</Text>
           </TouchableOpacity>
           
@@ -226,7 +231,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             onPress={handleUploadVideo}
             activeOpacity={0.7}
           >
-            <Ionicons name="videocam" size={24} color={generalTextColor} style={styles.buttonIcon} />
+            <Ionicons name="videocam" size={20} color={AppScreenBackgroundColor} style={styles.buttonIcon} />
             <Text style={styles.buttonText}>{t('journalistPanel.newVideo')}</Text>
           </TouchableOpacity>
         </View>
@@ -234,7 +239,6 @@ const JounalistPannelScreen = ({ navigation }) => {
         {/* Articles Section */}
         <View style={styles.contentContainer}>
           <View style={styles.sectionTitleContainer}>
-            <Ionicons name="document-text" size={20} color={generalTitleColor} style={styles.sectionTitleIcon} />
             <Text style={styles.sectionTitle}>{t('journalistPanel.yourArticles')}</Text>
           </View>
           
@@ -300,7 +304,7 @@ const styles = StyleSheet.create({
     height: 40,
   },
   statsContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
     paddingVertical: 0,
     marginBottom: 0,
     //backgroundColor: 'blue',
@@ -399,12 +403,12 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     marginTop: 8,
     marginBottom: 16,
   },
   actionButton: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: MainBrownSecondaryColor,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -413,6 +417,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     marginHorizontal: 6,
+    marginVertical: 16,
   },
   videoButton: {
     marginLeft: 6,
@@ -421,9 +426,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   buttonText: {
-    color: generalTextColor,
+    color: AppScreenBackgroundColor,
     fontFamily: generalTitleFont,
-    fontSize: commentTextSize,
+    fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
   },
   contentContainer: {
@@ -433,16 +438,16 @@ const styles = StyleSheet.create({
   sectionTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   sectionTitleIcon: {
     marginRight: 8,
   },
   sectionTitle: {
-    fontSize: generalTitleSize,
+    fontSize: articleTitleSize+1,
     fontWeight: generalTitleFontWeight,
-    color: generalTitleColor,
-    fontFamily: generalTitleFont,
+    color: MainBrownSecondaryColor,
+    fontFamily: articleTitleFont,
   },
   emptyState: {
     alignItems: 'center',

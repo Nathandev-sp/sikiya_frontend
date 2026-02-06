@@ -196,7 +196,7 @@ const LanguageSettingScreen = () => {
                                     <Ionicons 
                                         name="checkmark-circle" 
                                         size={22} 
-                                        color={'#2BA1E6'} 
+                                        color={MainBrownSecondaryColor} 
                                     />
                                 </View>
                             )}
@@ -242,7 +242,7 @@ const LanguageSettingScreen = () => {
                                     <Ionicons 
                                         name="checkmark-circle" 
                                         size={22} 
-                                        color={'#2BA1E6'} 
+                                        color={MainBrownSecondaryColor} 
                                     />
                                 </View>
                             )}
@@ -292,15 +292,14 @@ const styles = StyleSheet.create({
         backgroundColor: AppScreenBackgroundColor,
     },
     formContainer: {
-        backgroundColor: genBtnBackgroundColor,
-        borderRadius: 16,
+        backgroundColor: '#FFF',
+        borderRadius: 12,
         marginHorizontal: 12,
         padding: 18,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
+        
     },
     sectionTitle: {
-        fontSize: generalTextSize,
+        fontSize: generalTextSize+1,
         fontWeight: '700',
         color: MainBrownSecondaryColor,
         marginBottom: 8,
@@ -308,7 +307,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     sectionDescription: {
-        fontSize: generalSmallTextSize,
+        fontSize: commentTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         lineHeight: 20,
@@ -319,15 +318,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        marginBottom: 10,
+        borderWidth: 0.8,
+        borderColor: "#CCC",
+        marginBottom: 12,
         backgroundColor: AppScreenBackgroundColor,
     },
     selectedLanguageCard: {
-        borderColor: '#2BA1E6',
+        borderColor: MainBrownSecondaryColor,
         borderWidth: 1.2,
-        backgroundColor: '#F0F6FA',
+        backgroundColor: lightBannerBackgroundColor,
     },
     languageIconContainer: {
         width: 44,

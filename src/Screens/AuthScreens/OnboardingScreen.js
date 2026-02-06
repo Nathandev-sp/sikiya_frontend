@@ -173,26 +173,6 @@ const styles = StyleSheet.create({
     height: 160,
     resizeMode: 'contain',
   },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginVertical: 10,
-    paddingHorizontal: 20,
-    width: '60%',
-  },
-  welcomeTitle: {
-    fontFamily: generalTitleFont,
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: MainBrownSecondaryColor,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  welcomeParagraph: {
-    fontFamily: generalTextFont,
-    fontSize: 15,
-    color: withdrawnTitleColor,
-    textAlign: 'center',
-  },
   bottonLayer: {
     marginTop: 10,
     //justifyContent: 'center',

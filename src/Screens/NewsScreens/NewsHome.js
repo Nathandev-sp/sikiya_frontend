@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import DateConverter from '../../Helpers/DateConverter';
 import StarRating from '../../Components/StarRating';
@@ -40,7 +40,7 @@ const createStyles = (height) => StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.32)',
+        backgroundColor: 'rgba(0,0,0,0.2)',
         zIndex: 1,
     },
     topBar: {
@@ -165,6 +165,25 @@ const createStyles = (height) => StyleSheet.create({
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
+    articleTitleInContent: {
+        fontSize: articleTitleSize,
+        color: generalTextColor,
+        fontFamily: articleTitleFont,
+        lineHeight: 24,
+        marginBottom: 8,
+    },
+    locationTextInContent: {
+        color: withdrawnTitleColor,
+        fontWeight: generalTextFontWeight,
+        fontSize: commentTextSize,
+        fontFamily: generalTextFont,
+    },
+    dateTextInContent: {
+        color: withdrawnTitleColor,
+        fontSize: commentTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+    },
     contentSection: {
         backgroundColor: AppScreenBackgroundColor,
         borderTopLeftRadius: 24,
@@ -199,12 +218,12 @@ const createStyles = (height) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
-        padding: 3,
+        padding: 2,
     },
     sourceLogo: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: MainSecondaryBlueColor,
     },
     sourceLogoText: {
@@ -241,7 +260,7 @@ const createStyles = (height) => StyleSheet.create({
         marginTop: 10,
         marginBottom: 20,
         borderLeftWidth: 4,
-        borderLeftColor: mainBrownColor,
+        borderLeftColor: MainSecondaryBlueColor,
     },
     highlightLabel: {
         fontSize: commentTextSize,
@@ -267,7 +286,7 @@ const createStyles = (height) => StyleSheet.create({
         fontSize: generalTitleSize,
         fontWeight: generalTitleFontWeight,
         color: MainBrownSecondaryColor,
-        fontFamily: generalTitleFont,
+        fontFamily: articleTitleFont,
         marginBottom: 12,
     },
     articleContent: {
@@ -694,7 +713,7 @@ const NewsHome = ({ route }) => {
                         showsHorizontalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <Image
-                                style={[styles.headerImage, { width, height: height * 0.48 }]}
+                                style={[styles.headerImage, { width, height: height * 0.46 }]}
                                 defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
                                 source={{ uri: getImageUrl(item) }}
                                 resizeMode="cover"
@@ -720,7 +739,7 @@ const NewsHome = ({ route }) => {
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             activeOpacity={generalActiveOpacity}
                         >
-                            <Ionicons name="arrow-back" size={24} color={withdrawnTitleColor} />
+                            <Ionicons name="arrow-back" size={24} color={MainBrownSecondaryColor} />
                         </TouchableOpacity>
                         <View style={styles.topBarRight}>
                             <View style={styles.bookmarkButtonWrapper}>
@@ -731,7 +750,7 @@ const NewsHome = ({ route }) => {
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 activeOpacity={generalActiveOpacity}
                             >
-                                <Ionicons name="share-outline" size={24} color={withdrawnTitleColor} />
+                                <Ionicons name="share-outline" size={24} color={MainBrownSecondaryColor} />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -743,24 +762,8 @@ const NewsHome = ({ route }) => {
                         </View>
                     )}
 
-                    {/* Title and Meta Info */}
+                    {/* Meta Info (slider dots only in header) */}
                     <View style={styles.headerContent}>
-                        <Text style={styles.articleTitle}>{article.article_title}</Text>
-                        <View style={styles.locationDateRow}>
-                            <View style={styles.locationInfo}>
-                                <Ionicons name="location" size={14} color="#fff" />
-                                <Text style={styles.locationTextOverlay}>{article.location || i18n.t('flashNews.defaultLocation')}</Text>
-                            </View>
-                            <Text style={styles.dateTextOverlay}>
-                                {(() => {
-                                    if (!article.published_on) return '';
-                                    const date = new Date(article.published_on);
-                                    const day = date.getDate();
-                                    const month = date.toLocaleString('en-US', { month: 'short' });
-                                    return `${day} ${month}`;
-                                })()}
-                            </Text>
-                        </View>
                         {/* Slider dots */}
                         {images.length > 1 && (
                             <View style={styles.sliderDotsContainer}>
@@ -780,7 +783,24 @@ const NewsHome = ({ route }) => {
 
                 {/* Content Section with Rounded Top */}
                 <View style={styles.contentSection}>
-                    
+                    {/* Title and post time / location */}
+                    <Text style={styles.articleTitleInContent}>{article.article_title}</Text>
+                    <View style={styles.locationDateRow}>
+                        <View style={styles.locationInfo}>
+                            <Ionicons name="location" size={14} color={withdrawnTitleColor} />
+                            <Text style={styles.locationTextInContent}>{article.location || i18n.t('flashNews.defaultLocation')}</Text>
+                        </View>
+                        <Text style={styles.dateTextInContent}>
+                            {(() => {
+                                if (!article.published_on) return '';
+                                const date = new Date(article.published_on);
+                                const day = date.getDate();
+                                const month = date.toLocaleString('en-US', { month: 'short' });
+                                return `${day} ${month}`;
+                            })()}
+                        </Text>
+                    </View>
+
                     {/* Source/Author Info */}
                     <View style={styles.sourceContainer}>
                         <TouchableOpacity

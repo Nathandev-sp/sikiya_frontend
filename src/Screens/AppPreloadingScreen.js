@@ -8,7 +8,7 @@ import { AppScreenBackgroundColor, lightBannerBackgroundColor, main_Style, MainB
 const AppPreloadingScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle={"light-content"} />
+      <StatusBar barStyle="dark-content" />
       <View style={styles.logoContainer}>
         <Image 
           source={require("../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}

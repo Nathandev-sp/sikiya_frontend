@@ -1,6 +1,6 @@
 import React, { useState, useRef, useContext } from "react";
 import { View, Text, StyleSheet,Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from "react-native";
-import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, articleTitleFont } from "../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, articleTitleFont, commentTextSize } from "../../styles/GeneralAppStyle";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Context as AuthContext } from "../../Context/AuthContext"; // Import AuthContext if needed
@@ -59,21 +59,21 @@ const LoginScreen = ({navigation}) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={{ flex: 1 }}>
-            <View style={[styles.headerSection, { height: height * 0.38 }]}>
+            <View style={[styles.headerSection, { height: height * 0.34 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <Image 
-                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
+                  source={require("../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
                   style={styles.companyLogo}
                 />
               </View>
 
               <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeTitle}>{t('auth.welcome')}</Text>
-                <Text style={styles.welcomeSubtitle}>{t('auth.loginToJoinConversations')}</Text>
+                <Text style={styles.welcomeTitle}>{t('auth.loginToJoinConversations')}</Text>
+                
               </View>
             </View>
 
-            <View style={[auth_Style.formContainer, {marginTop: 20}]}>
+            <View style={[auth_Style.formContainer]}>
               <View style={auth_Style.authInputBundle}> 
                 <Text style={auth_Style.authLabel}>{t('auth.email')}</Text>
                 <View style={[
@@ -126,28 +126,34 @@ const LoginScreen = ({navigation}) => {
                     />
                   </TouchableOpacity>
                 </View>
+
+                {state.errorMessage ? <View style={{ marginTop: 24, alignItems: 'center',
+                  paddingHorizontal: 24
+                 }}>
+                    <Text style={styles.errorMessage}>{state.errorMessage}</Text>
+                </View>: null}
               </View>
 
-              <View style={styles.signupRow}>
-                <Text style={styles.signupText}>{t('auth.dontHaveAccount')}</Text>
-                <TouchableOpacity onPress={goToSignupScreen} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.signupLink}>{t('auth.signUp')}</Text>
+              <View style={{ alignSelf: 'center', marginTop: "auto", marginBottom: 40, width: '100%' }}>
+                <View style={styles.signupRow}>
+                  <Text style={styles.signupText}>{t('auth.dontHaveAccount')}</Text>
+                  <TouchableOpacity onPress={goToSignupScreen} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                    <Text style={styles.signupLink}>{t('auth.signUp')}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                
+
+                <TouchableOpacity  style={[auth_Style.authButtonStyle, styles.loginButton, main_Style.genButtonElevation]} activeOpacity={generalActiveOpacity} onPress={handleLogin}>
+                  {loading ? (<LottieLoad />) : (<Text style={auth_Style.authButtonText}>{t('auth.login')}</Text>)}
                 </TouchableOpacity>
-              </View>
 
-              {state.errorMessage ? <View style={{ marginTop: 10, alignItems: 'center' }}>
-                  <Text style={styles.errorMessage}>{state.errorMessage}</Text>
-              </View>: null}
-
-              <TouchableOpacity  style={[auth_Style.authButtonStyle, styles.loginButton]} activeOpacity={generalActiveOpacity} onPress={handleLogin}>
-                {loading ? (<LottieLoad />) : (<Text style={auth_Style.authButtonText}>{t('auth.login')}</Text>)}
-              </TouchableOpacity>
-
-              {/* Forgot Password Link - Below Button */}
-              <View style={styles.forgotPasswordContainer}>
-                <TouchableOpacity onPress={goToForgotPassword} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
-                </TouchableOpacity>
+                {/* Forgot Password Link - Below Button */}
+                <View style={styles.forgotPasswordContainer}>
+                  <TouchableOpacity onPress={goToForgotPassword} activeOpacity={generalActiveOpacity} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+                    <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -162,23 +168,23 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 10,
+    //paddingTop: 10,
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: MainBrownSecondaryColor,
+    //backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     width: '92%',
-    borderRadius: 24,
-    marginBottom: 12,
+    //borderRadius: 24,
+    //marginBottom: 12,
     //flex: 1,
-    maxHeight: '70%',
+    maxHeight: '60%',
   },
   companyLogo: {
-    width: '75%',
-    height: '75%',
+    width: '95%',
+    height: '95%',
     resizeMode: 'contain',
   },
   welcomeContainer: {
@@ -186,40 +192,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     //flex: 0.3,
     justifyContent: 'center',
-    paddingTop: 8,
+    //paddingTop: 8,
   },
   welcomeTitle: {
-    fontFamily: generalTitleFont,
+    fontFamily: articleTitleFont,
     fontSize: generalTitleSize + 6,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
-    marginBottom: 16,
-    marginTop: 20,
-  },
-  welcomeSubtitle: {
-    fontFamily: articleTitleFont,
-    fontSize: generalTextSize+1,
-    color: withdrawnTitleColor,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 24,
+    marginBottom: 4,
+    marginTop: 8,
   },
   signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    //marginTop: 12,
   },
   signupText: {
     fontFamily: generalTextFont,
-    fontSize: 13.5,
+    fontSize: commentTextSize,
     color: withdrawnTitleColor,
   },
   signupLink: {
     fontFamily: generalTitleFont,
-    fontSize: 13.5,
+    fontSize: commentTextSize+0.5,
     fontWeight: '600',
     color: MainSecondaryBlueColor,
     marginLeft: 5,
@@ -230,7 +227,7 @@ const styles = StyleSheet.create({
   errorMessage: {
     color: 'red',
     fontFamily: generalTextFont,
-    fontSize: 14,
+    fontSize: commentTextSize,
     textAlign: 'center',
     marginTop: 0,
     paddingHorizontal: 20,
@@ -242,7 +239,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontFamily: generalTextFont,
-    fontSize: 13.5,
+    fontSize: commentTextSize,
     color: withdrawnTitleColor,
     //opacity: 0.7,
   },

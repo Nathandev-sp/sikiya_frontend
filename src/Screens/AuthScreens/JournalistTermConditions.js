@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor } from "../../styles/GeneralAppStyle";
+import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor, main_Style, cardBackgroundColor, MainSecondaryBlueColor, commentTextSize } from "../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
 import GoBackButton from "../../../NavComponents/GoBackButton";
 import { useNavigation } from "@react-navigation/native";
@@ -36,9 +36,8 @@ const JournalistTermConditions = ({ route }) => {
     <SafeAreaView style={auth_Style.authSafeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={"dark-content"} />
       <AuthScreenMiniHeader title={t('onboarding.termsAndConditions')} />
-      <GoBackButton />
       
-      <View style={[auth_Style.formContainer]}>
+      <View style={[auth_Style.formContainer, main_Style.genContentElevation]}>
         {/* Terms and Conditions ScrollView */}
         <View style={styles.termsContainer}>
           <ScrollView 
@@ -71,7 +70,7 @@ const JournalistTermConditions = ({ route }) => {
             <Ionicons
               name={agreed ? "checkbox" : "square-outline"}
               size={24}
-              color={agreed ? MainBrownSecondaryColor : "#888"}
+              color={agreed ? MainBrownSecondaryColor : MainBrownSecondaryColor}
             />
           </TouchableOpacity>
           <Text style={styles.agreeText}>
@@ -100,18 +99,13 @@ const JournalistTermConditions = ({ route }) => {
 const styles = StyleSheet.create({
   termsContainer: {
     flex: 1,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: lightBannerBackgroundColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     borderColor: "#E0E0E0",
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
     overflow: 'hidden',
   },
   termsScrollView: {
@@ -162,19 +156,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 8,
     marginBottom: 8,
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: cardBackgroundColor,
     padding: 14,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderWidth: 1.2,
+    borderColor: MainBrownSecondaryColor,
   },
   checkboxContainer: {
     marginRight: 12,
   },
   agreeText: {
-    fontSize: generalTextSize - 1,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
-    color: generalTitleColor,
+    color: generalTextColor,
     flex: 1,
     flexWrap: 'wrap',
     lineHeight: 20,

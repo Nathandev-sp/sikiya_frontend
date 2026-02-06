@@ -75,40 +75,43 @@ const JournalistSubmissionCard = ({submission}) => {
 
     return(
         <View style={[styles.container, main_Style.genButtonElevation, {width: width * 0.94}]}>
-            <View style={styles.introContainer}>
-                {/* Image on the left */}
-                <View style={styles.imageContainer}>
-                    <Image 
-                        style={styles.frontImage}
-                        defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
-                        source={getImageSource()}
-                    />
-                </View>
-                
-                {/* Content on the right */}
-                <View style={styles.contentContainer}>
-                    {/* Title */}
-                    <View style={styles.titleContainer}>
-                        <Text 
-                            style={styles.cardTitle} 
-                            numberOfLines={2}
-                            ellipsizeMode="tail"
-                        >
-                            {isArticle ? submission.article_title : submission.video_title}
-                        </Text>
+            {/* Upper section with red background */}
+            <View style={styles.upperSection}>
+                <View style={styles.introContainer}>
+                    {/* Image on the left */}
+                    <View style={styles.imageContainer}>
+                        <Image 
+                            style={styles.frontImage}
+                            defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
+                            source={getImageSource()}
+                        />
                     </View>
                     
-                    {/* Type indicator (Article or Video) */}
-                    <View style={styles.typeContainer}>
-                        <Ionicons 
-                            name={isArticle ? "document-text" : "videocam"} 
-                            size={14} 
-                            color={withdrawnTitleColor} 
-                            style={styles.typeIcon}
-                        />
-                        <Text style={styles.typeText}>
-                            {isArticle ? t('submissions.article') : t('submissions.video')}
-                        </Text>
+                    {/* Content on the right */}
+                    <View style={styles.contentContainer}>
+                        {/* Title */}
+                        <View style={styles.titleContainer}>
+                            <Text 
+                                style={styles.cardTitle} 
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                            >
+                                {isArticle ? submission.article_title : submission.video_title}
+                            </Text>
+                        </View>
+                        
+                        {/* Type indicator (Article or Video) */}
+                        <View style={styles.typeContainer}>
+                            <Ionicons 
+                                name={isArticle ? "document-text" : "videocam"} 
+                                size={20} 
+                                color={withdrawnTitleColor} 
+                                style={styles.typeIcon}
+                            />
+                            <Text style={styles.typeText}>
+                                {isArticle ? t('submissions.article') : t('submissions.video')}
+                            </Text>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -163,87 +166,90 @@ const JournalistSubmissionCard = ({submission}) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: cardBackgroundColor,
+        backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        marginVertical: 8,
+        marginVertical: 6,
         alignSelf: 'center',
-        padding: 12,
-        borderWidth: 0.5,
-        borderColor: '#ccc',
+        overflow: 'hidden',
+        borderWidth: 1.2,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    upperSection: {
+        backgroundColor: cardBackgroundColor,
+        padding: 8,
     },
     introContainer: {
+        width: '100%',
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 10,
+        minHeight: 80,
+        marginBottom: 0,
     },
     imageContainer: {
-        width: 110,
-        height: 85,
-        borderRadius: 12,
-        backgroundColor: lightBannerBackgroundColor,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '30%',
+        height: 80,
+        borderRadius: 8,
+        backgroundColor: '#F5F5F5',
         overflow: 'hidden',
         marginRight: 12,
+        position: 'relative',
     },
     frontImage: {
-        width: "100%",
+        width: '100%',
         height: '100%',
-        borderRadius: 12,
+        borderRadius: 8,
     },
     contentContainer: {
         flex: 1,
-        justifyContent: 'flex-start',
-        minHeight: 85,
+        justifyContent: 'space-between',
+        paddingRight: 4,
         paddingVertical: 2,
     },
     titleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        marginBottom: 8,
-        minHeight: 44,
+        marginBottom: 6,
     },
     cardTitle: {
         fontSize: generalTextSize,
         fontWeight: '600',
         color: generalTextColor,
-        fontFamily: generalTitleFont,
+        fontFamily: articleTitleFont,
         lineHeight: 20,
-        letterSpacing: 0.2,
+        letterSpacing: 0.1,
     },
     typeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: lightBannerBackgroundColor,
-        paddingHorizontal: 8,
+        alignSelf: 'flex-start',
+        backgroundColor: mainBrownColor,
+        paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 6,
-        alignSelf: 'flex-start',
     },
     typeIcon: {
         marginRight: 5,
     },
     typeText: {
         fontSize: commentTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        fontWeight: '600',
-        letterSpacing: 0.3,
+        color:generalTextColor,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        letterSpacing: 0.8,
     },
     approvalSection: {
-        borderTopWidth: 0.5,
-        borderTopColor: withdrawnTitleColor,
-        paddingTop: 12,
-        marginTop: 6,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 8,
+        paddingVertical: 12,
+        marginTop: 0,
     },
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     statusLabel: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize - 1,
         color: generalTextColor,
         fontFamily: generalTitleFont,
         fontWeight: '600',
@@ -252,66 +258,68 @@ const styles = StyleSheet.create({
     statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 6,
+        backgroundColor: 'rgba(0,0,0,0.04)',
     },
     statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
         marginRight: 6,
     },
     statusText: {
-        fontSize: generalSmallTextSize,
-        fontFamily: generalTitleFont,
-        fontWeight: '700',
-        letterSpacing: 0.3,
+        fontSize: withdrawnTitleSize - 1,
+        fontFamily: generalTextFont,
+        fontWeight: '600',
+        letterSpacing: 0.2,
     },
     dateRow: {
-        marginTop: 8,
-        marginBottom: 4,
+        marginTop: 6,
+        marginBottom: 3,
     },
     dateItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 4,
     },
     dateIcon: {
-        marginRight: 8,
+        marginRight: 2,
     },
     dateLabel: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize - 1,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: '500',
     },
     dateValue: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize - 1,
         color: generalTextColor,
         fontFamily: generalTextFont,
         fontWeight: '600',
     },
     messageContainer: {
-        marginTop: 10,
-        padding: 12,
-        backgroundColor: lightBannerBackgroundColor,
-        borderRadius: 10,
+        marginTop: 8,
+        padding: 10,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: 'rgba(0,0,0,0.08)',
     },
     messageLabel: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize - 1,
         color: generalTextColor,
         fontFamily: generalTitleFont,
         fontWeight: '600',
-        marginBottom: 6,
+        marginBottom: 4,
         letterSpacing: 0.2,
     },
     messageText: {
-        fontSize: generalSmallTextSize,
+        fontSize: withdrawnTitleSize - 1,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        lineHeight: 20,
+        lineHeight: 18,
     },
 });
 

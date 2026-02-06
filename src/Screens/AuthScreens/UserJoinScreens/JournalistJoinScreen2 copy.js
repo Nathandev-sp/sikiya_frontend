@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, Switch, Alert, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, secCardBackgroundColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, withdrawnTitleColor, secCardBackgroundColor, articleTitleFont, cardBackgroundColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import GoBackButton from "../../../../NavComponents/GoBackButton";
 import * as ImagePicker from 'expo-image-picker';
@@ -188,10 +188,11 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
           ref={scrollRef}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.32 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -200,7 +201,7 @@ const JournalistJoinScreen2 = ({ navigation, route }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -388,22 +389,19 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 10,
-    marginBottom: 0,
     //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: MainBrownSecondaryColor,
+    //backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     width: '92%',
-    borderRadius: 16,
-    marginBottom: 0,
-    flex: 1,
-    //maxHeight: '60%',
-    position: 'relative',
+    //borderRadius: 24,
+    //marginBottom: 12,
+    //flex: 1,
+    maxHeight: '60%',
   },
   backButtonWrapper: {
     position: 'absolute',
@@ -422,32 +420,34 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
-    color: AppScreenBackgroundColor,
+    color: MainBrownSecondaryColor,
   },
   companyLogo: {
-    width: '70%',
-    height: '70%',
+    width: '95%',
+    height: '95%',
     resizeMode: 'contain',
   },
   welcomeContainer: {
     alignItems: 'center',
-    paddingHorizontal: 32,
-    flex: 0.4,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    //marginVertical: 12,
+    //flex: 0.3,
     justifyContent: 'center',
-    paddingTop: 8,
+    //backgroundColor: 'red',
   },
   welcomeSubtitle: {
     fontFamily: articleTitleFont,
-    fontSize: generalTextSize + 1,
-    color: withdrawnTitleColor,
+    fontSize: generalTextSize+3,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 24,
   },
   profileRow: {
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: cardBackgroundColor,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     marginHorizontal: 16,
     marginVertical: 8,
     marginBottom: 16,
@@ -485,20 +485,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileImageLoading: {
-    borderWidth: 1.5,
+    //borderWidth: 1.2,
     borderColor: '#ccc',
   },
   profileImageError: {
     borderColor: '#d32f2f',
-    borderwidth: 2,
+    borderwidth: 1.2,
   },
   profileImage: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    padding: 2.5,
-    borderWidth: 1.5,
-    borderColor: MainSecondaryBlueColor,
+    //padding: 2.5,
+    //borderWidth: 1.2,
+    borderColor: MainBrownSecondaryColor,
     backgroundColor: AppScreenBackgroundColor,
   },
   cameraIconOverlay: {
@@ -541,7 +541,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: 24,
+    marginBottom: 24,
   },
   arrowIcon: {
     marginLeft: 8,

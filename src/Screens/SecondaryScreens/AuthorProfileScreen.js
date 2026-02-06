@@ -188,10 +188,8 @@ const AuthorProfileScreen = ({ route }) => {
 
                 {/* Profile Card */}
                 <View style={[styles.profileCard, main_Style.genButtonElevation]}>
-                    {/* Name - Centered */}
                     <Text style={styles.name}>{user.displayName}</Text>
-                    
-                    {/* Image and Stats Row */}
+
                     <View style={styles.imageAndStatsRow}>
                         <View style={styles.profileImageContainer}>
                             <Image
@@ -206,7 +204,8 @@ const AuthorProfileScreen = ({ route }) => {
                                 </View>
                             )}
                         </View>
-                        <View style={[styles.statsRow]}>
+
+                        <View style={styles.statsRow}>
                             <View style={styles.statItem}>
                                 <View style={styles.statContent}>
                                     <Ionicons name="shield-checkmark" size={18} color="#4CAF50" />
@@ -214,9 +213,7 @@ const AuthorProfileScreen = ({ route }) => {
                                         {user.role === 'journalist' ? i18n.t('profile.trustScore') : i18n.t('profile.respectScore')}
                                     </Text>
                                     <Text style={styles.statText}>
-                                        {user.role === 'journalist' 
-                                            ? (user.trust_score || 0) 
-                                            : (user.respect_score || 0)}%
+                                        {user.role === 'journalist' ? (user.trust_score || 0) : (user.respect_score || 0)}%
                                     </Text>
                                 </View>
                             </View>
@@ -230,92 +227,81 @@ const AuthorProfileScreen = ({ route }) => {
                             </View>
                         </View>
                     </View>
-                    
-                    {/* Follow Button and Share Button Row */}
+
                     <View style={styles.buttonRow}>
                         <View style={[styles.followButtonContainer, main_Style.genButtonElevation]}>
                             {isOwnProfile ? (
-                                <TouchableOpacity 
-                                    style={styles.selfProfileButton}
-                                    activeOpacity={0.8}
-                                    disabled
-                                >
+                                <TouchableOpacity style={styles.selfProfileButton} activeOpacity={0.8} disabled>
                                     <Text style={styles.selfProfileText}>{i18n.t('profile.selfProfile')}</Text>
                                 </TouchableOpacity>
                             ) : (
-                                <FollowButton 
-                                    initialFollowed={isFollowing}
-                                    onToggle={handleFollowToggle}
-                                />
+                                <FollowButton initialFollowed={isFollowing} onToggle={handleFollowToggle} />
                             )}
                         </View>
-                        <TouchableOpacity 
-                            style={[styles.shareButton, main_Style.genButtonElevation]}
-                            activeOpacity={generalActiveOpacity}
-                        >
+                        <TouchableOpacity style={[styles.shareButton, main_Style.genButtonElevation]} activeOpacity={generalActiveOpacity}>
                             <Ionicons name="share-outline" size={20} color={MainBrownSecondaryColor} />
                         </TouchableOpacity>
                     </View>
-                    </View>
+                </View>
 
-                    {/* Full Name, Role, Affiliation and Area of Focus Section */}
-                    <View style={[styles.infoSection]}>
-                        <View style={styles.infoRow}>
-                            <View style={styles.infoItem}>
-                                <View style={styles.infoHeader}>
-                                    <Ionicons name="person" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>{i18n.t('profile.fullName')}</Text>
-                                </View>
-                                <Text style={styles.infoText} numberOfLines={2}>
-                                    {user.firstname} {user.lastname}
-                                </Text>
+                {/* Full Name, Role, Affiliation and Area of Focus Section */}
+                <View style={styles.infoSection}>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoItem}>
+                            <View style={styles.infoHeader}>
+                                <Ionicons name="person" size={16} color={MainBrownSecondaryColor} />
+                                <Text style={styles.infoTitle}>{i18n.t('profile.fullName')}</Text>
                             </View>
-                            <View style={styles.infoItem}>
-                                <View style={styles.infoHeader}>
-                                    <Ionicons name="medal" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>{i18n.t('profile.role')}</Text>
-                                </View>
-                                <Text style={styles.infoText} numberOfLines={2}>
-                                    {formatRole(user.role)}
-                                </Text>
-                            </View>
+                            <Text style={styles.infoText} numberOfLines={2}>
+                                {user.firstname} {user.lastname}
+                            </Text>
                         </View>
 
-                        <View style={styles.infoRow}>
-                            {user.journalist_affiliation && (
-                                <View style={styles.infoItem}>
-                                    <View style={styles.infoHeader}>
-                                        <Ionicons name="business" size={16} color={MainBrownSecondaryColor} />
-                                        <Text style={styles.infoTitle}>{i18n.t('profile.affiliation')}</Text>
-                                    </View>
-                                    <Text style={styles.infoText} numberOfLines={2}>
-                                        {user.journalist_affiliation}
-                                    </Text>
-                                </View>
-                            )}
-                            <View style={styles.infoItem}>
-                                <View style={styles.infoHeader}>
-                                    <Ionicons name="megaphone" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>{i18n.t('profile.areaOfFocus')}</Text>
-                                </View>
-                                <Text style={styles.infoText} numberOfLines={2}>
-                                    {user.area_of_expertise || i18n.t('profile.notSpecified')}
-                                </Text>
+                        <View style={styles.infoItem}>
+                            <View style={styles.infoHeader}>
+                                <Ionicons name="medal" size={16} color={MainBrownSecondaryColor} />
+                                <Text style={styles.infoTitle}>{i18n.t('profile.role')}</Text>
                             </View>
+                            <Text style={styles.infoText} numberOfLines={2}>
+                                {formatRole(user.role)}
+                            </Text>
                         </View>
                     </View>
 
-                    {/* Description Section */}
-                    <View style={styles.descriptionSection}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="document-text" size={18} color={MainBrownSecondaryColor} />
-                            <Text style={styles.sectionTitle}>{i18n.t('profile.about')}</Text>
+                    <View style={styles.infoRow}>
+                        {user.journalist_affiliation && (
+                            <View style={styles.infoItem}>
+                                <View style={styles.infoHeader}>
+                                    <Ionicons name="business" size={16} color={MainBrownSecondaryColor} />
+                                    <Text style={styles.infoTitle}>{i18n.t('profile.affiliation')}</Text>
+                                </View>
+                                <Text style={styles.infoText} numberOfLines={2}>
+                                    {user.journalist_affiliation}
+                                </Text>
+                            </View>
+                        )}
+                        <View style={styles.infoItem}>
+                            <View style={styles.infoHeader}>
+                                <Ionicons name="megaphone" size={16} color={MainBrownSecondaryColor} />
+                                <Text style={styles.infoTitle}>{i18n.t('profile.areaOfFocus')}</Text>
+                            </View>
+                            <Text style={styles.infoText} numberOfLines={2}>
+                                {user.area_of_expertise || i18n.t('profile.notSpecified')}
+                            </Text>
                         </View>
-                        <Text style={styles.description}>
-                            {user.journalist_description || user.bio || i18n.t('profile.noDescriptionAvailable')}
-                        </Text>
                     </View>
-                
+                </View>
+
+                {/* Description Section */}
+                <View style={styles.descriptionSection}>
+                    <View style={styles.sectionHeader}>
+                        <Ionicons name="document-text" size={18} color={MainBrownSecondaryColor} />
+                        <Text style={styles.sectionTitle}>{i18n.t('profile.about')}</Text>
+                    </View>
+                    <Text style={styles.description}>
+                        {user.journalist_description || user.bio || i18n.t('profile.noDescriptionAvailable')}
+                    </Text>
+                </View>
 
                 {/* Recent Articles Section */}
                 {user.articles && user.articles.length > 0 && (
@@ -403,19 +389,18 @@ const styles = StyleSheet.create({
         height: 40,
     },
     profileCard: {
-        backgroundColor: genBtnBackgroundColor,
+        backgroundColor: cardBackgroundColor,
         marginHorizontal: 12,
         marginTop: 16,
         marginBottom: 12,
-        borderWidth: 0.1,
-        borderColor: MainBrownSecondaryColor,
-        padding: 12,
-        borderRadius: 12,
+        padding: 14,
+        borderRadius: 14,
+        
     },
     name: {
         fontSize: articleTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
+        color: generalTextColor,
         fontFamily: articleTitleFont,
         textAlign: 'center',
         marginBottom: 8,
@@ -423,17 +408,18 @@ const styles = StyleSheet.create({
     imageAndStatsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 14,
         gap: 16,
+        
     },
     statsRow: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        //backgroundColor: '#F8F8F8',
-        paddingVertical: 6,
-        paddingHorizontal: 8,
-        borderRadius: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: AppScreenBackgroundColor,
     },
     statItem: {
         flex: 1,
@@ -445,25 +431,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     statLabel: {
-        fontSize: withdrawnTitleSize,
+        fontSize: withdrawnTitleSize - 1,
         fontWeight: generalTextFontWeight,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        marginTop: 4,
-        marginBottom: 8,
+        marginTop: 6,
+        marginBottom: 4,
+        letterSpacing: 0.2,
     },
     statText: {
-        fontSize: generalTextSize,
+        fontSize: generalTextSize + 2,
         fontWeight: generalTitleFontWeight,
         color: generalTitleColor,
         fontFamily: generalTitleFont,
         textAlign: 'center',
-        marginBottom: 4,
+        letterSpacing: 0.3,
     },
     statDivider: {
         width: 1,
-        height: 45,
-        backgroundColor: '#D0D0D0',
+        height: 44,
+        backgroundColor: 'rgba(0,0,0,0.08)',
         marginHorizontal: 12,
     },
     buttonRow: {
@@ -497,6 +484,11 @@ const styles = StyleSheet.create({
         position: 'relative',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 0.5,
+        //backgroundColor: 'red',
+        borderRadius: 50,
+        borderWidth: 2,
+        borderColor: AppScreenBackgroundColor ,
     },
     profilePic: {
         width: 90,
@@ -515,21 +507,23 @@ const styles = StyleSheet.create({
     },
     infoSection: {
         marginTop: 12,
-        marginBottom: 8,
-        //  022backgroundColor: '#F8F8F8',
-        borderRadius: 12,
-
+        marginBottom: 12,
+        paddingHorizontal: 16,
     },
     infoRow: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 12,
         marginBottom: 12,
     },
     infoItem: {
         flex: 1,
-        //backgroundColor: '#F8F8F8',
-        padding: 4,
-        minHeight: 90,
+        backgroundColor: '#FFFFFF',
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
+        minHeight: 96,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -538,14 +532,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,
-        //backgroundColor: 'red',
     },
     infoTitle: {
         fontSize: generalSmallTextSize,
         fontWeight: generalTextFontWeight,
         color: MainBrownSecondaryColor,
-        marginLeft: 8,
+        marginLeft: 6,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.2,
     },
     infoText: {
         fontSize: commentTextSize,
@@ -554,17 +548,21 @@ const styles = StyleSheet.create({
         lineHeight: generalSmallLineHeight,
         textAlign: 'center',
     },
+
     descriptionSection: {
-        marginBottom: 8,
-        paddingTop: 8,
-        paddingHorizontal: 4,
+        marginTop: 4,
+        marginBottom: 12,
         marginHorizontal: 16,
         padding: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     sectionTitle: {
         fontSize: generalTitleSize,
@@ -572,6 +570,7 @@ const styles = StyleSheet.create({
         color: MainBrownSecondaryColor,
         marginLeft: 8,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.2,
     },
     description: {
         fontSize: generalTextSize,
@@ -589,7 +588,6 @@ const styles = StyleSheet.create({
     contentContainer: {
         paddingHorizontal: 12,
         paddingTop: 4,
-        //backgroundColor: 'red',
     },
     sectionHeaderRow: {
         flexDirection: 'row',

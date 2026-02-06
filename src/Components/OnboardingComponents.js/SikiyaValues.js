@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, withdrawnTitleColor, articleTitleFont, main_Style } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, mainBrownColor, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, MainBrownSecondaryColor, auth_Style, withdrawnTitleColor, articleTitleFont, main_Style, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
 import { useLanguage } from '../../Context/LanguageContext';
 
 // Example images for each value (replace with your own local or remote images)
@@ -42,7 +42,7 @@ const SikiyaValues = () => {
 
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%'}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%'}]}>
         <View style={styles.mainContainer}>
         <Text style={styles.headerText}>{t('onboarding.ourValues')}</Text>
         <View style={styles.valuesGrid}>
@@ -71,12 +71,12 @@ const styles = StyleSheet.create({
     //justifyContent: 'center',
   },
   headerText: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize + 4,
+    fontFamily: articleTitleFont,
+    fontSize: generalTitleSize + 3,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     marginTop: 8,
-    marginBottom: 4,
+    marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 0.3,
   },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     fontFamily: generalTitleFont,
     fontSize: generalTitleSize - 1,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainSecondaryBlueColor,
     marginBottom: 6,
     textAlign: 'center',
     letterSpacing: 0.2,

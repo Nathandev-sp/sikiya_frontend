@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         zIndex: 10,
         position: 'relative',
-        borderWidth: 0.8,
-        borderColor: '#E0E0E0',
+        borderWidth: 0.5,
+        borderColor: MainBrownSecondaryColor,
     },
     authorAndProfileRow: {
         flexDirection: 'row',

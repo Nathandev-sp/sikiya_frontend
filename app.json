@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sikiya",
     "slug": "Sikiya",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1.2.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sikiya.app",
-      "buildNumber": "2",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",

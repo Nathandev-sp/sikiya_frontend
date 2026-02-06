@@ -1,7 +1,7 @@
-import React, {useState, useEffect, useCallback, useRef, useContext} from 'react';
+import React, {useState, useEffect, useCallback, useRef, useContext, useMemo} from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
-import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight, articleTitleSize, secCardBackgroundColor, cardBackgroundColor } from '../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
 import SecondaryNewsCart from '../Components/SecondaryNewscart';
@@ -13,6 +13,7 @@ import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
 import { getImageUrl } from '../utils/imageUrl';
 import i18n from '../utils/i18n';
 import { Context as AuthContext } from '../Context/AuthContext';
+import BannerAd from '../Components/Ads/BannerAd';
 
 const UserProfileScreen = ({route}) => {
     const navigation = useNavigation();
@@ -20,31 +21,25 @@ const UserProfileScreen = ({route}) => {
     const [userProfile, setUserProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [imageVersion, setImageVersion] = useState(Date.now()); // Cache-busting version
     const isFirstMount = useRef(true);
-    const previousProfilePicture = useRef(null); // Track previous profile picture URL
     const [trialInfo, setTrialInfo] = useState({
         isOnTrial: false,
         daysRemaining: 0
     });
 
-    // Get preloaded user profile data from route params
     const preloadedUserProfile = route?.params?.preloadedUserProfile;
 
-    //console.log("User Profile:", userProfile);
-
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = useCallback(async () => {
         try {
             if (!preloadedUserProfile) {
-            setIsLoading(true);
-            const response = await SikiyaAPI.get('/user/profile/');
-            setUserProfile(response.data);
+                setIsLoading(true);
+                const response = await SikiyaAPI.get('/user/profile/');
+                setUserProfile(response.data);
             } else {
                 console.log("Using preloaded user profile");
                 setUserProfile(preloadedUserProfile);
             }
             
-            // Fetch trial status
             const trialStatus = await fetchTrialStatus();
             if (trialStatus) {
                 setTrialInfo({
@@ -57,7 +52,24 @@ const UserProfileScreen = ({route}) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [preloadedUserProfile, fetchTrialStatus]);
+
+    // Only fetch on mount
+    useEffect(() => {
+        if (isFirstMount.current) {
+            fetchUserProfile();
+            isFirstMount.current = false;
+        }
+    }, []);
+
+    // Refresh when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            if (!isFirstMount.current) {
+                onRefresh();
+            }
+        }, [])
+    );
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -97,45 +109,8 @@ const UserProfileScreen = ({route}) => {
         }
     };
 
-    useEffect(() => {
-        fetchUserProfile();
-        isFirstMount.current = false;
-    }, []);
-
-    // Refresh profile when screen comes into focus (e.g., returning from ProfileSettingScreen)
-    useFocusEffect(
-        useCallback(() => {
-            // Skip refresh on initial mount (handled by useEffect)
-            // Only refresh when returning to the screen - always fetch fresh data from API
-            if (!isFirstMount.current) {
-                const refreshProfile = async () => {
-                    try {
-                        const response = await SikiyaAPI.get('/user/profile/');
-                        const newProfilePicture = response.data.profile_picture;
-                        
-                        // Always force image refresh when returning to screen
-                        // (in case same URL but different image content, e.g., after profile pic update)
-                        setImageVersion(Date.now());
-                        previousProfilePicture.current = newProfilePicture;
-                        
-                        setUserProfile(response.data);
-                        
-                        // Refresh trial status
-                        const trialStatus = await fetchTrialStatus();
-                        if (trialStatus) {
-                            setTrialInfo({
-                                isOnTrial: trialStatus.isOnTrial,
-                                daysRemaining: trialStatus.daysRemaining
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error fetching user profile:', error.message);
-                    }
-                };
-                refreshProfile();
-            }
-        }, [])
-    );
+    const previousProfilePicture = useRef(null); // Track previous profile picture URL
+    const [imageVersion, setImageVersion] = useState(Date.now()); // Cache-busting version
 
     const handleSettingsPress = () => {
         navigation.navigate('Settings', {firstname: userProfile?.firstname, lastname: userProfile?.lastname});
@@ -168,7 +143,9 @@ const UserProfileScreen = ({route}) => {
     return (
         <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
             <StatusBar barStyle={"dark-content"} />
-            { refreshing && (<MediumLoadingState />)}
+            <BannerAd />
+            {/* Remove this line: */}
+            {/* {refreshing && (<MediumLoadingState />)} */}
             <ScrollView 
                 showsVerticalScrollIndicator={false} 
                 style={styles.scrollView}
@@ -273,17 +250,40 @@ const UserProfileScreen = ({route}) => {
                 {/* Free Trial Banner */}
                 {trialInfo.isOnTrial && trialInfo.daysRemaining > 0 && (
                     <View style={[styles.trialBanner, main_Style.genButtonElevation]}>
-                        <View style={styles.trialIconContainer}>
-                            <Ionicons name="gift" size={32} color={MainSecondaryBlueColor} />
-                        </View>
-                        <View style={styles.trialTextContainer}>
+                        {/* Decorative Background Elements */}
+                        <View style={styles.trialBannerDecoTop} />
+                        <View style={styles.trialBannerDecoBottom} />
+                        
+                        {/* Header Section with Icon and Badge */}
+                        
+
+                        {/* Content Section */}
+                        <View style={styles.trialContentSection}>
                             <Text style={styles.trialTitle}>{i18n.t('trial.title')}</Text>
                             <Text style={styles.trialMessage}>
                                 {i18n.t('trial.message')}
                             </Text>
-                            <Text style={styles.trialDaysRemaining}>
-                                {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? i18n.t('trial.dayRemaining') : i18n.t('trial.daysRemaining')}
-                            </Text>
+                            
+                            {/* Progress Bar Section */}
+                            <View style={styles.trialProgressSection}>
+                                <View style={styles.trialProgressHeader}>
+                                    <View style={styles.trialDaysContainer}>
+                                        <Text style={styles.trialDaysNumber}>{trialInfo.daysRemaining}</Text>
+                                        <Text style={styles.trialDaysLabel}>
+                                            {trialInfo.daysRemaining === 1 ? i18n.t('trial.dayRemaining') : i18n.t('trial.daysRemaining')}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        style={styles.trialCtaButton}
+                                        onPress={() => navigation.navigate('MembershipSettings')}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.trialCtaText}>{i18n.t('trial.upgrade', { defaultValue: 'Upgrade Now' })}</Text>
+                                        <Ionicons name="arrow-forward" size={16} color={AppScreenBackgroundColor} />
+                                    </TouchableOpacity>
+                                </View>
+                            
+                            </View>
                         </View>
                     </View>
                 )}
@@ -374,20 +374,20 @@ const styles = StyleSheet.create({
         backgroundColor: genBtnBackgroundColor,
     },
     profileCard: {
-        backgroundColor: genBtnBackgroundColor,
+        backgroundColor: cardBackgroundColor,
         marginHorizontal: 12,
         marginTop: 8,
         marginBottom: 12,
         padding: 16,
-        paddingTop: 24,
+        paddingTop: 16,
         borderRadius: 12,
-        borderWidth: 0.5,
-        borderColor: '#E0E0E0',
+        //borderWidth: 0.5,
+        //borderColor: MainBrownSecondaryColor,
     },
     profileCardContent: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 16,
+        marginBottom: 2,
     },
     profileInfoContainer: {
         flex: 1,
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        marginBottom: 0,
+        marginBottom: 4,
     },
     statsCard: {
         marginTop: 4,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: generalTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
+        color: generalTextColor,
         fontFamily: generalTitleFont,
         textAlign: 'left',
         marginBottom: 0,
@@ -505,47 +505,140 @@ const styles = StyleSheet.create({
         marginHorizontal: 16,
     },
     trialBanner: {
-        backgroundColor: '#E3F2FD', // Light blue background
+        backgroundColor: MainBrownSecondaryColor,
         marginHorizontal: 12,
         marginBottom: 12,
         padding: 16,
+        paddingBottom: 8,
         borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: MainSecondaryBlueColor,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    trialBannerDecoTop: {
+        position: 'absolute',
+        top: -30,
+        right: -30,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    trialBannerDecoBottom: {
+        position: 'absolute',
+        bottom: -40,
+        left: -40,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    trialHeaderSection: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
     },
     trialIconContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: genBtnBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    trialTextContainer: {
-        flex: 1,
+    trialBadge: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    trialBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: AppScreenBackgroundColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 1,
+    },
+    trialContentSection: {
+        marginBottom: 0,
     },
     trialTitle: {
-        fontSize: generalTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: MainSecondaryBlueColor,
+        fontSize: articleTitleSize,
+        fontWeight: '700',
+        color: AppScreenBackgroundColor,
         fontFamily: generalTitleFont,
-        marginBottom: 6,
+        marginBottom: 8,
     },
     trialMessage: {
         fontSize: generalTextSize,
-        color: generalTextColor,
+        color: 'rgba(255, 255, 255, 0.9)',
         fontFamily: generalTextFont,
-        lineHeight: 20,
-        marginBottom: 6,
+        lineHeight: 22,
+        marginBottom: 0,
     },
-    trialDaysRemaining: {
+    trialProgressSection: {
+        marginTop: 12,
+    },
+    trialProgressHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    trialDaysContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 6,
+    },
+    trialDaysNumber: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: AppScreenBackgroundColor,
+        fontFamily: generalTitleFont,
+    },
+    trialDaysLabel: {
         fontSize: generalSmallTextSize,
-        color: MainBrownSecondaryColor,
+        color: 'rgba(255, 255, 255, 0.85)',
         fontFamily: generalTextFont,
-        fontWeight: generalTitleFontWeight,
+        fontWeight: '600',
+    },
+    trialCtaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: MainSecondaryBlueColor,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    trialCtaText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: AppScreenBackgroundColor,
+        fontFamily: generalTitleFont,
+    },
+    trialProgressBarContainer: {
+        height: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    trialProgressBarFill: {
+        height: '100%',
+        backgroundColor: MainSecondaryBlueColor,
+        borderRadius: 4,
     },
     savedSection: {
         marginTop: 0,
@@ -576,7 +669,7 @@ const styles = StyleSheet.create({
     noArticlesContainer: {
         padding: 48,
         alignItems: 'center',
-        backgroundColor: lightBannerBackgroundColor,
+        //backgroundColor: lightBannerBackgroundColor,
         borderRadius: 16,
         marginHorizontal: 12,
     },

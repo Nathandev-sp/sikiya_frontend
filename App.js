@@ -22,7 +22,7 @@ import NotificationCenterScreen from './src/Screens/NotificationCenterScreen'; /
 
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
-import { StatusBar } from 'react-native';
+import { StatusBar, Platform } from 'react-native';
 import AppScreenBackgroundColor, { MainBrownSecondaryColor, MainSecondaryColor } from './src/styles/GeneralAppStyle';
 
 // Authentication imports----------------------------

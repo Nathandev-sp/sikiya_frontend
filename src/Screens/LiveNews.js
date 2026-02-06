@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert, Platform} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +31,7 @@ import SikiyaAPI from '../../API/SikiyaAPI';
 import CommentInputModal from '../../FeedbackComponent/CommentInputModal';
 import FeedbackContainer from '../../FeedbackComponent/FeedbackContainer';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { formatNumber } from '../utils/numberFormatter';
 import { Context as AuthContext } from '../Context/AuthContext';
 import { useRewardedAd } from '../Components/Ads/RewardedAd';
@@ -46,6 +46,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const navigation = useNavigation();
     const videoPlayersRef = useRef({});
     const scrollToVideoIdRef = useRef(null); // Track if we need to scroll to a specific video
+    const isScreenFocused = useIsFocused();
     const { t } = useLanguage();
     
     // Auth context for user role
@@ -231,10 +232,14 @@ const LiveNews = ({ preloadedVideos, route }) => {
     // Handle rewarded ad watch - needs to be defined before handleUnlockVideos
     const handleWatchAd = useCallback(async (actionOverride = null) => {
         const action = actionOverride || pendingRewardAction;
-        if (!action) return;
+        console.log('🎬 handleWatchAd called with action:', action);
+        if (!action) {
+            console.warn('❌ No action specified for ad');
+            return;
+        }
 
         if (!isAdLoaded) {
-            console.warn('Ad not loaded yet');
+            console.warn('❌ Ad not loaded yet');
             Alert.alert(
                 t('video.adStillLoading'), 
                 t('video.adLoadingMessage'),
@@ -243,6 +248,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
             return;
         }
         
+        console.log('✅ Ad is loaded, preparing to show...');
         setIsShowingAd(true);
         if (!actionOverride) {
             setShowAdModal(false);
@@ -250,18 +256,24 @@ const LiveNews = ({ preloadedVideos, route }) => {
         
         let earned = false;
         try {
+            console.log('🎬 Calling showRewardedAd()...');
             earned = await showRewardedAd();
+            console.log('🎬 showRewardedAd() returned, earned:', earned);
         } catch (error) {
-            console.error('Error showing rewarded ad:', error);
+            console.error('❌ Error showing rewarded ad:', error);
+            Alert.alert('Error', 'Failed to show ad. Please try again.');
         }
 
         if (!earned) {
+            console.log('❌ User did not earn reward (dismissed or error)');
             setIsShowingAd(false);
             if (!actionOverride) {
                 setShowAdModal(true);
             }
             return;
         }
+        
+        console.log('✅ User earned reward!');
 
         try {
             if (action === 'videos') {
@@ -370,6 +382,25 @@ const LiveNews = ({ preloadedVideos, route }) => {
             fetchCommentQuota();
         }
     }, [isGeneralUser, fetchCommentQuota]);
+    
+    // Cleanup when entire screen unmounts
+    useEffect(() => {
+        return () => {
+            console.log('LiveNews component unmounting - final cleanup');
+            // Pause all videos
+            Object.values(videoPlayersRef.current).forEach(player => {
+                if (player && typeof player.pause === 'function') {
+                    try {
+                        player.pause();
+                    } catch (err) {
+                        // Ignore errors
+                    }
+                }
+            });
+            // Clear the ref
+            videoPlayersRef.current = {};
+        };
+    }, []);
 
     // Handle scrolling to specific video when videoId is provided (from notification)
     useEffect(() => {
@@ -455,10 +486,11 @@ const LiveNews = ({ preloadedVideos, route }) => {
         setShowComments(!showComments);
     };
 
-    const openCommentModal = useCallback(async () => {
+    const openCommentModal = useCallback(() => {
         if (isGeneralUser) {
-            await fetchCommentQuota();
+            fetchCommentQuota();
         }
+        setShowComments(false); // Close comments section when opening modal
         setModalVisible(true);
     }, [fetchCommentQuota, isGeneralUser]);
 
@@ -518,7 +550,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     try {
                         player.pause();
                     } catch (err) {
-                        console.warn('Failed to pause video:', err);
+                        // Silently ignore native player disposal errors
                     }
                 }
             });
@@ -526,28 +558,28 @@ const LiveNews = ({ preloadedVideos, route }) => {
     }, [videoLimitReached]);
 
     // Pause all videos when screen loses focus
-    useFocusEffect(
-        useCallback(() => {
-            // Screen is focused - videos will be played by VideoItemComponent based on isActive
-            return () => {
-                // Screen is unfocused - pause all videos
-                Object.values(videoPlayersRef.current).forEach(player => {
-                    if (player && typeof player.pause === 'function') {
-                        try {
-                            player.pause();
-                        } catch (err) {
-                            console.warn('Failed to pause video on unfocus:', err);
-                        }
+    useEffect(() => {
+        if (!isScreenFocused) {
+            console.log('LiveNews screen unfocused - pausing videos');
+            const players = Object.values(videoPlayersRef.current);
+            console.log(`Attempting to pause ${players.length} videos`);
+            players.forEach((player, index) => {
+                if (player && typeof player.pause === 'function') {
+                    try {
+                        player.pause();
+                        console.log(`Paused video ${index + 1}`);
+                    } catch (err) {
+                        console.warn(`Failed to pause video ${index + 1}:`, err.message);
                     }
-                });
-                // Clear cooldown timer
-                if (adCooldownTimerRef.current) {
-                    clearInterval(adCooldownTimerRef.current);
-                    adCooldownTimerRef.current = null;
                 }
-            };
-        }, [])
-    );
+            });
+            // Clear cooldown timer
+            if (adCooldownTimerRef.current) {
+                clearInterval(adCooldownTimerRef.current);
+                adCooldownTimerRef.current = null;
+            }
+        }
+    }, [isScreenFocused]);
 
     const handleProfile = () => {
         if (currentVideo?.journalist_id?._id) {
@@ -579,6 +611,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 openCommentModal={openCommentModal}
                 setVideos={setVideos}
                 videoLimitReached={videoLimitReached}
+                isScreenFocused={isScreenFocused}
             />
         );
     };
@@ -615,7 +648,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
 
     return(
         <SafeAreaView style={styles.safeArea} edges={['right', 'left']}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
             <FlatList
                 ref={flatListRef}
                 data={videos}
@@ -647,7 +680,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 ListFooterComponent={
                     isLoadingMore ? (
                         <View style={styles.loadingMoreContainer}>
-                            <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
+                            <BigLoaderAnim />
                             <Text style={styles.loadingMoreText}>{t('video.loadingMoreVideos')}</Text>
                         </View>
                     ) : null
@@ -659,7 +692,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSend={onSendComment}
-                placeholder={t('video.writeYourComment')}
+                placeholder={t('comment.writeCommentPlaceholder')}
                 mode="video"
                 isLoading={commentLoading}
                 quota={isGeneralUser ? commentQuota : null}
@@ -682,8 +715,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 />
             )}
 
-            {/* Video quota overlay */}
-            {videoLimitReached && (
+            {/* Video quota overlay - hide when showing ad */}
+            {videoLimitReached && !isShowingAd && (
                 <View style={[styles.videoQuotaOverlayContainer, main_Style.genContentElevation]}>
                     <View style={styles.videoQuotaOverlay}>
                         <Text style={styles.quotaTitle}>{t('video.quotaReached')}</Text>
@@ -744,6 +777,7 @@ const VideoItemComponent = ({
     openCommentModal,
     setVideos: setVideosProp,
     videoLimitReached,
+    isScreenFocused,
 }) => {
     const resolveJournalistName = (journalist) => {
         if (!journalist) return '';
@@ -772,9 +806,10 @@ const VideoItemComponent = ({
         player => {
             player.loop = true;
             
-            // Store player reference
-            if (item?._id) {
+            // Store player reference immediately
+            if (item?._id && videoPlayersRef.current) {
                 videoPlayersRef.current[item._id] = player;
+                console.log(`Stored player reference for video ${item._id}`);
             }
             
             // Set up status listener for loading states
@@ -792,23 +827,22 @@ const VideoItemComponent = ({
                     setVideoError(true);
                 }
             });
-            
-            if (isActive && !videoLimitReached) {
-                player.play().catch(err => {
-                    console.error('Error playing video:', err);
-                    setVideoError(true);
-                    setIsVideoLoading(false);
-                });
-            } else {
-                player.pause();
-            }
         }
     );
 
     useEffect(() => {
-        // Only play video if it's active AND quota limit hasn't been reached
-        if (isActive && !videoLimitReached) {
-            videoPlayer.play();
+        // Only play video if it's active AND quota limit hasn't been reached AND screen is focused
+        const shouldPlay = isActive && !videoLimitReached && isScreenFocused;
+        
+        if (shouldPlay && videoPlayer && typeof videoPlayer.play === 'function') {
+            const playPromise = videoPlayer.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(err => {
+                    console.error('Error playing video:', err);
+                    setVideoError(true);
+                    setIsVideoLoading(false);
+                });
+            }
             
             // Track video view when it becomes active (first time)
             if (!viewTrackedRef.current && item?._id) {
@@ -854,7 +888,7 @@ const VideoItemComponent = ({
                 try {
                     videoPlayer.pause();
                 } catch (err) {
-                    console.warn('Video pause failed', err);
+                    // Silently ignore native player disposal errors
                 }
             }
             
@@ -875,7 +909,7 @@ const VideoItemComponent = ({
                 watchTimeStartRef.current = null;
             }
         }
-    }, [isActive, videoPlayer, item?._id, videoLimitReached]);
+    }, [isActive, videoPlayer, item?._id, videoLimitReached, isScreenFocused]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -885,9 +919,11 @@ const VideoItemComponent = ({
                 try {
                     player.pause();
                 } catch (err) {
-                    console.warn('Video pause on unmount failed', err);
+                    // Silently ignore native player disposal errors
+                    // This is expected when React unmounts components quickly
                 }
             }
+            // Clean up the ref entry
             if (item?._id && videoPlayersRef?.current?.[item._id]) {
                 delete videoPlayersRef.current[item._id];
             }
@@ -952,12 +988,18 @@ const VideoItemComponent = ({
         setIsVideoLoading(true);
         
         // Attempt to replay
-        if (videoPlayer) {
-            videoPlayer.play().catch(err => {
-                console.error('Retry failed:', err);
-                setVideoError(true);
-                setIsVideoLoading(false);
-            });
+        if (videoPlayer && typeof videoPlayer.play === 'function') {
+            const playPromise = videoPlayer.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(err => {
+                    console.error('Retry failed:', err);
+                    setVideoError(true);
+                    setIsVideoLoading(false);
+                });
+            }
+        } else {
+            console.warn('Video player not ready for retry');
+            setIsVideoLoading(false);
         }
     }, [videoPlayer]);
 
@@ -1024,7 +1066,7 @@ const VideoItemComponent = ({
                 {isVideoLoading && !videoError && (
                     <View style={styles.videoLoadingOverlay}>
                         <View style={[styles.loadingContainer, main_Style.genContentElevation]}>
-                            <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
+                            <BigLoaderAnim />
                             <Text style={styles.loadingText}>{t('video.loadingVideo')}</Text>
                         </View>
                     </View>
@@ -1205,30 +1247,48 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 16,
         marginBottom: 24,
+        lineHeight: generalLineHeight,
     },
     retryButton: {
         backgroundColor: MainBrownSecondaryColor,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
+        paddingVertical: 14,
+        paddingHorizontal: 32,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        ...Platform.select({
+            ios: {
+                shadowColor: MainBrownSecondaryColor,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
     },
     retryButtonText: {
-        color: AppScreenBackgroundColor,
+        color: '#FFFFFF',
         fontSize: generalTextSize,
-        fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#000',
+        paddingHorizontal: 32,
     },
     emptyText: {
         fontSize: generalTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         marginTop: 16,
+        textAlign: 'center',
     },
     videoContainer: {
         position: 'relative',
@@ -1237,13 +1297,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     videoFrame: {
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: 'hidden',
-        //borderWidth: 1,
-        //borderColor: 'rgba(255,255,255,0.15)',
         marginTop: 8,
         marginBottom: 12,
         backgroundColor: '#000',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 8,
+            },
+        }),
     },
     videoContent: {
         width: '100%',
@@ -1265,28 +1334,30 @@ const styles = StyleSheet.create({
     titleContainer: {
         flex: 1,
         marginRight: 12,
-        backgroundColor: 'rgba(0, 0, 0, 1)',
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 0.5,
-        //borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        padding: 16,
+        borderRadius: 16,
+        backdropFilter: 'blur(10px)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     articleTitle: {
         fontSize: articleTitleSize,
         fontWeight: articleTitleFontWeight,
-        color: AppScreenBackgroundColor,
+        color: '#FFFFFF',
         fontFamily: articleTitleFont,
         lineHeight: generalLineHeight,
-        marginBottom: 6,
+        marginBottom: 8,
     },
     authorInfo: {
-        marginTop: 4,
+        marginTop: 6,
     },
     authorName: {
         fontSize: generalSmallTextSize,
-        color: AppScreenBackgroundColor,
+        color: '#FFFFFF',
         fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        fontWeight: '600',
+        marginBottom: 4,
     },
     locationDateRow: {
         flexDirection: 'row',
@@ -1300,44 +1371,68 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 4,
         flexShrink: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
     },
     locationTextOverlay: {
-        color: AppScreenBackgroundColor,
-        fontWeight: generalTextFontWeight,
-        fontSize: generalSmallTextSize,
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: generalSmallTextSize - 1,
         fontFamily: generalTextFont,
     },
     dateTextOverlay: {
-        color: AppScreenBackgroundColor,
-        fontWeight: generalTextFontWeight,
-        fontSize: generalSmallTextSize,
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontWeight: '500',
+        fontSize: generalSmallTextSize - 1,
         fontFamily: generalTextFont,
-        marginLeft: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
     },
     verticalActionButtons: {
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 16,
+        gap: 14,
     },
     actionButtonGroup: {
         alignItems: 'center',
+        gap: 4,
     },
     actionButton: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 40,
-        width: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0, 0, 0, 1)',
-        //borderWidth: 1.5,
-        //borderColor: 'rgba(255, 255, 255, 0.3)',
+        height: 48,
+        width: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(10px)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     actionCount: {
-        fontSize: generalSmallTextSize,
-        color: AppScreenBackgroundColor,
+        fontSize: generalSmallTextSize - 1,
+        color: '#FFFFFF',
         fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
-        marginTop: 4,
+        fontWeight: '700',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+        overflow: 'hidden',
     },
     commentsIsland: {
         position: 'absolute',
@@ -1348,71 +1443,72 @@ const styles = StyleSheet.create({
         backgroundColor: AppScreenBackgroundColor,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingTop: 16,
+        paddingTop: 20,
         paddingBottom: 20,
         paddingHorizontal: 4,
-        //backgroundColor: 'red',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 12,
+            },
+        }),
     },
     commentsHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 4,
-        paddingBottom: 12,
+        paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
+        borderBottomColor: 'rgba(0,0,0,0.08)',
         paddingHorizontal: 16,
     },
     commentsHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
     },
     commentsCountText: {
-        fontSize: generalTextSize,
-        fontWeight: generalTitleFontWeight,
+        fontSize: generalTextSize + 1,
+        fontWeight: '700',
         color: generalTitleColor,
         fontFamily: generalTitleFont,
+        letterSpacing: 0.3,
     },
     commentsHeaderRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 10,
     },
     addCommentButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        backgroundColor: genBtnBackgroundColor,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: 'rgba(157, 115, 64, 0.1)',
+        borderWidth: 1.5,
+        borderColor: MainBrownSecondaryColor,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    commentsTitle: {
-        fontSize: generalTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
-    },
-    commentsCount: {
-        fontSize: generalSmallTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
-    },
     closeButton: {
-        padding: 4,
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.05)',
     },
     commentsContent: {
         flex: 1,
         width: '100%',
-        //backgroundColor: 'red',
     },
     commentsContentContainer: {
         paddingRight: '0%',
-        //backgroundColor: 'blue',
     },
     loadingMoreContainer: {
-        paddingVertical: 20,
+        paddingVertical: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1423,10 +1519,11 @@ const styles = StyleSheet.create({
         backgroundColor: AppScreenBackgroundColor,
     },
     loadingMoreText: {
-        marginTop: 8,
+        marginTop: 12,
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        fontWeight: '600',
     },
     videoQuotaOverlayContainer: {
         position: 'absolute',
@@ -1436,121 +1533,159 @@ const styles = StyleSheet.create({
         right: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
     },
     videoQuotaOverlay: {
         width: '100%',
-        maxWidth: 420,
-        backgroundColor: secCardBackgroundColor, //MainSecondaryBlueColor,
-        borderRadius: 12,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#7B0D1E',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.12,
-        shadowRadius: 6,
-        elevation: 4,
+        maxWidth: 400,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.25,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 12,
+            },
+        }),
     },
     quotaTitle: {
-        fontSize: articleTitleSize,
+        fontSize: generalTitleSize + 2,
         fontFamily: generalTitleFont,
-        fontWeight: generalTitleFontWeight,
-        alignSelf: 'center',
-        color: '#66101F',
-        marginBottom: 8,
+        fontWeight: '700',
+        textAlign: 'center',
+        color: MainBrownSecondaryColor,
+        marginBottom: 12,
+        letterSpacing: 0.3,
     },
     quotaSub: {
-        fontSize: generalSmallTextSize,
+        fontSize: generalTextSize - 1,
         fontFamily: generalTextFont,
         color: generalTextColor,
-        marginBottom: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 24,
     },
     quotaActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 6,
+        flexDirection: 'column',
+        gap: 12,
+        marginBottom: 8,
     },
     quotaButton: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 10,
-        borderRadius: 10,
+        paddingVertical: 16,
+        borderRadius: 12,
+        gap: 8,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
     },
     quotaPrimary: {
-        backgroundColor: '#fff',
-        //borderWidth: 1,
-        //borderColor: MainBrownSecondaryColor,
+        backgroundColor: MainBrownSecondaryColor,
     },
     quotaSecondary: {
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 2,
+        borderColor: MainBrownSecondaryColor,
     },
     quotaButtonText: {
         fontSize: generalTextSize,
         fontFamily: generalTitleFont,
-        fontWeight: generalTitleFontWeight,
-        color: '#fff',
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
     quotaPrimaryText: {
-        color: MainBrownSecondaryColor,
+        color: '#FFFFFF',
     },
     quotaRemaining: {
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
-        color: '#fff',
+        color: withdrawnTitleColor,
+        textAlign: 'center',
+        marginTop: 12,
     },
     videoLoadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 16,
         zIndex: 10,
     },
     loadingContainer: {
-        backgroundColor: AppScreenBackgroundColor,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
         borderRadius: 16,
         padding: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 180,
-        borderWidth: 0.8,
-        borderColor: '#ccc',
+        minWidth: 200,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
     },
     loadingText: {
         color: generalTitleColor,
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        fontWeight: '600',
         marginTop: 16,
         textAlign: 'center',
     },
     videoErrorOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backgroundColor: 'rgba(0, 0, 0, 0.95)',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 24,
         zIndex: 10,
     },
     errorContainer: {
-        backgroundColor: AppScreenBackgroundColor,
-        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
         padding: 32,
         alignItems: 'center',
-        maxWidth: 320,
-        borderWidth: 0.8,
-        borderColor: '#ccc',
+        maxWidth: 340,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.25,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 10,
+            },
+        }),
     },
     errorTitle: {
         fontSize: generalTitleSize,
         fontFamily: generalTitleFont,
-        fontWeight: generalTitleFontWeight,
+        fontWeight: '700',
         color: generalTitleColor,
         marginTop: 16,
         marginBottom: 8,
@@ -1560,24 +1695,37 @@ const styles = StyleSheet.create({
         fontSize: generalSmallTextSize,
         fontFamily: generalTextFont,
         color: withdrawnTitleColor,
-        marginBottom: 20,
+        marginBottom: 24,
         textAlign: 'center',
+        lineHeight: 20,
     },
     retryButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: genBtnBackgroundColor,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
+        backgroundColor: MainBrownSecondaryColor,
+        paddingVertical: 14,
+        paddingHorizontal: 28,
+        borderRadius: 12,
         gap: 8,
+        ...Platform.select({
+            ios: {
+                shadowColor: MainBrownSecondaryColor,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
     },
     retryButtonText: {
         fontSize: generalTextSize,
         fontFamily: generalTitleFont,
-        fontWeight: generalTitleFontWeight,
-        color: MainBrownSecondaryColor,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
     },
 });
 

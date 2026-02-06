@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, StatusBar, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from 'lottie-react-native';
-import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { articleTitleFont, articleTitleSize, auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from "../../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../../Components/AuthScreenMiniHeader";
 import LottieLoad from "../../../Helpers/LottieLoad";
 import SikiyaAPI from "../../../../API/SikiyaAPI";
@@ -23,11 +23,12 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [profileCreated, setProfileCreated] = useState(false);
   const [timer, setTimer] = useState(15);
+  const [buttonLoading, setButtonLoading] = useState(false);
 
   // Disable back button
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      // Prevent going back
+      // Prevent going back until profile is created
       if (!profileCreated) {
         e.preventDefault();
       }
@@ -36,21 +37,14 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
     return unsubscribe;
   }, [navigation, profileCreated]);
 
-  // Create journalist profile on mount
+  // Start timer immediately (no profile creation)
   useEffect(() => {
-    createJournalistProfile();
-  }, []);
-
-  // Start timer once profile is created and auto-navigate when done
-  useEffect(() => {
-    if (!profileCreated) return;
-
+    setLoading(false); // Stop showing loading animation
+    
     const interval = setInterval(() => {
       setTimer((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          // Auto-navigate when timer reaches 0
-          updateRole({ role: 'general' });
           return 0;
         }
         return prev - 1;
@@ -58,11 +52,9 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [profileCreated]);
+  }, []);
 
   const createJournalistProfile = async () => {
-    setLoading(true);
-
     try {
       const payload = {
         firstname: journalistInfo.firstName,
@@ -84,8 +76,9 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
       };
 
       await SikiyaAPI.post('/signup/journalist', payload);
-      await sleep(500);
       setProfileCreated(true);
+      // Auto-navigate after profile is created
+      updateRole({ role: 'general' });
     } catch (error) {
       console.log("Error creating journalist profile:", error);
       Alert.alert(
@@ -96,14 +89,13 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
           { text: t('common.cancel'), onPress: () => navigation.goBack() }
         ]
       );
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleContinue = async () => {
-    // Allow user to skip the timer by clicking
-    await updateRole({ role: 'general' });
+    setButtonLoading(true);
+    // Create profile when user presses the button
+    await createJournalistProfile();
   };
 
   const nextSteps = [
@@ -117,7 +109,7 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
       <StatusBar barStyle={"dark-content"} />
       <AuthScreenMiniHeader title={t('onboarding.welcomeToSikiya')} />
 
-      <View style={[auth_Style.onboardingContainer, { height: height * 0.55, width: '94%', marginTop: 4 }, auth_Style.authElevation]}>
+      <View style={[auth_Style.onboardingContainer, { height: height * 0.55, width: '94%', marginTop: 4 }]}>
         {loading ? (
           <View style={styles.loadingContainer}>
             <LottieLoad />
@@ -126,7 +118,7 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
         ) : (
           <View style={styles.mainContainer}>
             {/* Lottie Animation Section */}
-            <View style={styles.ImageGridContainer}>
+            <View style={[styles.ImageGridContainer, main_Style.genContentElevation]}>
               <LottieView
                 source={animation}
                 style={styles.singleAnimation}
@@ -168,26 +160,32 @@ const JournalistFinishJoinScreen = ({ navigation, route }) => {
         )}
       </View>
 
-      {/* Continue Button with Timer - Auto-navigates or tap to skip */}
-      {profileCreated && (
-        <TouchableOpacity
-          hitSlop={defaultButtonHitslop}
-          style={[
-            auth_Style.authButtonStyle,
-            styles.continueButton,
-          ]}
-          activeOpacity={generalActiveOpacity}
-          onPress={handleContinue}
-        >
-          <Text style={auth_Style.authButtonText}>
-            {timer > 0 
-              ? `${t('onboarding.openSikiya')} (${timer}s)`
-              : t('onboarding.openSikiya')
-            }
-          </Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" style={styles.arrowIcon} />
-        </TouchableOpacity>
-      )}
+      {/* Continue Button with Timer - Disabled until 15s, then enabled */}
+      <TouchableOpacity
+        hitSlop={defaultButtonHitslop}
+        style={[
+          auth_Style.authButtonStyle,
+          styles.continueButton,
+          timer > 0 && styles.disabledButton,
+        ]}
+        activeOpacity={generalActiveOpacity}
+        onPress={handleContinue}
+        disabled={timer > 0 || buttonLoading}
+      >
+        {buttonLoading ? (
+          <LottieLoad />
+        ) : (
+          <>
+            <Text style={[auth_Style.authButtonText, timer > 0 && styles.disabledButtonText]}>
+              {timer > 0 
+                ? `${t('onboarding.openSikiya')} (${timer}s)`
+                : t('onboarding.openSikiya')
+              }
+            </Text>
+            <Ionicons name="arrow-forward" size={20} color={timer > 0 ? '#ccc' : '#fff'} style={styles.arrowIcon} />
+          </>
+        )}
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -243,11 +241,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   introMissionParagraph: {
-    fontFamily: generalTitleFont,
-    fontSize: generalTitleSize,
+    fontFamily: articleTitleFont,
+    fontSize: articleTitleSize,
     fontWeight: 'bold',
     color: generalTitleColor,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   nextStepsContainer: {
     marginBottom: 12,
@@ -311,6 +309,13 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     marginLeft: 8,
+  },
+  disabledButton: {
+    opacity: 0.5,
+    backgroundColor: MainBrownSecondaryColor,
+  },
+  disabledButtonText: {
+    color: AppScreenBackgroundColor
   },
 });
 

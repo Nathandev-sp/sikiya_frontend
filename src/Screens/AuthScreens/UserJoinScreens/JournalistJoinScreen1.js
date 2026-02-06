@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont } from "../../../styles/GeneralAppStyle";
+import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont, MainSecondaryBlueColor } from "../../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import CountryPicker from "../../../Components/CountryPicker";
 import CityPicker from "../../../Components/CityPicker";
@@ -104,7 +104,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
         >
           <View style={{ flex: 1 }}>
             {/* Header Section */}
-            <View style={[styles.headerSection, { height: height * 0.35 }]}>
+            <View style={[styles.headerSection, { height: height * 0.34 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
                   <GoBackButton 
@@ -113,7 +113,7 @@ const JournalistJoinScreen1 = ({ navigation }) => {
                   />
                 </View>
                 <Image 
-                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
+                  source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
                   style={styles.companyLogo}
                 />
               </View>
@@ -314,22 +314,21 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 0,
-    marginBottom: 12,
+    //paddingTop: 0,
+    //marginBottom: 12,
     //backgroundColor: 'red',
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: MainBrownSecondaryColor,
+    //backgroundColor: MainBrownSecondaryColor,
     borderColor: MainBrownSecondaryColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     width: '92%',
-    borderRadius: 16,
-    marginBottom: 0,
-    flex: 1,
-    maxHeight: '65%',
-    position: 'relative',
+    //borderRadius: 24,
+    //marginBottom: 12,
+    //flex: 1,
+    maxHeight: '60%',
   },
   backButtonWrapper: {
     position: 'absolute',
@@ -348,7 +347,7 @@ const styles = StyleSheet.create({
   },
   backButtonIcon: {
     fontSize: 28,
-    color: '#FFF'
+    color: MainBrownSecondaryColor,
   },
   companyLogo: {
     width: '95%',
@@ -360,12 +359,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     //flex: 0.4,
     justifyContent: 'center',
-    paddingTop: 24,
+    marginTop: 24,
   },
   welcomeSubtitle: {
     fontFamily: articleTitleFont,
-    fontSize: generalTextSize+1,
-    color: withdrawnTitleColor,
+    fontSize: generalTextSize+3,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 24,

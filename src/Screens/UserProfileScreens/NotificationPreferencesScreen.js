@@ -494,7 +494,7 @@ const NotificationPreferencesScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     loadingContainer: {
         flex: 1,
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
     },
     preferencesContainer: {
-        backgroundColor: secCardBackgroundColor,
+        backgroundColor: "#FFF",
         borderRadius: 12,
         marginHorizontal: 12,
         paddingVertical: 8,

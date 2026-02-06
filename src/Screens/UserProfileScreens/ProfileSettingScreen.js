@@ -336,7 +336,7 @@ const ProfileSettingScreen = () => {
                 </View>
 
                 {/* Respect Score Display */}
-                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
+                <View style={[styles.formContainerName, main_Style.genButtonElevation]}>
                     {/* Name Title Section */}
                     <View style={styles.nameTitleSection}>
                         <Text style={styles.nameTitle}>
@@ -362,7 +362,7 @@ const ProfileSettingScreen = () => {
 
                 <VerticalSpacer height={20} />
 
-                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
+                <View style={[styles.formContainerDetails, main_Style.genButtonElevation]}>
                     {/* Toggle for display name format */}
                     <View style={styles.toggleGroup}>
                         <View style={styles.toggleTextContainer}>
@@ -524,7 +524,7 @@ const ProfileSettingScreen = () => {
                 <VerticalSpacer height={20} />
 
                 {/* Verified User Section */}
-                <View style={[styles.formContainer, main_Style.genButtonElevation]}>
+                <View style={[styles.formContainerDetails, main_Style.genButtonElevation]}>
                     <TouchableOpacity 
                         style={styles.verificationHeader}
                         onPress={() => setShowVerificationInfo(!showVerificationInfo)}
@@ -592,7 +592,7 @@ const ProfileSettingScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     headerSection: {
         alignItems: 'center',
@@ -651,13 +651,20 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
-    formContainer: {
-        backgroundColor: genBtnBackgroundColor,
-        borderRadius: 16,
+    formContainerName: {
+        backgroundColor: cardBackgroundColor,
+        borderRadius: 12,
         marginHorizontal: 12,
-        padding: 18,
+        padding: 12,
         borderWidth: 1,
         borderColor: '#E5E7EB',
+    },
+    formContainerDetails: {
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        marginHorizontal: 12,
+        padding: 12,
+        
     },
     nameTitleSection: {
         marginBottom: 20,
@@ -728,7 +735,7 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
         color: generalTextColor,
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: MainBrownSecondaryColor,
         zIndex: 8,
         shadowColor: '#000000', // iOS shadow properties
         shadowOffset: { width: 0, height: 0.2 },

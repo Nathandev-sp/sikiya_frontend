@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from "react-native";
-import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, generalActiveOpacity } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, generalActiveOpacity, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, articleTitleSize } from "../../styles/GeneralAppStyle";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from '../../Context/LanguageContext';
 
@@ -21,10 +21,10 @@ const ApplyToBe = () => {
   }
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.5, width: '94%', justifyContent: "space-between", paddingVertical: 16}, auth_Style.authElevation]}>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%', justifyContent: "space-between", paddingVertical: 16}]}>
       {/* Join as User Button */}
       <TouchableOpacity 
-        style={[styles.ButtonContainer, styles.imageLeftContainer]} 
+        style={[styles.ButtonContainer, styles.imageLeftContainer, main_Style.genButtonElevation]} 
         activeOpacity={generalActiveOpacity} 
         onPress={handleUserPress}
       >
@@ -32,7 +32,7 @@ const ApplyToBe = () => {
           <Image source={userImage} style={styles.largeImage} />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.headline}>{t('onboarding.joinAsUser')}</Text>
+          <Text style={styles.headlineUser}>{t('onboarding.joinAsUser')}</Text>
           <Text style={styles.description}>
             {t('onboarding.joinAsUserDescription')}
           </Text>
@@ -41,12 +41,12 @@ const ApplyToBe = () => {
 
       {/* Apply to be Journalist Button */}
       <TouchableOpacity 
-        style={[styles.ButtonContainer, styles.imageRightContainer]} 
+        style={[styles.ButtonContainer, styles.imageRightContainer, main_Style.genButtonElevation]} 
         activeOpacity={generalActiveOpacity} 
         onPress={handleJournalistPress}
       >
         <View style={styles.textContainer}>
-          <Text style={styles.headline}>{t('onboarding.applyToBeJournalist')}</Text>
+          <Text style={styles.headlineJourn}>{t('onboarding.applyToBeJournalist')}</Text>
           <Text style={styles.description}>
             {t('onboarding.joinAsJournalistDescription')}
           </Text>
@@ -69,22 +69,21 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 16,
     backgroundColor: '#F6F3EF',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   imageLeftContainer: {
     flexDirection: 'row',
+    borderWidth: 1.2,
+    borderColor: MainSecondaryBlueColor
   },
   imageRightContainer: {
     flexDirection: 'row-reverse',
+    borderWidth: 1.2,
+    borderColor: MainBrownSecondaryColor
   },
   imageWrapper: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
@@ -95,9 +94,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   largeImage: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     resizeMode: 'cover',
   },
   textContainer: {
@@ -105,11 +104,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
-  headline: {
+  headlineUser: {
     fontFamily: generalTitleFont,
-    fontSize: generalTitleSize - 1,
+    fontSize: articleTitleSize,
     fontWeight: '700',
-    color: generalTitleColor,
+    color: MainSecondaryBlueColor,
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  headlineJourn: {
+    fontFamily: generalTitleFont,
+    fontSize: articleTitleSize,
+    fontWeight: '700',
+    color: MainBrownSecondaryColor,
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 0.3,

@@ -160,10 +160,15 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
                 visible={replyModalVisible}
                 onClose={() => setReplyModalVisible(false)}
                 onSend={submitReply}
-                placeholder="Write your reply..."
+                placeholder={t('comment.writeReplyPlaceholder')}
                 mode="comment"
                 isLoading={loadingReply}
-                replyToName={`${mainComment.comment_author_id.firstname} ${mainComment.comment_author_id.lastname}`}
+                replyToName={
+                    mainComment?.comment_author_id?.displayName ||
+                    mainComment?.comment_author_id?.displayname ||
+                    mainComment?.comment_author_id?.display_name ||
+                    `${mainComment?.comment_author_id?.firstname || ''} ${mainComment?.comment_author_id?.lastname || ''}`.trim()
+                }
             />
         </View>
     );

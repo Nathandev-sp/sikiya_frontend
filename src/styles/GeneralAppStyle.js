@@ -124,11 +124,11 @@ const auth_Style = StyleSheet.create({
   authInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 0.5,
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginVertical: 1,
     backgroundColor: "#FFFFFF", // #F0F6FA #E0EDF5 #EBEBEB #F5F5F5
     //Adding some content
@@ -164,17 +164,12 @@ const auth_Style = StyleSheet.create({
     paddingHorizontal: 0,
   },
   authButtonStyle: {
-    backgroundColor: '#66462c', // main:#66462c  #B0C6CE #8EADB8 #5E8897
+    backgroundColor: MainBrownSecondaryColor, // main:#66462c  #B0C6CE #8EADB8 #5E8897
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 6,
+    borderRadius: 8,
     alignItems: 'center',
     marginTop: 20,
-    zIndex: 10,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 0.5,
     width: 160,
     alignSelf: 'center',
     marginTop: 100,
@@ -195,7 +190,7 @@ const auth_Style = StyleSheet.create({
   onboardingContainer: {
     alignSelf: 'center',
     padding: 12,
-    backgroundColor: cardBackgroundColor,  //#E4EEFF #EBF2FE #DBE2EE #D5DDEB #E9E2D8
+    //backgroundColor: cardBackgroundColor,  //#E4EEFF #EBF2FE #DBE2EE #D5DDEB #E9E2D8
     borderRadius: 16,
   },
    formContainer: {

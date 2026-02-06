@@ -104,7 +104,7 @@ const ToggleBlock = ({ selected, setSelected }) => {
 
 const styles = StyleSheet.create({
   toggleContainer: {
-    height: 38,
+    height: 32,
     width: '65%',
     maxWidth: 320,
     backgroundColor: '#fff',

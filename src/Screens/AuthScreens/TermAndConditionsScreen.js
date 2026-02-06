@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { auth_Style, AppScreenBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor } from "../../styles/GeneralAppStyle";
+import { auth_Style, AppScreenBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor, main_Style, MainSecondaryBlueColor, commentTextSize, cardBackgroundColor } from "../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
 import SikiyaAPI from "../../../API/SikiyaAPI";
 import LottieLoad from "../../Helpers/LottieLoad";
@@ -51,7 +51,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
     } catch (error) {
       console.log("Error creating user profile:", error);
     } finally {
-      await updateRole({ role: 'general' });
+      await updateRole({ role: 'contributor' });
       setLoading(false);
     }
   };
@@ -63,7 +63,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
       
       <View style={[auth_Style.formContainer]}>
         {/* Terms and Conditions ScrollView */}
-        <View style={styles.termsContainer}>
+        <View style={[styles.termsContainer, main_Style.genContentElevation]}>
           <ScrollView 
             style={styles.termsScrollView}
             contentContainerStyle={styles.termsContent}
@@ -94,7 +94,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
             <Ionicons
               name={agreed ? "checkbox" : "square-outline"}
               size={24}
-              color={agreed ? MainBrownSecondaryColor : "#888"}
+              color={agreed ? MainSecondaryBlueColor : MainSecondaryBlueColor}
             />
           </TouchableOpacity>
           <Text style={styles.agreeText}>
@@ -108,7 +108,7 @@ const TermAndConditionsScreen = ({ navigation, route }) => {
           activeOpacity={generalActiveOpacity}
           style={[
             auth_Style.authButtonStyle,
-            { marginTop: 24, marginBottom: 20, opacity: agreed ? 1 : 0.2 }
+            { marginTop: 16, marginBottom: 32, opacity: agreed ? 1 : 0.2, backgroundColor: MainSecondaryBlueColor }
           ]}
           onPress={() => {
             if (agreed) {
@@ -134,15 +134,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: lightBannerBackgroundColor,
-    borderWidth: 1,
+    //borderWidth: 1,
     borderColor: "#E0E0E0",
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
     overflow: 'hidden',
   },
   termsScrollView: {
@@ -181,7 +176,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   sectionContent: {
-    fontSize: generalTextSize - 1,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
     lineHeight: 22,
@@ -193,19 +188,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 8,
     marginBottom: 8,
-    backgroundColor: lightBannerBackgroundColor,
+    backgroundColor: cardBackgroundColor,
     padding: 14,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderWidth: 1.2,
+    borderColor: MainSecondaryBlueColor,
   },
   checkboxContainer: {
     marginRight: 12,
   },
   agreeText: {
-    fontSize: generalTextSize - 1,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
-    color: generalTitleColor,
+    color: generalTextColor,
     flex: 1,
     flexWrap: 'wrap',
     lineHeight: 20,
