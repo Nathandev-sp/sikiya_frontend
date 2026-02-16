@@ -677,7 +677,8 @@
     "created": "Created",
     "decisionDate": "Decision Date",
     "decisionMessage": "Decision Message",
-    "notAvailable": "N/A"
+    "notAvailable": "N/A",
+    "untitled": "Untitled"
   },
   "journalistPanel": {
     "totalArticles": "Total Articles",
@@ -870,7 +871,12 @@
     "dailyCommentLimit": "Limit reached for today",
     "dailyCommentLimitDescription": "You can still reply to main comments. Upgrade or watch an add for more comments.",
     "watchAd": "Watch an ad",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "postingIn": "Posting in",
+    "replyingTo": "Replying to",
+    "writeComment": "Write a comment...",
+    "writeCommentPlaceholder": "Write your comment...",
+    "writeReplyPlaceholder": "Write your reply..."
   }
 }
 

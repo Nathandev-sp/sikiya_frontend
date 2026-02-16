@@ -1,5 +1,5 @@
-import React from "react";
-import {View, Text, StyleSheet, Image, useWindowDimensions} from 'react-native';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import AppScreenBackgroundColor, { 
     articleTextSize,
     articleTitleColor, 
@@ -23,11 +23,11 @@ import { getImageUrl } from "../utils/imageUrl";
 import DateConverter from "../Helpers/DateConverter";
 import { useLanguage } from "../Context/LanguageContext";
 
-const JournalistSubmissionCard = ({submission}) => {
-    const {width} = useWindowDimensions();
+const JournalistSubmissionCard = ({ submission }) => {
+    const { width } = useWindowDimensions();
     const { t } = useLanguage();
-    const isArticle = submission.type === 'article';
-    const isVideo = submission.type === 'video';
+    const isArticle = submission?.type === 'article';
+    const isVideo = submission?.type === 'video';
 
     // Get status color
     const getStatusColor = (status) => {
@@ -57,33 +57,38 @@ const JournalistSubmissionCard = ({submission}) => {
         }
     };
 
-    // Get image source
-    const getImageSource = () => {
-        if (isArticle && submission.article_front_image) {
+    // Get image source (memoized to avoid new object refs every render)
+    const imageSource = useMemo(() => {
+        if (isArticle && submission?.article_front_image) {
             return { uri: getImageUrl(submission.article_front_image) };
         }
-        if (isVideo && submission.video_front_image) {
+        if (isVideo && submission?.video_front_image) {
             return { uri: getImageUrl(submission.video_front_image) };
         }
-        // Use video camera image for videos, placeholder for articles
         if (isVideo) {
             return require('../../assets/functionalImages/video-camera.png');
         }
-        // Use placeholder for articles
         return require('../../assets/functionalImages/FrontImagePlaceholder.png');
-    };
+    }, [isArticle, isVideo, submission?.article_front_image, submission?.video_front_image]);
 
-    return(
-        <View style={[styles.container, main_Style.genButtonElevation, {width: width * 0.94}]}>
+    const title = (isArticle ? submission?.article_title : submission?.video_title) || t('submissions.untitled', { defaultValue: 'Untitled' });
+
+    return (
+        <View
+            style={[styles.container, main_Style.genButtonElevation, { width: width * 0.94 }]}
+            accessibilityRole="summary"
+            accessibilityLabel={`${isArticle ? t('submissions.article') : t('submissions.video')}: ${title}. ${t('submissions.approvalStatus')}: ${getStatusText(submission?.approval_status)}`}
+        >
             {/* Upper section with red background */}
             <View style={styles.upperSection}>
                 <View style={styles.introContainer}>
                     {/* Image on the left */}
                     <View style={styles.imageContainer}>
-                        <Image 
+                        <Image
                             style={styles.frontImage}
-                            defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
-                            source={getImageSource()}
+                            defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')}
+                            source={imageSource}
+                            resizeMode="cover"
                         />
                     </View>
                     
@@ -91,12 +96,12 @@ const JournalistSubmissionCard = ({submission}) => {
                     <View style={styles.contentContainer}>
                         {/* Title */}
                         <View style={styles.titleContainer}>
-                            <Text 
-                                style={styles.cardTitle} 
+                            <Text
+                                style={styles.cardTitle}
                                 numberOfLines={2}
                                 ellipsizeMode="tail"
                             >
-                                {isArticle ? submission.article_title : submission.video_title}
+                                {title}
                             </Text>
                         </View>
                         
@@ -104,7 +109,7 @@ const JournalistSubmissionCard = ({submission}) => {
                         <View style={styles.typeContainer}>
                             <Ionicons 
                                 name={isArticle ? "document-text" : "videocam"} 
-                                size={20} 
+                                size={16} 
                                 color={withdrawnTitleColor} 
                                 style={styles.typeIcon}
                             />
@@ -121,9 +126,9 @@ const JournalistSubmissionCard = ({submission}) => {
                 <View style={styles.statusRow}>
                     <Text style={styles.statusLabel}>{t('submissions.approvalStatus')}:</Text>
                     <View style={[styles.statusBadge]}>
-                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(submission.approval_status) }]} />
-                        <Text style={[styles.statusText, { color: getStatusColor(submission.approval_status) }]}>
-                            {getStatusText(submission.approval_status)}
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(submission?.approval_status) }]} />
+                        <Text style={[styles.statusText, { color: getStatusColor(submission?.approval_status) }]}>
+                            {getStatusText(submission?.approval_status)}
                         </Text>
                     </View>
                 </View>
@@ -134,13 +139,13 @@ const JournalistSubmissionCard = ({submission}) => {
                         <Ionicons name="calendar" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
                         <Text style={styles.dateLabel}>{t('submissions.created')}: </Text>
                         <Text style={styles.dateValue}>
-                            {submission.created_on ? DateConverter(submission.created_on) : t('submissions.notAvailable')}
+                            {submission?.created_on ? DateConverter(submission.created_on) : t('submissions.notAvailable')}
                         </Text>
                     </View>
                 </View>
                 
                 {/* Decision Date - show if there's a decision (published_on or approval_date) */}
-                {(submission.published_on || submission.approval_date) && (
+                {(submission?.published_on || submission?.approval_date) && (
                     <View style={styles.dateRow}>
                         <View style={styles.dateItem}>
                             <Ionicons name="checkmark-circle" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
@@ -151,9 +156,9 @@ const JournalistSubmissionCard = ({submission}) => {
                         </View>
                     </View>
                 )}
-                
+
                 {/* Approval Message - only show if not pending */}
-                {submission.approval_status !== 'pending' && submission.approval_reason && (
+                {submission?.approval_status !== 'pending' && submission?.approval_reason && (
                     <View style={styles.messageContainer}>
                         <Text style={styles.messageLabel}>{t('submissions.decisionMessage')}:</Text>
                         <Text style={styles.messageText}>{submission.approval_reason}</Text>
@@ -168,11 +173,11 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        marginVertical: 6,
+        marginVertical: 8,
         alignSelf: 'center',
         overflow: 'hidden',
         borderWidth: 1.2,
-        borderColor: 'rgba(0,0,0,0.05)',
+        borderColor: 'rgba(0,0,0,0.1)',
     },
     upperSection: {
         backgroundColor: cardBackgroundColor,
@@ -181,12 +186,13 @@ const styles = StyleSheet.create({
     introContainer: {
         width: '100%',
         flexDirection: 'row',
-        minHeight: 80,
+        minHeight: 40,
         marginBottom: 0,
+        alignItems: 'center',
     },
     imageContainer: {
-        width: '30%',
-        height: 80,
+        width: '25%',
+        height: 70,
         borderRadius: 8,
         backgroundColor: '#F5F5F5',
         overflow: 'hidden',
@@ -195,7 +201,7 @@ const styles = StyleSheet.create({
     },
     frontImage: {
         width: '100%',
-        height: '100%',
+        height: 70,
         borderRadius: 8,
     },
     contentContainer: {
@@ -210,12 +216,12 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     cardTitle: {
-        fontSize: generalTextSize,
+        fontSize: commentTextSize,
         fontWeight: '600',
         color: generalTextColor,
-        fontFamily: articleTitleFont,
+        fontFamily: generalTextFont,
         lineHeight: 20,
-        letterSpacing: 0.1,
+        //letterSpacing: 0.1,
     },
     typeContainer: {
         flexDirection: 'row',
@@ -230,7 +236,7 @@ const styles = StyleSheet.create({
         marginRight: 5,
     },
     typeText: {
-        fontSize: commentTextSize,
+        fontSize: withdrawnTitleSize-1,
         color:generalTextColor,
         fontFamily: generalTitleFont,
         fontWeight: '700',
@@ -323,5 +329,5 @@ const styles = StyleSheet.create({
     },
 });
 
-export default JournalistSubmissionCard;
+export default React.memo(JournalistSubmissionCard);
 

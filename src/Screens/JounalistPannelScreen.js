@@ -222,7 +222,10 @@ const JounalistPannelScreen = ({ navigation }) => {
             onPress={handleAddArticle}
             activeOpacity={0.7}
           >
-            <Ionicons name="document-text" size={20} color={AppScreenBackgroundColor} style={styles.buttonIcon} />
+            <Image
+             style={styles.buttonIcon} 
+             source={require('../../assets/functionalImages/Sikiya_new_article.png')}
+             />
             <Text style={styles.buttonText}>{t('journalistPanel.newArticle')}</Text>
           </TouchableOpacity>
           
@@ -231,7 +234,10 @@ const JounalistPannelScreen = ({ navigation }) => {
             onPress={handleUploadVideo}
             activeOpacity={0.7}
           >
-            <Ionicons name="videocam" size={20} color={AppScreenBackgroundColor} style={styles.buttonIcon} />
+            <Image
+             style={styles.buttonIcon} 
+             source={require('../../assets/functionalImages/Sikiya_new_video.png')}
+             />
             <Text style={styles.buttonText}>{t('journalistPanel.newVideo')}</Text>
           </TouchableOpacity>
         </View>
@@ -408,15 +414,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   actionButton: {
-    backgroundColor: MainBrownSecondaryColor,
-    flexDirection: 'row',
+    backgroundColor: secCardBackgroundColor,
+    //flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     borderRadius: 8,
     flex: 1,
-    marginHorizontal: 6,
+    marginHorizontal: 8,
     marginVertical: 16,
   },
   videoButton: {
@@ -424,9 +430,12 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 8,
+    height: 60,
+    width: 60,
+    marginBottom: 8,
   },
   buttonText: {
-    color: AppScreenBackgroundColor,
+    color: generalTextColor,
     fontFamily: generalTitleFont,
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,

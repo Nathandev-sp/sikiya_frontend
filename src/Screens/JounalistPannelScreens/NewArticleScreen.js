@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style, commentTextSize} from '../../styles/GeneralAppStyle';
@@ -174,23 +174,26 @@ const NewArticleScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          <TouchableWithoutFeedback onPress={dismissKeyboard}>
+            <View style={styles.scrollContentInner}>
           {/* Header with Back Button and Image */}
           <View style={styles.headerContainer}>
-            <View style={{position: 'absolute', top: -45, left: 10, zIndex: 10}}>
+            <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
                   <GoBackButton />
             </View>
             <Image 
-              source={require('../../../assets/functionalImages/article.png')}
+              source={require('../../../assets/functionalImages/Sikiya_new_article.png')}
               style={styles.headerLogo}
               resizeMode="contain"
             />
             <View style={styles.placeholder} />
+            {/* Title Section */}
+            <View style={styles.titleSection}>
+              <Text style={styles.screenTitle}>{t('newArticle.title')}</Text>
+            </View>
           </View>
 
-          {/* Title Section */}
-          <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>{t('newArticle.title')}</Text>
-          </View>
+          
 
           {/* Article Title Input */}
           <View style={styles.inputSection}>
@@ -348,6 +351,8 @@ const NewArticleScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.bottomSpacer} />
+            </View>
+          </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -361,18 +366,25 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 24,
   },
+  scrollContentInner: {
+    flexGrow: 1,
+  },
   headerContainer: {
-    //flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingTop: 4,
-    paddingBottom: 4,
-    //backgroundColor: 'red',
+    paddingBottom: 8,
+    backgroundColor: cardBackgroundColor,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 32,
+    marginTop: 12,
   },
   headerLogo: {
-    width: 50,
-    height: 50,
+    marginTop: 12,
+    width: 100,
+    height: 100,
 
   },
   placeholder: {
@@ -381,13 +393,16 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 16,
     paddingBottom: 20,
+    paddingTop: 24,
   },
   screenTitle: {
     fontSize: largeTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
+    //marginBottom: 8,
+    marginTop: 8,
   },
   inputSection: {
     paddingHorizontal: 16,
@@ -416,7 +431,7 @@ const styles = StyleSheet.create({
     fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
-    marginBottom: 12,
+    marginBottom: 16,
     marginTop: 2,
     fontStyle: 'italic',
   },
@@ -424,13 +439,13 @@ const styles = StyleSheet.create({
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 0.8,
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "#FFFFFF",
-    marginBottom: 8,
+    marginBottom: 12,
     //Adding some content
     zIndex: 8,
     shadowColor: '#000000', // iOS shadow properties
@@ -445,7 +460,7 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 0.8,
+    borderWidth: 1,
   },
   textArea: {
     backgroundColor: "#FFFFFF",
@@ -454,12 +469,12 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 0.8,
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     //backgroundColor: "#FFFFFF",
     //Adding some content
     zIndex: 8,
@@ -474,7 +489,7 @@ const styles = StyleSheet.create({
   },
   fullArticleTextArea: {
     minHeight: 300,
-    maxHeight: 500,
+    maxHeight: 450,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

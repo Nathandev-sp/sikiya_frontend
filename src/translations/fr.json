@@ -674,7 +674,8 @@
     "created": "Créé",
     "decisionDate": "Date de décision",
     "decisionMessage": "Message de décision",
-    "notAvailable": "N/D"
+    "notAvailable": "N/D",
+    "untitled": "Sans titre"
   },
   "journalistPanel": {
     "totalArticles": "Articles totaux",
@@ -867,7 +868,12 @@
     "dailyCommentLimit": "Limite atteinte pour aujourd’hui",
     "dailyCommentLimitDescription": "Vous pouvez toujours répondre aux commentaires principaux. Mettez à niveau ou regardez une publicité pour débloquer plus de commentaires.",
     "watchAd": "Publicité",
-    "upgrade": "Mettre à niveau"
+    "upgrade": "Mettre à niveau",
+    "postingIn": "Publication dans",
+    "replyingTo": "Réponse à",
+    "writeComment": "Écrire un commentaire...",
+    "writeCommentPlaceholder": "Écrivez votre commentaire...",
+    "writeReplyPlaceholder": "Écrivez votre réponse..."
   }
 }
 

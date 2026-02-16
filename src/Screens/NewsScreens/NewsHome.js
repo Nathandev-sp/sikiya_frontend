@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -18,6 +18,7 @@ import BannerAdComponent from '../../Components/Ads/BannerAd';
 import { Context as AuthContext } from '../../Context/AuthContext';
 import i18n from '../../utils/i18n';
 import { useRewardedAd } from '../../Components/Ads/RewardedAd';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const createStyles = (height) => StyleSheet.create({
     container: {
@@ -139,6 +140,9 @@ const createStyles = (height) => StyleSheet.create({
         marginTop: 0,
         marginBottom: 16,
         width: '100%',
+        borderBottomWidth: 0.4,
+        borderBottomColor: MainBrownSecondaryColor,
+        paddingBottom: 12,
     },
     locationInfo: {
         flexDirection: 'row',
@@ -202,8 +206,8 @@ const createStyles = (height) => StyleSheet.create({
         alignItems: 'center',
         marginBottom: 10,
         paddingBottom: 16,
-        borderBottomWidth: 0.2,
-        borderBottomColor: withdrawnTitleColor,
+        borderBottomWidth: 0.4,
+        borderBottomColor: MainBrownSecondaryColor,
     },
     sourceInfo: {
         flexDirection: 'row',
@@ -299,15 +303,169 @@ const createStyles = (height) => StyleSheet.create({
     },
     commentsSection: {
         paddingTop: 4,
-        width: '105%',
+        width: '100%',
         alignSelf: 'center',
     },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.35)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        height: height * 0.8,
+        backgroundColor: AppScreenBackgroundColor,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        //paddingHorizontal: 4,
+        //paddingTop: 12,
+        paddingBottom: 0,
+    },
+    modalHandle: {
+        width: 48,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        alignSelf: 'center',
+        //marginBottom: 12,
+    },
+    modalHandleContainer: {
+        paddingVertical: 8,
+        paddingHorizontal: 0,
+        alignItems: 'center',
+        alignSelf: 'stretch',
+    },
+    modalHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        //marginBottom: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 4,
+        
+    },
+    modalHeaderImage: {
+        width: 80,
+        height: 52,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    modalHeaderText: {
+        flex: 1,
+    },
+    modalTitle: {
+        fontSize: commentTextSize-0.5,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: articleTitleFont,
+        lineHeight: 20,
+    },
+    modalAuthor: {
+        fontSize: commentTextSize,
+        fontWeight: generalTextFontWeight,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        marginBottom: 0,
+    },
+    modalLaneFlag: {
+        minHeight: 32,
+        //width: '100%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        position: 'relative',
+    },
+    modalLaneFlagText: {
+        fontSize: commentTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
+        fontFamily: generalTitleFont,
+    },
+    modalLaneCloseButton: {
+        position: 'absolute',
+        right: 16,
+        top: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalCloseButton: {
+        position: 'absolute',
+        right: 12,
+        top: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    discussionLanesContainer: {
+        gap: 12,
+        marginBottom: 20,
+    },
+    discussionLaneCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 12,
+        marginHorizontal: 0,
+    },
+    discussionLaneContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 12,
+    },
+    discussionLaneIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    discussionLaneInfo: {
+        flex: 1,
+    },
+    discussionLaneTitle: {
+        fontSize: generalTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
+        fontFamily: generalTextFont,
+        marginBottom: 4,
+    },
+    discussionLaneCommentCount: {
+        fontSize: generalSmallTextSize,
+        fontWeight: generalTextFontWeight,
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontFamily: generalTextFont,
+    },
+    discussionLanePlusButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     horizontalRule: {
-        height: 0.4,
-        backgroundColor: withdrawnTitleColor,
+        height: 0.2,
+        backgroundColor: MainBrownSecondaryColor,
         //width: '100%',
         marginVertical: 16,
-        marginHorizontal: 12,
+        marginHorizontal: 4,
     },
     loadingContainer: {
         flex: 1,
@@ -344,10 +502,25 @@ const createStyles = (height) => StyleSheet.create({
         fontFamily: generalTitleFont,
         textAlign: 'center',
     },
+    modalCommentContainer: {
+        flex: 1,
+        backgroundColor: cardBackgroundColor,
+    },
+    modalScrollContent: {
+        flexGrow: 1,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 24,
+        minHeight: 200,
+    },
+    modalContentWrapper: {
+        flex: 1,
+    },
 });
 
 const NewsHome = ({ route }) => {
     const { article: articleParam, articleId } = route.params || {};
+    const { t } = useLanguage();
     // Log article journalist data to debug trust score
     //console.log('Article journalist data:', article);
     const [article, setArticle] = useState(articleParam);
@@ -362,6 +535,46 @@ const NewsHome = ({ route }) => {
     const viewTrackedRef = useRef(false); // Track if view has been recorded
     const startTimeRef = useRef(null); // Track when user started reading
     const readTimeIntervalRef = useRef(null); // Interval for tracking read time
+    const [discussionModalVisible, setDiscussionModalVisible] = useState(false);
+    const [selectedLane, setSelectedLane] = useState(null);
+    const [replyingToComment, setReplyingToComment] = useState(null); // { commentId, authorName }
+    
+    // Pan responder for swipe-to-dismiss
+    const modalTranslateY = useRef(new Animated.Value(0)).current;
+    const panResponderRef = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                // Only respond to vertical swipes
+                return Math.abs(gestureState.dy) > 5;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                // Only allow dragging down
+                if (gestureState.dy > 0) {
+                    modalTranslateY.setValue(gestureState.dy);
+                }
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+                    // Close modal if dragged down enough
+                    Animated.timing(modalTranslateY, {
+                        toValue: height,
+                        duration: 200,
+                        useNativeDriver: true,
+                    }).start(() => {
+                        closeDiscussionLane();
+                        modalTranslateY.setValue(0);
+                    });
+                } else {
+                    // Snap back
+                    Animated.spring(modalTranslateY, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                    }).start();
+                }
+            },
+        })
+    ).current;
     
     const { width, height } = useWindowDimensions();
     const styles = createStyles(height);
@@ -374,6 +587,69 @@ const NewsHome = ({ route }) => {
     // Cooldown timer for ads
     const [adCooldownSeconds, setAdCooldownSeconds] = useState(0);
     const adCooldownTimerRef = useRef(null);
+
+    // Dummy discussion lanes data
+    const dummyDiscussionLanes = [
+        {
+            id: '1',
+            title: 'General Discussion',
+            backgroundColor: '#2563EB',
+            icon: 'chatbubbles-outline',
+            commentCount: 24,
+        },
+        {
+            id: '2',
+            title: 'Fact Check',
+            backgroundColor: '#7C3AED',
+            icon: 'checkmark-circle-outline',
+            commentCount: 12,
+        },
+        {
+            id: '3',
+            title: 'Expert Opinion',
+            backgroundColor: '#FE5F55',
+            icon: 'star-outline',
+            commentCount: 8,
+        },
+        {
+            id: '4',
+            title: 'Questions',
+            backgroundColor: '#7FB069',
+            icon: 'help-circle-outline',
+            commentCount: 15,
+        },
+    ];
+
+    const getJournalistName = useCallback(() => {
+        if (!article?.journalist) return i18n.t('article.unknownAuthor');
+
+        if (article.journalist.displayName) {
+            return article.journalist.displayName;
+        }
+
+        if (article.journalist.journalist?.displayName) {
+            return article.journalist.journalist.displayName;
+        }
+
+        const firstname = article.journalist.firstname || article.journalist.journalist?.firstname || '';
+        const lastname = article.journalist.lastname || article.journalist.journalist?.lastname || '';
+
+        if (firstname || lastname) {
+            return `${firstname} ${lastname}`.trim();
+        }
+
+        return i18n.t('article.unknownAuthor');
+    }, [article]);
+
+    const openDiscussionLane = useCallback((lane) => {
+        setSelectedLane(lane);
+        setDiscussionModalVisible(true);
+    }, []);
+
+    const closeDiscussionLane = useCallback(() => {
+        setDiscussionModalVisible(false);
+        setSelectedLane(null);
+    }, []);
 
     // Fetch article by ID if articleId is provided but article is not
     useEffect(() => {
@@ -558,6 +834,39 @@ const NewsHome = ({ route }) => {
         }
     };
 
+    const onSendReply = async (text) => {
+        if (!text || !replyingToComment?.commentId || !article._id) return;
+        try {
+            setCommentLoading(true);
+            const payload = {
+                comment_article_id: article._id,
+                comment_content: text,
+                reply_to_comment_id: replyingToComment.commentId,
+            };
+            const response = await SikiyaAPI.post('/comment/reply', payload);
+            if (response.status === 201 || response.status === 200) {
+                setReplyingToComment(null);
+                setRefreshCommentsKey(prevKey => prevKey + 1);
+                setArticle(prev => ({
+                    ...prev,
+                    number_of_comments: (prev.number_of_comments || 0) + 1
+                }));
+            }
+        } catch (error) {
+            console.error('Error sending reply:', error);
+        } finally {
+            setCommentLoading(false);
+        }
+    };
+
+    const handleSendCommentOrReply = (text) => {
+        if (replyingToComment) {
+            onSendReply(text);
+        } else {
+            onSendComment(text);
+        }
+    };
+
     const images = article && articleOtherImages && articleOtherImages.length > 0
         ? [article.article_front_image, ...articleOtherImages]
         : [article?.article_front_image].filter(Boolean);
@@ -713,7 +1022,7 @@ const NewsHome = ({ route }) => {
                         showsHorizontalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <Image
-                                style={[styles.headerImage, { width, height: height * 0.46 }]}
+                                style={[styles.headerImage, { width, height: height * 0.48 }, main_Style.genContentElevation]}
                                 defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
                                 source={{ uri: getImageUrl(item) }}
                                 resizeMode="cover"
@@ -871,36 +1180,156 @@ const NewsHome = ({ route }) => {
                         <Text style={styles.fullContentLabel}>{i18n.t('article.fullArticle')}</Text>
                         <Text style={styles.articleContent}>{article.article_content}</Text>
                     </View>
+                    <View style={styles.horizontalRule} />
                     
                     {/* Comments Section */}
                     <View style={styles.commentsSection}>
-                        <View style={styles.horizontalRule} />
-                        <FeedbackContainer 
-                            articleId={article._id} 
-                            refreshKey={refreshCommentsKey} 
-                            commentLoading={commentLoading} 
-                            setCommentLoading={setCommentLoading}
-                            onAddCommentPress={async () => {
-                                setModalVisible(true);
-                                await fetchCommentQuota();
-                            }}
-                            totalCommentCount={article.number_of_comments || 0}
-                        />
-                        <CommentInputModal
-                            visible={modalVisible}
-                            onClose={() => setModalVisible(false)}
-                            onSend={onSendComment}
-                            placeholder={i18n.t('comment.writeCommentPlaceholder')}
-                            isLoading={commentLoading}
-                            quota={commentQuota}
-                            quotaLoading={quotaLoading}
-                            onUnlock={handleUnlockComment}
-                            onUpgrade={handleUpgrade}
-                            userRole={userRole}
-                        />
+                        {/* Discussion Lanes */}
+                        <View style={styles.discussionLanesContainer}>
+                            {dummyDiscussionLanes.map((lane) => (
+                                <TouchableOpacity
+                                    key={lane.id}
+                                    style={[
+                                        styles.discussionLaneCard,
+                                        { backgroundColor: lane.backgroundColor },
+                                        main_Style.genContentElevation,
+                                    ]}
+                                    activeOpacity={0.8}
+                                    onPress={() => openDiscussionLane(lane)}
+                                >
+                                    <View style={styles.discussionLaneContent}>
+                                        <View style={styles.discussionLaneIcon}>
+                                            <Ionicons
+                                                name={lane.icon}
+                                                size={20}
+                                                color="#fff"
+                                            />
+                                        </View>
+                                        <View style={styles.discussionLaneInfo}>
+                                            <Text style={styles.discussionLaneTitle}>
+                                                {lane.title}
+                                            </Text>
+                                            <Text style={styles.discussionLaneCommentCount}>
+                                                {lane.commentCount} {lane.commentCount === 1 ? 'comment' : 'comments'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.discussionLanePlusButton}
+                                        activeOpacity={0.7}
+                                        onPress={() => openDiscussionLane(lane)}
+                                    >
+                                        <Ionicons
+                                            name="add"
+                                            size={24}
+                                            color="#fff"
+                                        />
+                                    </TouchableOpacity>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
                 </View>
             </ScrollView>
+
+            <Modal
+                transparent
+                visible={discussionModalVisible}
+                animationType="none"
+                onRequestClose={closeDiscussionLane}
+            >
+                <View style={styles.modalBackdrop}>
+                    <Animated.View 
+                        style={[
+                            styles.modalSheet,
+                            {
+                                transform: [{ translateY: modalTranslateY }],
+                            },
+                        ]}
+                    >
+                        {selectedLane && (
+                            <View>
+                                
+
+                                {/* Lane flag with close button */}
+                                <View
+                                    style={[
+                                        styles.modalLaneFlag,
+                                        { backgroundColor: selectedLane.backgroundColor },
+                                    ]}
+                                >
+                                    <Ionicons name={selectedLane.icon} size={18} color="#fff" />
+                                    <Text style={styles.modalLaneFlagText}>{selectedLane.title}</Text>
+                                    
+                                    <TouchableOpacity 
+                                        style={styles.modalLaneCloseButton}
+                                        onPress={closeDiscussionLane}
+                                        activeOpacity={0.7}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="close" size={20} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Article header with image and title 
+                                <View style={[styles.modalHeaderRow, { borderBottomColor: selectedLane.backgroundColor, borderBottomWidth: 1.2 }]}>
+                                    <Image
+                                        style={styles.modalHeaderImage}
+                                        defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
+                                        source={{ uri: getImageUrl(article.article_front_image) }}
+                                        resizeMode="cover"
+                                    />
+                                    <View style={styles.modalHeaderText}>
+                                        <Text style={styles.modalTitle}>{article.article_title}</Text>
+                                        {/*<Text style={styles.modalAuthor}>{getJournalistName()}</Text>
+                                    </View>
+                                </View>
+                                */}
+                            </View>
+                        )}
+
+                        <KeyboardAvoidingView 
+                            style={styles.modalContentWrapper}
+                            behavior="padding"
+                            keyboardVerticalOffset={Platform.OS === 'ios' ? height * 0.2 : 0}
+                        >
+                            <ScrollView
+                                contentContainerStyle={styles.modalScrollContent}
+                                style={styles.modalCommentContainer}
+                                showsVerticalScrollIndicator={false}
+                                keyboardShouldPersistTaps="handled"
+                                keyboardDismissMode="interactive"
+                                bounces={true}
+                                overScrollMode="never"
+                            >
+                                <FeedbackContainer
+                                    articleId={article._id}
+                                    refreshKey={refreshCommentsKey}
+                                    commentLoading={commentLoading}
+                                    setCommentLoading={setCommentLoading}
+                                    onAddCommentPress={() => setModalVisible(true)}
+                                    onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
+                                />
+                            </ScrollView>
+                            
+                            <CommentInputModal
+                                onSend={handleSendCommentOrReply}
+                                placeholder={t('comments.writeComment') || "Write a comment..."}
+                                isLoading={commentLoading}
+                                quota={commentQuota}
+                                quotaLoading={quotaLoading}
+                                onUnlock={handleUnlockComment}
+                                onUpgrade={handleUpgrade}
+                                userRole={userRole}
+                                modalTitle={replyingToComment ? null : selectedLane?.title}
+                                titleColor={selectedLane?.backgroundColor}
+                                replyToName={replyingToComment?.authorName ?? null}
+                                onCancelReply={replyingToComment ? () => setReplyingToComment(null) : undefined}
+                            />
+                        </KeyboardAvoidingView>
+                    </Animated.View>
+                </View>
+            </Modal>
             
         </SafeAreaView>
     );

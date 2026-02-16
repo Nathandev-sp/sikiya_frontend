@@ -162,21 +162,22 @@ const NewVideoTitleScreen = ({ navigation }) => {
         >
           {/* Header with Back Button and Image */}
           <View style={styles.headerContainer}>
-            <View style={{position: 'absolute', top: -45, left: 10, zIndex: 10}}>
+            <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
                   <GoBackButton />
             </View>
             <Image 
-              source={require('../../../assets/functionalImages/video.png')}
+              source={require('../../../assets/functionalImages/Sikiya_new_video.png')}
               style={styles.headerLogo}
               resizeMode="contain"
             />
             <View style={styles.placeholder} />
+            {/* Title Section */}
+            <View style={styles.titleSection}>
+              <Text style={styles.screenTitle}>{t('newVideo.title')}</Text>
+            </View>
           </View>
 
-          {/* Title Section */}
-          <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>{t('newVideo.title')}</Text>
-          </View>
+          
 
           {/* Video Title Input */}
           <View style={styles.inputSection}>
@@ -276,13 +277,19 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingTop: 4,
-    paddingBottom: 4,
+    paddingBottom: 8,
+    backgroundColor: cardBackgroundColor,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 32,
+    marginTop: 12,
   },
   headerLogo: {
-    width: 50,
-    height: 50,
+    marginTop: 12,
+    width: 100,
+    height: 100,
   },
   placeholder: {
     width: 40,
@@ -290,14 +297,16 @@ const styles = StyleSheet.create({
   titleSection: {
     paddingHorizontal: 16,
     paddingBottom: 20,
-    paddingTop: 16,
+    paddingTop: 24,
   },
   screenTitle: {
     fontSize: largeTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
+    //marginBottom: 8,
+    marginTop: 8,
   },
   inputSection: {
     paddingHorizontal: 16,
@@ -333,8 +342,8 @@ const styles = StyleSheet.create({
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 0.5,
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -354,7 +363,7 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 0.8,
+    borderWidth: 1,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,
@@ -362,7 +371,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 10,
     marginHorizontal: 16,
-    marginTop: 8,
+    marginTop: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

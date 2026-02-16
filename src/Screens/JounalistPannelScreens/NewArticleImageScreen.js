@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor, commentTextSize} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor, commentTextSize, generalTitleSize} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
@@ -310,21 +310,22 @@ const NewArticleImageScreen = ({ navigation, route }) => {
         >
           {/* Header with Back Button and Image */}
           <View style={styles.headerContainer}>
-            <View style={{position: 'absolute', top: -45, left: 10, zIndex: 10}}>
+            <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
                   <GoBackButton />
             </View>
             <Image 
-              source={require('../../../assets/functionalImages/article.png')}
+              source={require('../../../assets/functionalImages/Sikiya_new_article.png')}
               style={styles.headerLogo}
               resizeMode="contain"
             />
             <View style={styles.placeholder} />
+            {/* Title Section */}
+            <View style={styles.titleSection}>
+              <Text style={styles.screenTitle}>{articleTitle || t('articleImages.title')}</Text>
+            </View>
           </View>
 
-          {/* Title Section */}
-          <View style={styles.titleSection}>
-            <Text style={styles.screenTitle}>{articleTitle || t('articleImages.title')}</Text>
-          </View>
+          
 
           {/* Photo Upload Section */}
           <View style={styles.photoSection}>
@@ -498,13 +499,19 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingTop: 4,
-    paddingBottom: 4,
+    paddingBottom: 8,
+    backgroundColor: cardBackgroundColor,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 32,
+    marginTop: 12,
   },
   headerLogo: {
-    width: 50,
-    height: 50,
+    marginTop: 12,
+    width: 100,
+    height: 100,
   },
   placeholder: {
     width: 40,
@@ -516,14 +523,15 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: largeTextSize,
-    fontWeight: generalTitleFontWeight,
+    fontWeight: '700',
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
+    marginTop: 8,
   },
   photoSection: {
     paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: generalTextSize,
@@ -536,7 +544,7 @@ const styles = StyleSheet.create({
     fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
-    marginBottom: 12,
+    marginBottom: 24,
     marginTop: 2,
     fontStyle: 'italic',
   },
@@ -548,7 +556,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     marginBottom: 16,
@@ -561,7 +569,7 @@ const styles = StyleSheet.create({
   },
   photoError: {
     borderColor: '#F4796B',
-    borderWidth: 0.8,
+    borderWidth: 1,
   },
   mainPhoto: {
     width: '100%',
@@ -578,7 +586,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     //Adding some content
@@ -655,7 +663,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     marginBottom: 24,
@@ -678,7 +686,7 @@ const styles = StyleSheet.create({
     fontFamily: generalTextFont,
     color: generalTextColor,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: MainBrownSecondaryColor,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -700,7 +708,7 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#F4796B',
-    borderWidth: 1.5,
+    borderWidth: 1,
   },
   submitButton: {
     backgroundColor: MainBrownSecondaryColor,

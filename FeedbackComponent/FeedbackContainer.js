@@ -9,7 +9,7 @@ import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitl
 import { useLanguage } from '../src/Context/LanguageContext';
 
 
-const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, hideHeader = false, totalCommentCount = null }) => {
+const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, onReplyToComment, hideHeader = false, totalCommentCount = null }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -106,7 +106,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
         if (hideHeader) return null;
         return (
             <View style={styles.commentsHeader}>
-                <View style={styles.commentsHeaderLeft}>
+                {/*<View style={styles.commentsHeaderLeft}>
                     <Ionicons name="chatbox-ellipses-outline" size={20} color={MainBrownSecondaryColor} />
                     <Text style={styles.commentsCountText}>{formattedCount} {t('comments.comments')}</Text>
                 </View>
@@ -118,7 +118,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
                     >
                         <Ionicons name="chatbubbles" size={20} color={MainBrownSecondaryColor} />
                     </TouchableOpacity>
-                )}
+                )}  */}
             </View>
         );
     };
@@ -150,10 +150,12 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             mainComment={item}
             articleId={articleId}
             videoId={videoId}
+            onReplyToComment={onReplyToComment}
         />
     );
 
-    // Optionally, filter comments by sentiment if needed
+    const ItemSeparator = () => <View style={styles.itemSeparator} />;
+
     return (
         <View style={styles.feedbackContainterStyle}>
             <FlatList
@@ -163,6 +165,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
                 ListHeaderComponent={renderHeader}
                 ListFooterComponent={renderFooter}
                 ListEmptyComponent={renderEmptyState}
+                ItemSeparatorComponent={ItemSeparator}
                 onEndReached={loadMoreComments}
                 onEndReachedThreshold={0.5}
                 showsVerticalScrollIndicator={false}
@@ -176,10 +179,9 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
 
 const styles = StyleSheet.create({
     feedbackContainterStyle: {
-        width: '98%',
-        marginTop: 2,
-        paddingBottom: 50, // Add extra padding at the bottom for scrolling
+        width: '100%',
         alignSelf: 'center',
+        paddingBottom: 24,
         //backgroundColor: 'red',
     },
     commentsHeader: {
@@ -209,32 +211,42 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     verticalSpacer: {
-        height: 50, // Adjust the height as needed
+        height: 16,
     },
     emptyStateContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 40,
-        paddingHorizontal: 20,
+        paddingVertical: 48,
+        paddingHorizontal: 24,
+        minHeight: 180,
     },
     emptyStateText: {
         fontSize: generalTextSize,
         fontWeight: generalTitleFontWeight,
         color: generalTitleColor,
         fontFamily: generalTitleFont,
-        marginTop: 16,
-        marginBottom: 4,
+        marginTop: 20,
+        marginBottom: 6,
+        textAlign: 'center',
     },
     emptyStateSubtext: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         textAlign: 'center',
+        lineHeight: 20,
+        paddingHorizontal: 16,
     },
     footerLoader: {
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    itemSeparator: {
+        height: 1,
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        marginVertical: 12,
+        marginHorizontal: 0,
     },
     loaderContainer: {
         flex: 1,

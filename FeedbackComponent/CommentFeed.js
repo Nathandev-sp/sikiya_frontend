@@ -2,16 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Animated, ActivityIndicator } from 'react-native';
 import CommentElement from '../FeedbackComponent/CommentElement';
 import { defaultButtonHitslop, generalTextFont, MainBrownSecondaryColor } from '../src/styles/GeneralAppStyle';
-import CommentInputModal from './CommentInputModal'; // Adjust path if needed
 import SikiyaAPI from '../API/SikiyaAPI';
 import { useLanguage } from '../src/Context/LanguageContext';
 
-const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
+const CommentFeed = ({ mainComment, sentiment, articleId, videoId, onReplyToComment }) => {
     const [showSubComments, setShowSubComments] = useState(false);
-    const [replyModalVisible, setReplyModalVisible] = useState(false);
     const [subComments, setSubComments] = useState([]);
     const [loadingSubComments, setLoadingSubComments] = useState(false);
-    const [loadingReply, setLoadingReply] = useState(false);
     const animationValue = useRef(new Animated.Value(0)).current;
     const { t } = useLanguage();
 
@@ -51,47 +48,16 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
         }
     };
 
-    const submitReply = async (replyText) => {
-        if (!replyText || !mainComment._id || (!articleId && !videoId)) return;
-        
-        setLoadingReply(true);
-        try {
-            // Use videoId if provided, otherwise use articleId
-            const payload = videoId ? {
-                comment_content: replyText,
-                mainComment: false,
-                reply_to_comment_id: mainComment._id
-            } : {
-                comment_article_id: articleId,
-                comment_content: replyText,
-                reply_to_comment_id: mainComment._id
-            };
-            
-            // Use video comment endpoint if videoId, otherwise use article reply endpoint
-            const endpoint = videoId 
-                ? `/video/${videoId}/comment`
-                : '/comment/reply';
-            
-            const response = await SikiyaAPI.post(endpoint, payload);
-            
-            // Add the new reply to the subComments array
-            setSubComments(prevComments => [response.data, ...prevComments]);
-            
-            // If subcomments are not visible, make them visible
-            if (!showSubComments) {
-                setShowSubComments(true);
-                Animated.timing(animationValue, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start();
-            }
-            
-            setReplyModalVisible(false);
-        } catch (error) {
-            console.error('Error submitting reply:', error);
-        } finally {
-            setLoadingReply(false);
+    const getReplyToAuthorName = () => {
+        const author = mainComment?.comment_author_id;
+        if (!author) return '';
+        return author.displayName || author.displayname || author.display_name
+            || `${author.firstname || ''} ${author.lastname || ''}`.trim() || t('profile.unknown');
+    };
+
+    const handleReplyPress = () => {
+        if (onReplyToComment) {
+            onReplyToComment(mainComment._id, getReplyToAuthorName());
         }
     };
 
@@ -128,7 +94,7 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
                 <View style={styles.verticalBar} />
                 
                 <View style={styles.mainCommentContainer}>
-                    <CommentElement comment={mainComment} showButtons={true} onToggleSubComments={toggleSubComments} onReply={() => setReplyModalVisible(true)} showSubComments={showSubComments} />
+                    <CommentElement comment={mainComment} showButtons={true} onToggleSubComments={toggleSubComments} onReply={handleReplyPress} showSubComments={showSubComments} />
                 </View>
             </View>
 
@@ -155,34 +121,19 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId }) => {
                 </Animated.View>
             )}
 
-            {/* Reply Modal - Now with proper functionality */}
-            <CommentInputModal
-                visible={replyModalVisible}
-                onClose={() => setReplyModalVisible(false)}
-                onSend={submitReply}
-                placeholder={t('comment.writeReplyPlaceholder')}
-                mode="comment"
-                isLoading={loadingReply}
-                replyToName={
-                    mainComment?.comment_author_id?.displayName ||
-                    mainComment?.comment_author_id?.displayname ||
-                    mainComment?.comment_author_id?.display_name ||
-                    `${mainComment?.comment_author_id?.firstname || ''} ${mainComment?.comment_author_id?.lastname || ''}`.trim()
-                }
-            />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     commentFeedContainer: {
-        width: '98%',
+        width: '100%',
         alignSelf: 'center',
-        marginBottom: 8,
+        //marginBottom: 8,
         //backgroundColor: 'red',
     },
     mainCommentWrapper: {
-        flexDirection: 'row',
+        //flexDirection: 'row',
         width: '100%',
         alignItems: 'stretch',
     },
@@ -198,7 +149,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     subCommentContainer: {
-        paddingLeft: 16,
+        paddingLeft: 12,
         paddingRight: 0,
         marginTop: 0,
         marginLeft: 0,

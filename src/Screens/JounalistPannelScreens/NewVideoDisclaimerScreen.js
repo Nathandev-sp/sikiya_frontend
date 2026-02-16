@@ -21,7 +21,8 @@ import AppScreenBackgroundColor, {
   lightBannerBackgroundColor,
   generalActiveOpacity,
   defaultButtonHitslop,
-  MainSecondaryBlueColor
+  MainSecondaryBlueColor,
+  commentTextSize
 } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useLanguage } from '../../Context/LanguageContext';
@@ -45,20 +46,19 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
       <StatusBar barStyle={"dark-content"} />
       {/* Header with Back Button and Image */}
       <View style={styles.headerContainer}>
-        <View style={{position: 'absolute', top: -45, left: 10, zIndex: 10}}>
+        <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
           <GoBackButton />
         </View>
         <Image 
-          source={require('../../../assets/functionalImages/video.png')}
+          source={require('../../../assets/functionalImages/Sikiya_new_video.png')}
           style={styles.headerLogo}
           resizeMode="contain"
         />
         <View style={styles.placeholder} />
-      </View>
-
-      {/* Title Section */}
-      <View style={styles.titleSection}>
-        <Text style={styles.screenTitle}>{t('videoDisclaimer.title')}</Text>
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.screenTitle}>{t('videoDisclaimer.title')}</Text>
+        </View>
       </View>
 
       {/* Disclaimer Content */}
@@ -115,7 +115,7 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
           <Ionicons
             name={agreed ? "checkbox" : "square-outline"}
             size={24}
-            color={agreed ? MainBrownSecondaryColor : "#888"}
+            color={agreed ? MainBrownSecondaryColor : MainBrownSecondaryColor}
           />
         </TouchableOpacity>
         <Text style={styles.agreeText}>
@@ -143,7 +143,6 @@ const NewVideoDisclaimerScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
   },
   headerContainer: {
     alignItems: 'center',
@@ -151,54 +150,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 8,
+    backgroundColor: cardBackgroundColor,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    //borderWidth: 0.5,
+    //borderColor: MainBrownSecondaryColor,
   },
   headerLogo: {
-    width: 50,
-    height: 50,
+    marginTop: 12,
+    width: 100,
+    height: 100,
   },
   placeholder: {
     width: 40,
   },
   titleSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   screenTitle: {
     fontSize: largeTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
-    color: generalTitleColor,
+    color: MainBrownSecondaryColor,
     textAlign: 'center',
+    marginTop: 12,
   },
   disclaimerContainer: {
-    flex: 1,
     marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    
+    //backgroundColor: lightBannerBackgroundColor,
     padding: 16,
     justifyContent: 'space-around',
   },
   section: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   iconContainer: {
     width: 50,
     height: 50,
-    //borderRadius: 25,
-    //backgroundColor: '#F0F6FA',
+    borderRadius: 25,
+    //backgroundColor: cardBackgroundColor,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   sectionText: {
     flex: 1,
-    fontSize: generalTextSize,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
     lineHeight: 20,
@@ -208,19 +211,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginBottom: 12,
-    backgroundColor: '#FFF',
+    backgroundColor: lightBannerBackgroundColor,
     padding: 12,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    borderWidth: 1.2,
+    borderColor: MainBrownSecondaryColor,
   },
   checkboxContainer: {
     marginRight: 12,
   },
   agreeText: {
-    fontSize: generalTextSize - 1,
+    fontSize: commentTextSize,
     fontFamily: generalTextFont,
-    color: generalTitleColor,
+    color: generalTextColor,
     flex: 1,
     flexWrap: 'wrap',
     lineHeight: 18,

@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 const AppScreenBackgroundColor = '#FAFAFA'; //#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
 const MainBrownSecondaryColor = '#66462C'; //blue from the screen header 66462C
-const MainBlueColor = '##344E7B'; // Dark purple color for titles #344E7B
+const MainBlueColor = '#344E7B'; // Dark purple color for titles #344E7B
 
 const mainBrownColor = '#E5E2DC'; //#E5E2DC #BCB19D
 const mainborderColor = '#7A7A7A'; // border color for the cards #CCCCCC #563B25
@@ -214,7 +214,7 @@ const auth_Style = StyleSheet.create({
   },
   inputErrorCont: {
     borderColor: '#F4796B',
-    borderWidth: 0.8,
+    borderWidth: 1,
   },
   authIcon: {
     fontSize: 24,

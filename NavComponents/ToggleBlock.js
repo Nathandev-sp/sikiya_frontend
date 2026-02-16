@@ -104,7 +104,7 @@ const ToggleBlock = ({ selected, setSelected }) => {
 
 const styles = StyleSheet.create({
   toggleContainer: {
-    height: 32,
+    height: 24,
     width: '65%',
     maxWidth: 320,
     backgroundColor: '#fff',
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   text: {
-    fontSize: withdrawnTitleSize + 1,
+    fontSize: withdrawnTitleSize - 1,
     fontFamily: generalTitleFont,
     letterSpacing: 0.3,
   },
