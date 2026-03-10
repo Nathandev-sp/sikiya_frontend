@@ -124,9 +124,9 @@ const HelpSupportSettingScreen = () => {
                                     )}
                                 </View>
                                 <Ionicons 
-                                    name={expandedFAQ === faq.id ? "chevron-up-circle" : "chevron-down-circle"} 
+                                    name={expandedFAQ === faq.id ? "chevron-up-circle-outline" : "chevron-down-circle-outline"} 
                                     size={24} 
-                                    color={MainBrownSecondaryColor} 
+                                    color={withdrawnTitleColor} 
                                 />
                             </TouchableOpacity>
                             {index < faqData.length - 1 && <View style={styles.divider} />}
@@ -147,16 +147,18 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         backgroundColor: "#FFF",
-        borderRadius: 12,
+        borderRadius: 8,
         marginHorizontal: 12,
         padding: 12,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
         
     },
     sectionTitle: {
         fontSize: generalTextSize,
         fontWeight: '700',
         color: MainBrownSecondaryColor,
-        marginBottom: 16,
+        marginBottom: 8,
         fontFamily: generalTitleFont,
         letterSpacing: 0.3,
     },
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 14,
         paddingHorizontal: 4,
-        borderBottomWidth: 1.5,
+        //borderBottomWidth: 0.8,
         borderBottomColor: '#E5E7EB',
     },
     iconContainer: {
@@ -218,11 +220,11 @@ const styles = StyleSheet.create({
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         lineHeight: 20,
-        marginTop: 10,
+        marginTop: 12,
         paddingRight: 4,
     },
     divider: {
-        height: 1.5,
+        //height: 1.5,
         backgroundColor: '#E5E7EB',
         marginVertical: 4,
     },

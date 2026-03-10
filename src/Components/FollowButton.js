@@ -35,7 +35,7 @@ const FollowButton = ({ initialFollowed = false, onToggle }) => {
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,

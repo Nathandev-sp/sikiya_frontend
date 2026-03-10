@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Platform, Alert, StatusBar, Linking} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { cardBackgroundColor, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalSmallTextSize, articleTitleSize, commentTextSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { cardBackgroundColor, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, settingsStyles, withdrawnTitleColor, generalSmallTextSize, articleTitleSize, commentTextSize, lightBannerBackgroundColor } from '../../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -389,7 +389,7 @@ const MembershipSettingScreen = () => {
                     </View>
                 </View>
 
-                <VerticalSpacer height={20} />
+                <VerticalSpacer height={0} />
 
                 {/* Features Section */}
                 <View style={[styles.featuresContainer, main_Style.genButtonElevation]}>
@@ -438,7 +438,7 @@ const MembershipSettingScreen = () => {
                                         <Text style={styles.upgradeButtonTitle}>{t('membershipSettings.upgradeToContributor')}</Text>
                                         
                                     </View>
-                                    <Ionicons name="arrow-forward" size={22} color="#49A078" />
+                                    <Ionicons name="arrow-forward" size={22} color={AppScreenBackgroundColor} />
                                 </>
                             )}
                         </TouchableOpacity>
@@ -451,7 +451,7 @@ const MembershipSettingScreen = () => {
                     // Contributor - Show manage button
                     <View style={styles.actionContainer}>
                         <View style={[styles.activeSubscriptionCard, main_Style.genButtonElevation]}>
-                            <Ionicons name="checkmark-circle" size={24} color={contributorPlan.color} />
+                            <Ionicons name="checkmark-circle-outline" size={24} color={contributorPlan.color} />
                             <Text style={styles.activeTitle}>{t('membershipSettings.youAreContributor')}</Text>
                             <Text style={styles.activeDescription}>
                                 {t('membershipSettings.enjoyingPremiumFeatures')}
@@ -509,15 +509,19 @@ const styles = StyleSheet.create({
     // Hero Card Styles
     heroCard: {
         backgroundColor: MainBrownSecondaryColor,
-        borderRadius: 16,
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
+        //borderRadius: 12,
         padding: 8,
         marginHorizontal: 16,
-        marginTop: 20,
+        marginTop: 12,
         overflow: 'hidden',
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     heroImage: {
         width: '100%',
-        height: 80,
+        height: 60,
         resizeMode: 'contain',
     },
     heroContent: {
@@ -535,7 +539,7 @@ const styles = StyleSheet.create({
         fontSize: commentTextSize,
         color: '#fff',
         fontFamily: generalTextFont,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     heroPriceContainer: {
         flexDirection: 'row',
@@ -555,22 +559,26 @@ const styles = StyleSheet.create({
     },
     // Features Section
     featuresContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginHorizontal: 16,
-        padding: 20,
+        backgroundColor: cardBackgroundColor,
+        //borderRadius: 12,
+        marginHorizontal: 17,
+        padding: 16,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
+        borderBottomRightRadius: 12,
+        borderBottomLeftRadius: 12,
     },
     sectionTitle: {
         fontSize: articleTitleSize,
         fontWeight: 'bold',
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 20,
+        marginBottom: 16,
     },
     featureRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 20,
+        marginBottom: 12,
     },
     featureIconContainer: {
         width: 44,
@@ -603,19 +611,22 @@ const styles = StyleSheet.create({
     },
     // Upgrade Button (for free users)
     upgradeButton: {
-        backgroundColor: '#E8F5E9',
+        backgroundColor: '#49A078',
         borderRadius: 12,
-        padding: 16,
+        padding: 12,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: '#3d8a5f',
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
+        //borderWidth: 1,
+        //borderColor: '#3d8a5f',
     },
     upgradeIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         backgroundColor: '#49A078',
         alignItems: 'center',
         justifyContent: 'center',
@@ -627,9 +638,9 @@ const styles = StyleSheet.create({
     upgradeButtonTitle: {
         fontSize: articleTitleSize,
         fontWeight: 'bold',
-        color: '#49A078',
+        color: AppScreenBackgroundColor,
         fontFamily: generalTitleFont,
-        marginBottom: 4,
+        marginBottom: 0,
     },
     upgradeButtonSubtitle: {
         fontSize: generalSmallTextSize,
@@ -655,21 +666,23 @@ const styles = StyleSheet.create({
         backgroundColor: '#E8F5E9',
         borderRadius: 12,
         padding: 16,
+        paddingHorizontal: 16,
         alignItems: 'center',
-        borderWidth: 2,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
         borderColor: '#49A078',
     },
     activeTitle: {
-        fontSize: articleTitleSize+3,
+        fontSize: articleTitleSize,
         fontWeight: 'bold',
         color: '#49A078',
         fontFamily: generalTitleFont,
-        marginTop: 12,
-        marginBottom: 8,
+        marginTop: 4,
+        marginBottom: 4,
     },
     activeDescription: {
-        fontSize: 14,
-        color: generalTextColor,
+        fontSize: commentTextSize,
+        color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         textAlign: 'center',
         lineHeight: 20,

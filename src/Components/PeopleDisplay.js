@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginVertical: 4,
         alignSelf: 'center',
-        paddingVertical: 12,
+        paddingVertical: 8,
         paddingHorizontal: 14,
         overflow: 'visible',
         borderWidth: 0.2,
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
     profilePicContainer: {
         position: 'relative',
         borderRadius: 32,
-        borderWidth: 2,
+        borderWidth: 1,
         borderColor: '#E5E5E5',
-        padding: 0.5,
+        padding: 0,
         backgroundColor: '#FFF',
     },
     profilePic: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     roleBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(157, 115, 64, 0.08)',
+        backgroundColor: 'rgba(157, 115, 64, 0.2)',
         alignSelf: 'flex-start',
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 18,
         borderRadius: 8,
-        backgroundColor: 'rgba(157, 115, 64, 0.1)',
+        backgroundColor: 'rgba(157, 115, 64, 0.9)',
         borderWidth: 1,
         borderColor: 'rgba(157, 115, 64, 0.25)',
         alignItems: 'center',

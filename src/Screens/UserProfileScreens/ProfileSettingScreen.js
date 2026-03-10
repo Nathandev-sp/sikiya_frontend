@@ -653,24 +653,28 @@ const styles = StyleSheet.create({
     },
     formContainerName: {
         backgroundColor: cardBackgroundColor,
-        borderRadius: 12,
+        borderRadius: 8,
         marginHorizontal: 12,
         padding: 12,
         borderWidth: 1,
         borderColor: '#E5E7EB',
+        
     },
     formContainerDetails: {
         backgroundColor: '#FFF',
-        borderRadius: 12,
+        borderRadius: 8,
         marginHorizontal: 12,
         padding: 12,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
         
     },
     nameTitleSection: {
-        marginBottom: 20,
-        paddingBottom: 16,
+        marginBottom: 4,
+        paddingBottom: 8,
         borderBottomWidth: 1,
         borderBottomColor: generalTextColor,
+        //backgroundColor: "red"
     },
     nameTitle: {
         fontSize: articleTitleSize,
@@ -686,10 +690,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 8,
+        marginBottom: 2,
     },
     scoreValueContainer: {
         marginTop: 0,
+        //backgroundColor: "red"
     },
     scorePercentage: {
         fontSize: largeTextSize,
@@ -697,7 +702,7 @@ const styles = StyleSheet.create({
         color: MainSecondaryBlueColor,
         fontFamily: generalTitleFont,
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 4,
     },
     scoreBarBackground: {
         height: 8,
@@ -734,7 +739,7 @@ const styles = StyleSheet.create({
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
         color: generalTextColor,
-        borderWidth: 1,
+        borderWidth: 0.8,
         borderColor: MainBrownSecondaryColor,
         zIndex: 8,
         shadowColor: '#000000', // iOS shadow properties
@@ -747,8 +752,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: "#FFFFFF",
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
+        borderWidth: 0.8,
+        borderColor: MainBrownSecondaryColor,
         paddingHorizontal: 12,
         //paddingVertical: 10,
         zIndex: 8,
@@ -836,12 +841,12 @@ const styles = StyleSheet.create({
     saveButton: {
         backgroundColor: MainBrownSecondaryColor,
         paddingVertical: 14,
-        borderRadius: 12,
+        borderRadius: 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        marginTop: 12,
+        marginTop: 2,
         shadowColor: MainBrownSecondaryColor,
         shadowOffset: {
             width: 0,

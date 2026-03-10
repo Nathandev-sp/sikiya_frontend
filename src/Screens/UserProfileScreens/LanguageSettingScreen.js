@@ -293,9 +293,11 @@ const styles = StyleSheet.create({
     },
     formContainer: {
         backgroundColor: '#FFF',
-        borderRadius: 12,
+        borderRadius: 8,
         marginHorizontal: 12,
-        padding: 18,
+        padding: 12,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
         
     },
     sectionTitle: {
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     sectionDescription: {
-        fontSize: commentTextSize,
+        fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         lineHeight: 20,
@@ -316,11 +318,11 @@ const styles = StyleSheet.create({
     languageCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
+        padding: 8,
         borderRadius: 8,
         borderWidth: 0.8,
         borderColor: "#CCC",
-        marginBottom: 12,
+        marginBottom: 16,
         backgroundColor: AppScreenBackgroundColor,
     },
     selectedLanguageCard: {
@@ -359,7 +361,7 @@ const styles = StyleSheet.create({
     currentBadge: {
         backgroundColor: '#2BA1E6',
         paddingHorizontal: 8,
-        paddingVertical: 3,
+        paddingVertical: 4,
         borderRadius: 10,
         marginLeft: 6,
         alignItems: 'center',
@@ -373,7 +375,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.3,
     },
     languageNativeName: {
-        fontSize: generalSmallTextSize,
+        fontSize: generalSmallTextSize-1,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontStyle: 'italic',
@@ -388,23 +390,23 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#ccc',
-        marginBottom: 10,
+        marginBottom: 16,
         backgroundColor: AppScreenBackgroundColor,
     },
     contentLanguageTextContainer: {
         flex: 1,
     },
     contentLanguageDescription: {
-        fontSize: generalSmallTextSize,
+        fontSize: generalSmallTextSize-1,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        marginTop: 4,
+        marginTop: 2,
         lineHeight: 18,
     },
     changeButton: {
         backgroundColor: MainBrownSecondaryColor,
-        paddingVertical: 14,
-        borderRadius: 12,
+        paddingVertical: 12,
+        borderRadius: 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback, useRef, useContext, useMemo} from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight, articleTitleSize, secCardBackgroundColor, cardBackgroundColor } from '../styles/GeneralAppStyle';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -194,30 +194,31 @@ const UserProfileScreen = ({route}) => {
                         
                         {/* Right side: Name and Stats */}
                         <View style={styles.profileInfoContainer}>
-                            {/* Name with Contributor Badge */}
                             <View style={styles.nameContainer}>
                                 <Text style={styles.userName} numberOfLines={1}>
                                     {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
                                 </Text>
                                 {authState.role === 'contributor' && (
-                                    <Image 
-                                        source={require('../../assets/OnboardingImages/contributorImage.png')}
-                                        style={styles.contributorBadgeImage}
-                                        resizeMode="contain"
-                                    />
+                                    <View style={styles.contributorBadgeWrap}>
+                                        <Image 
+                                            source={require('../../assets/OnboardingImages/contributorImage.png')}
+                                            style={styles.contributorBadgeImage}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
                                 )}
                             </View>
 
-                            {/* Impact and Engagement Stats Card */}
+                            {/* Impact and Engagement Stats */}
                             <View style={styles.statsCard}>
-                                <View style={styles.statsContainerLeft}>
-                                    <View style={styles.statItemLeft}>
-                                        <Text style={styles.statNumber}>{(userProfile?.trust_score || userProfile?.respect_score || 0)}%</Text>
+                                <View style={styles.statsRow}>
+                                    <View style={styles.statBlock}>
+                                        <Text style={styles.statNumber}>{(userProfile?.trust_score ?? userProfile?.respect_score ?? 0)}%</Text>
                                         <Text style={styles.statLabelLeft}>{i18n.t('profile.trustScore')}</Text>
                                     </View>
-                                    
-                                    <View style={styles.statItemLeft}>
-                                        <Text style={styles.statNumber}>{userProfile?.total_upvotes_count || 0}</Text>
+                                    <View style={styles.statDivider} />
+                                    <View style={styles.statBlock}>
+                                        <Text style={styles.statNumber}>{userProfile?.total_upvotes_count ?? 0}</Text>
                                         <Text style={styles.statLabelLeft}>{i18n.t('profile.totalUpvotes')}</Text>
                                     </View>
                                 </View>
@@ -225,24 +226,25 @@ const UserProfileScreen = ({route}) => {
                         </View>
                     </View>
 
-                    {/* Following/Followers stats */}
+                    {/* Following / Followers */}
                     <View style={styles.followStatsContainer}>
+                        <View style={styles.followTopBorder} />
                         <TouchableOpacity 
-                            style={styles.statItem}
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate('UserFollow',{follower: 'Following'})}
+                            style={styles.followStatItem}
+                            activeOpacity={0.7}
+                            onPress={() => navigation.navigate('UserFollow', { follower: 'Following' })}
                         >
-                            <Text style={styles.statNumber}>{userProfile?.number_following || 0}</Text>
-                            <Text style={styles.statLabel}>{i18n.t('profile.following')}</Text>
+                            <Text style={styles.followStatNumber}>{userProfile?.number_following ?? 0}</Text>
+                            <Text style={styles.followStatLabel}>{i18n.t('profile.following')}</Text>
                         </TouchableOpacity>
-                        
+                        <View style={styles.followStatDivider} />
                         <TouchableOpacity 
-                            style={styles.statItem}
-                            activeOpacity={0.8}
-                            onPress={() => navigation.navigate('UserFollow',{follower: 'Followers'})}
+                            style={styles.followStatItem}
+                            activeOpacity={0.7}
+                            onPress={() => navigation.navigate('UserFollow', { follower: 'Followers' })}
                         >
-                            <Text style={styles.statNumber}>{userProfile?.number_of_followers || 0}</Text>
-                            <Text style={styles.statLabel}>{i18n.t('profile.followers')}</Text>
+                            <Text style={styles.followStatNumber}>{userProfile?.number_of_followers ?? 0}</Text>
+                            <Text style={styles.followStatLabel}>{i18n.t('profile.followers')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -375,74 +377,138 @@ const styles = StyleSheet.create({
     },
     profileCard: {
         backgroundColor: cardBackgroundColor,
-        marginHorizontal: 12,
+        marginHorizontal: 16,
         marginTop: 8,
-        marginBottom: 12,
-        padding: 16,
-        paddingTop: 16,
-        borderRadius: 12,
-        //borderWidth: 0.5,
-        //borderColor: MainBrownSecondaryColor,
+        marginBottom: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.06,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
     },
     profileCardContent: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginBottom: 2,
+        alignItems: 'center',
     },
     profileInfoContainer: {
         flex: 1,
-        marginLeft: 16,
-        justifyContent: 'flex-start',
+        marginLeft: 18,
+        justifyContent: 'center',
     },
     nameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginBottom: 4,
+        marginBottom: 12,
+        gap: 8,
+    },
+    userName: {
+        flex: 1,
+        fontSize: 20,
+        fontWeight: '700',
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 0.2,
+    },
+    contributorBadgeWrap: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        backgroundColor: 'rgba(129, 88, 55, 0.12)',
+    },
+    contributorBadgeImage: {
+        width: 22,
+        height: 22,
     },
     statsCard: {
-        marginTop: 4,
+        marginTop: 0,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+    },
+    statBlock: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statDivider: {
+        width: 1,
+        height: 28,
+        backgroundColor: 'rgba(0,0,0,0.08)',
+        marginHorizontal: 8,
     },
     followStatsContainer: {
         flexDirection: 'row',
+        alignItems: 'stretch',
+        marginTop: 18,
+    },
+    followTopBorder: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(0,0,0,0.08)',
+    },
+    followStatItem: {
+        flex: 1,
         alignItems: 'center',
-        width: '100%',
         justifyContent: 'center',
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#E0E0E0',
+        paddingVertical: 14,
+    },
+    followStatNumber: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTitleFont,
+        marginBottom: 2,
+    },
+    followStatLabel: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+    },
+    followStatDivider: {
+        width: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(0,0,0,0.08)',
     },
     profileImageContainer: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        padding: 2.5,
+        width: 88,
+        height: 88,
+        borderRadius: 44,
         overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: MainSecondaryBlueColor,
         backgroundColor: AppScreenBackgroundColor,
+        borderWidth: 3,
+        borderColor: 'rgba(255,255,255,0.9)',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     profileImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 45,
-        overflow: 'hidden',
-    },
-    userName: {
-        fontSize: generalTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTextColor,
-        fontFamily: generalTitleFont,
-        textAlign: 'left',
-        marginBottom: 0,
-        marginLeft: 4,
-        flex: 1,
-    },
-    contributorBadgeImage: {
-        width: 24,
-        height: 24,
-        marginLeft: 8,
     },
     statsContainer: {
         flexDirection: 'row',

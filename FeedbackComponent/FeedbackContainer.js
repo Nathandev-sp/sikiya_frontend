@@ -9,7 +9,7 @@ import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitl
 import { useLanguage } from '../src/Context/LanguageContext';
 
 
-const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, onReplyToComment, hideHeader = false, totalCommentCount = null }) => {
+const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, onReplyToComment, onBeforeNavigate, hideHeader = false, totalCommentCount = null }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -21,13 +21,19 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
 
     //console.log('Fetched article:', articleId);
 
+    const buildCommentsEndpoint = (page = 1, limit = 10) => {
+        if (videoId) {
+            let url = `/comments/video/${videoId}?page=${page}&limit=${limit}`;
+            if (discussionLaneId) url += `&discussionLaneId=${encodeURIComponent(discussionLaneId)}`;
+            return url;
+        }
+        return `/comments/article/${articleId}?page=${page}&limit=${limit}`;
+    };
+
     useEffect(() => {
         const fetchComments = async () => {
             try {
-                // Use videoId if provided, otherwise use articleId
-                const endpoint = videoId 
-                    ? `/comments/video/${videoId}?page=1&limit=10`
-                    : `/comments/article/${articleId}?page=1&limit=10`;
+                const endpoint = buildCommentsEndpoint(1, 10);
                 const response = await SikiyaAPI.get(endpoint);
                 
                 // Handle paginated response
@@ -52,7 +58,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
         };
         if (articleId || videoId) fetchComments();
         
-    }, [articleId, videoId, refreshKey]);
+    }, [articleId, videoId, discussionLaneId, refreshKey]);
 
     // Update totalCount when totalCommentCount prop changes
     useEffect(() => {
@@ -68,9 +74,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
         setLoadingMore(true);
         try {
             const nextPage = currentPage + 1;
-            const endpoint = videoId 
-                ? `/comments/video/${videoId}?page=${nextPage}&limit=10`
-                : `/comments/article/${articleId}?page=${nextPage}&limit=10`;
+            const endpoint = buildCommentsEndpoint(nextPage, 10);
             const response = await SikiyaAPI.get(endpoint);
             
             if (response.data.comments) {
@@ -151,6 +155,7 @@ const FeedbackContainer = ({ articleId, videoId, refreshKey, commentLoading, set
             articleId={articleId}
             videoId={videoId}
             onReplyToComment={onReplyToComment}
+            onBeforeNavigate={onBeforeNavigate}
         />
     );
 

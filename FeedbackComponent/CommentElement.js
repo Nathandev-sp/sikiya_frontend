@@ -26,6 +26,7 @@ const CommentElement = ({
     showSubComments, 
     showDeleteButton, 
     onDelete,
+    onBeforeNavigate,
     testID 
 }) => {
     const navigation = useNavigation();
@@ -137,9 +138,10 @@ const CommentElement = ({
     const goToAuthorProfile = useCallback(() => {
         const authorId = comment?.comment_author_id?._id;
         if (authorId) {
+            onBeforeNavigate?.();
             navigation.navigate('AuthorProfile', { userId: authorId });
         }
-    }, [comment?.comment_author_id?._id, navigation]);
+    }, [comment?.comment_author_id?._id, navigation, onBeforeNavigate]);
 
     // Safely get comment data with fallbacks
     const authorName = comment?.comment_author_id?.displayName || 'Unknown User';
@@ -325,11 +327,11 @@ const styles = StyleSheet.create({
     mainCommentContainer: {
         width: '100%',
         backgroundColor: '#FFF',
-        borderRadius: 12,
+        borderRadius: 8,
         alignSelf: 'center',
         paddingHorizontal: 10,
         paddingVertical: 4,
-        marginBottom: 12,
+        marginBottom: 8,
         zIndex: 10,
         position: 'relative',
         borderWidth: 1,

@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import NewsCategory from '../Components/NewsCategory';
 import HighLight from '../Components/Highlights';
-import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
 import NewsAPI from '../../API/NewsAPI';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
@@ -82,6 +82,7 @@ const HomeScreen = ({route}) => {
         'Business': [],
         'Sports': [],
         'Culture': [],
+        'Africa': [],
         'World': [],
     });
     const [loading, setLoading] = useState(!preloadedHomeArticles);
@@ -121,6 +122,7 @@ const HomeScreen = ({route}) => {
         'Business': 1,
         'Sports': 1,
         'Culture': 1,
+        'Africa': 1,
         'World': 1,
     });
     const [hasMoreByCategory, setHasMoreByCategory] = useState({
@@ -132,6 +134,7 @@ const HomeScreen = ({route}) => {
         'Business': true,
         'Sports': true,
         'Culture': true,
+        'Africa': true,
         'World': true,
     });
     const scrollY = useRef(new Animated.Value(0)).current;
@@ -350,14 +353,15 @@ const HomeScreen = ({route}) => {
     // Categories with translation keys
     const categories = [
         { key: 'Explore', name: 'explore', icon: 'compass', color: MainSecondaryBlueColor },
-        { key: 'Politics', name: 'politics', icon: 'flag', color: '#FE5F55' },
-        { key: 'Economy', name: 'economy', icon: 'trending-up', color: '#7FB069' },
+        { key: 'Politics', name: 'politics', icon: 'flag', color: '#CB0E01' },
+        { key: 'Economy', name: 'economy', icon: 'trending-up', color: '#51783F' },
         { key: 'Social', name: 'social', icon: 'people', color: '#7C3AED' },
         { key: 'Tech', name: 'tech', icon: 'hardware-chip', color: '#2563EB' },
         { key: 'Business', name: 'business', icon: 'briefcase', color: '#562C2C' },
-        { key: 'Sports', name: 'sports', icon: 'football', color: '#EA580C' },
-        { key: 'Culture', name: 'culture', icon: 'library', color: '#F4D35E' },
-        { key: 'World', name: 'world', icon: 'globe', color: '#28AFB0' },
+        { key: 'Sports', name: 'sports', icon: 'football', color: '#C24A0A' },
+        { key: 'Culture', name: 'culture', icon: 'library', color: '#57755F' },
+        { key: 'Africa', name: 'africa', icon: 'earth-outline', color: MainBrownSecondaryColor },
+        { key: 'World', name: 'world', icon: 'globe', color: '#1A7474' },
     ];
 
     const handleCategoryPress = async (categoryKey) => {
@@ -687,7 +691,7 @@ const HomeScreen = ({route}) => {
                 <View style={[styles.stickyCategoryContent, { borderLeftColor: currentCategory?.color || MainSecondaryBlueColor }]}>
                     <Ionicons 
                         name={currentCategory?.icon || 'compass'} 
-                        size={18} 
+                        size={20} 
                         color={currentCategory?.color || MainSecondaryBlueColor} 
                     />
                     <Text style={[styles.stickyCategoryText, { color: currentCategory?.color || MainSecondaryBlueColor }]}>
@@ -771,8 +775,8 @@ const styles = StyleSheet.create({
     },
     categoriesContainer: {
         paddingHorizontal: 16,
-        paddingVertical: 4,
-        gap: 10,
+        paddingVertical: 6,
+        gap: 16,
     },
     categoryButton: {
         marginRight: 8,
@@ -781,7 +785,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 6,
         borderRadius: 20,
         backgroundColor: '#FFFFFF',
         borderWidth: 0.5,
@@ -803,8 +807,8 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     categoryText: {
-        fontSize: commentTextSize + 0.5,
-        fontFamily: generalTextFont,
+        fontSize: commentTextSize,
+        fontFamily: generalTitleFont,
         fontWeight: '600',
         letterSpacing: 0.2,
     },
@@ -906,8 +910,8 @@ const styles = StyleSheet.create({
         borderLeftWidth: 3,
     },
     stickyCategoryText: {
-        fontSize: commentTextSize + 1,
-        fontFamily: generalTextFont,
+        fontSize: generalTextSize + 1,
+        fontFamily: generalTitleFont,
         fontWeight: '700',
         letterSpacing: 0.5,
     },

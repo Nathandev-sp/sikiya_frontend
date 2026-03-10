@@ -1,13 +1,13 @@
 import { StyleSheet } from "react-native";
 
-const AppScreenBackgroundColor = '#FAFAFA'; //#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
-const MainBrownSecondaryColor = '#66462C'; //blue from the screen header 66462C
+const AppScreenBackgroundColor = '#F9F9F8'; //#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
+const MainBrownSecondaryColor = '#815837'; //blue from the screen header 66462C #815837 #66462C
 const MainBlueColor = '#344E7B'; // Dark purple color for titles #344E7B
 
 const mainBrownColor = '#E5E2DC'; //#E5E2DC #BCB19D
 const mainborderColor = '#7A7A7A'; // border color for the cards #CCCCCC #563B25
 const mainTitleColor = '#3A2718'; // Title color for the cards ##E6E6E6 
-const FollowButtonColor = '#4889B4'; // Follow button color #F0F0F0 #E5E2DC #E5E2DC #E5E2DC #E5E2DC
+const FollowButtonColor = '#3A6F92'; // Follow button color #F0F0F0 #E5E2DC #E5E2DC #E5E2DC #E5E2DC
 
 
 const cardBackgroundColor = '#E6DFD6'; //#E5E2DC #EBEBEB #DEE1E3 #F7F7F7

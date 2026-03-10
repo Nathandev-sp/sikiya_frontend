@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
-import AppScreenBackgroundColor, { articleTitleSize, cardBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleSize, cardBackgroundColor, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../src/styles/GeneralAppStyle';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useLanguage } from '../src/Context/LanguageContext';
 
@@ -159,12 +159,12 @@ const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = nul
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: AppScreenBackgroundColor,
+    backgroundColor: lightBannerBackgroundColor,
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: 16,
     
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: Platform.OS === 'ios' ? 16 : 8,
     //borderTopLeftRadius: 20,
     //borderTopRightRadius: 20,
@@ -182,16 +182,16 @@ const styles = StyleSheet.create({
       },
     }),
     overflow: 'hidden',
-    borderTopWidth: 1,
+    borderTopWidth: 1.2,
     borderTopColor: MainBrownSecondaryColor,
   },
   limitBox: {
     marginBottom: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#7B0D1E',
+    borderColor: '#419D78',
     borderRadius: 12,
-    backgroundColor: secCardBackgroundColor,
+    backgroundColor: "#8CCFB4",
   },
   limitTitle: {
     fontSize: articleTitleSize,
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   actionSecondary: {
-    backgroundColor: MainSecondaryBlueColor,
+    backgroundColor: '#419D78',
   },
   actionButtonText: {
     fontSize: generalTextSize,

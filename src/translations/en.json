@@ -540,6 +540,7 @@
     "business": "Business",
     "entertainment": "Entertainment",
     "culture": "Culture",
+    "africa": "Africa",
     "world": "World"
   },
   "generalSettings": {
@@ -876,7 +877,9 @@
     "replyingTo": "Replying to",
     "writeComment": "Write a comment...",
     "writeCommentPlaceholder": "Write your comment...",
-    "writeReplyPlaceholder": "Write your reply..."
+    "writeReplyPlaceholder": "Write your reply...",
+    "oneComment": "comment",
+    "manyComments": "comments"
   }
 }
 

@@ -1,0 +1,117 @@
+{
+  "notifications": [
+    {
+      "_id": "notif_001",
+      "type": "new_article",
+      "data": { "articleId": "article_abc123" },
+      "title": "New article from a journalist you follow",
+      "body": "Sarah M. just published \"Climate summit outcomes: what it means for Africa\". Tap to read.",
+      "read": false,
+      "createdAt": "2025-02-15T14:30:00.000Z"
+    },
+    {
+      "_id": "notif_002",
+      "type": "new_video",
+      "data": { "videoId": "video_xyz789" },
+      "title": "New video available",
+      "body": "Breaking: Short take on the latest market moves is now live. Watch now.",
+      "read": false,
+      "createdAt": "2025-02-15T12:15:00.000Z"
+    },
+    {
+      "_id": "notif_003",
+      "type": "comment_reply",
+      "data": { "articleId": "article_abc123" },
+      "title": "Someone replied to your comment",
+      "body": "Alex K. replied to your comment on \"Climate summit outcomes\".",
+      "read": true,
+      "createdAt": "2025-02-15T10:45:00.000Z"
+    },
+    {
+      "_id": "notif_004",
+      "type": "new_comment",
+      "data": { "articleId": "article_def456" },
+      "title": "New comment on an article you commented on",
+      "body": "There are 3 new comments on \"Tech trends in 2025\".",
+      "read": false,
+      "createdAt": "2025-02-15T09:20:00.000Z"
+    },
+    {
+      "_id": "notif_005",
+      "type": "new_follower",
+      "data": { "followerId": "user_follower_001" },
+      "title": "New follower",
+      "body": "Jordan P. started following you. Check out their profile.",
+      "read": true,
+      "createdAt": "2025-02-14T18:00:00.000Z"
+    },
+    {
+      "_id": "notif_006",
+      "type": "article_approved",
+      "data": { "articleId": "article_ghi789" },
+      "title": "Your article was approved",
+      "body": "\"Local elections: voter turnout analysis\" has been approved and is now live.",
+      "read": false,
+      "createdAt": "2025-02-14T16:30:00.000Z"
+    },
+    {
+      "_id": "notif_007",
+      "type": "video_approved",
+      "data": { "videoId": "video_approved_001" },
+      "title": "Your video was approved",
+      "body": "Your short video has been approved and published to the feed.",
+      "read": true,
+      "createdAt": "2025-02-14T14:00:00.000Z"
+    },
+    {
+      "_id": "notif_008",
+      "type": "article_first_like",
+      "data": { "articleId": "article_jkl012" },
+      "title": "Your first like!",
+      "body": "Someone liked your comment on \"Health policy updates\". Keep the conversation going.",
+      "read": false,
+      "createdAt": "2025-02-14T11:22:00.000Z"
+    },
+    {
+      "_id": "notif_009",
+      "type": "article_milestone_likes",
+      "data": { "articleId": "article_mno345" },
+      "title": "Milestone: 100 likes",
+      "body": "Your article \"Education reform: what's next\" reached 100 likes. Great engagement!",
+      "read": true,
+      "createdAt": "2025-02-13T20:15:00.000Z"
+    },
+    {
+      "_id": "notif_010",
+      "type": "article_milestone_comments",
+      "data": { "articleId": "article_pqr678" },
+      "title": "50 comments on your article",
+      "body": "\"Digital rights in Africa\" has sparked a discussion with 50 comments.",
+      "read": false,
+      "createdAt": "2025-02-13T08:45:00.000Z"
+    },
+    {
+      "_id": "notif_011",
+      "type": "article_rejected",
+      "data": { "articleId": "article_rej_001" },
+      "title": "Article submission update",
+      "body": "Your submission \"Draft: Opinion piece\" needs edits. Check the feedback and resubmit.",
+      "read": true,
+      "createdAt": "2025-02-12T17:00:00.000Z"
+    },
+    {
+      "_id": "notif_012",
+      "type": "video_rejected",
+      "data": { "videoId": "video_rej_001" },
+      "title": "Video submission update",
+      "body": "Your video could not be published. Please review the guidelines and try again.",
+      "read": false,
+      "createdAt": "2025-02-12T10:30:00.000Z"
+    }
+  ],
+  "unreadCount": 6,
+  "pagination": {
+    "hasNextPage": false,
+    "totalNotifications": 12
+  }
+}

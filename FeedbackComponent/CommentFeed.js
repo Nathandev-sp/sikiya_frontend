@@ -5,7 +5,7 @@ import { defaultButtonHitslop, generalTextFont, MainBrownSecondaryColor } from '
 import SikiyaAPI from '../API/SikiyaAPI';
 import { useLanguage } from '../src/Context/LanguageContext';
 
-const CommentFeed = ({ mainComment, sentiment, articleId, videoId, onReplyToComment }) => {
+const CommentFeed = ({ mainComment, sentiment, articleId, videoId, onReplyToComment, onBeforeNavigate }) => {
     const [showSubComments, setShowSubComments] = useState(false);
     const [subComments, setSubComments] = useState([]);
     const [loadingSubComments, setLoadingSubComments] = useState(false);
@@ -94,7 +94,7 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId, onReplyToComm
                 <View style={styles.verticalBar} />
                 
                 <View style={styles.mainCommentContainer}>
-                    <CommentElement comment={mainComment} showButtons={true} onToggleSubComments={toggleSubComments} onReply={handleReplyPress} showSubComments={showSubComments} />
+                    <CommentElement comment={mainComment} showButtons={true} onToggleSubComments={toggleSubComments} onReply={handleReplyPress} showSubComments={showSubComments} onBeforeNavigate={onBeforeNavigate} />
                 </View>
             </View>
 
@@ -113,7 +113,7 @@ const CommentFeed = ({ mainComment, sentiment, articleId, videoId, onReplyToComm
                         </View>
                     ) : subComments.length > 0 ? (
                         subComments.map((comment) => (
-                            <CommentElement key={comment._id} comment={comment} showButtons={false} />
+                            <CommentElement key={comment._id} comment={comment} showButtons={false} onBeforeNavigate={onBeforeNavigate} />
                         ))
                     ) : (
                         <Text style={styles.noRepliesText}>{t('comments.noRepliesYet')}</Text>

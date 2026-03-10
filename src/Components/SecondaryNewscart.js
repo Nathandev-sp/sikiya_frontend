@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
     },
     authorImageContainer: {
         borderRadius: 16,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: '#E5E5E5',
-        padding: 1,
+        padding: 0.5,
         marginRight: 7,
         backgroundColor: '#FFF',
     },

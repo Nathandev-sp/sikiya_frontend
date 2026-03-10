@@ -504,7 +504,7 @@ const createStyles = (height) => StyleSheet.create({
     },
     modalCommentContainer: {
         flex: 1,
-        backgroundColor: cardBackgroundColor,
+        backgroundColor: lightBannerBackgroundColor,
     },
     modalScrollContent: {
         flexGrow: 1,
@@ -520,7 +520,7 @@ const createStyles = (height) => StyleSheet.create({
 
 const NewsHome = ({ route }) => {
     const { article: articleParam, articleId } = route.params || {};
-    const { t } = useLanguage();
+    const { t, appLanguage } = useLanguage();
     // Log article journalist data to debug trust score
     //console.log('Article journalist data:', article);
     const [article, setArticle] = useState(articleParam);
@@ -588,37 +588,24 @@ const NewsHome = ({ route }) => {
     const [adCooldownSeconds, setAdCooldownSeconds] = useState(0);
     const adCooldownTimerRef = useRef(null);
 
-    // Dummy discussion lanes data
-    const dummyDiscussionLanes = [
-        {
-            id: '1',
-            title: 'General Discussion',
-            backgroundColor: '#2563EB',
-            icon: 'chatbubbles-outline',
-            commentCount: 24,
-        },
-        {
-            id: '2',
-            title: 'Fact Check',
-            backgroundColor: '#7C3AED',
-            icon: 'checkmark-circle-outline',
-            commentCount: 12,
-        },
-        {
-            id: '3',
-            title: 'Expert Opinion',
-            backgroundColor: '#FE5F55',
-            icon: 'star-outline',
-            commentCount: 8,
-        },
-        {
-            id: '4',
-            title: 'Questions',
-            backgroundColor: '#7FB069',
-            icon: 'help-circle-outline',
-            commentCount: 15,
-        },
-    ];
+    // Discussion lanes from API, with title/description resolved for current language
+    const lang = appLanguage === 'fr' ? 'fr' : 'en';
+    const displayDiscussionLanes = React.useMemo(() => {
+        const lanes = article?.discussionLanes || [];
+        return lanes.map((lane) => {
+            const tEn = lane.translations?.en;
+            const tFr = lane.translations?.fr;
+            const title = (lang === 'fr' ? tFr?.title : tEn?.title) || tEn?.title || tFr?.title || lane.key || '';
+            const description = (lang === 'fr' ? tFr?.description : tEn?.description) || tEn?.description || tFr?.description || '';
+            return {
+                ...lane,
+                id: lane._id || lane.key,
+                title,
+                description,
+                commentCount: lane.commentCount ?? 0,
+            };
+        });
+    }, [article?.discussionLanes, lang]);
 
     const getJournalistName = useCallback(() => {
         if (!article?.journalist) return i18n.t('article.unknownAuthor');
@@ -997,6 +984,7 @@ const NewsHome = ({ route }) => {
     };
 
     const categoryColor = categoryColors[article.category] || MainSecondaryBlueColor;
+    console.log('article', article);
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -1184,50 +1172,52 @@ const NewsHome = ({ route }) => {
                     
                     {/* Comments Section */}
                     <View style={styles.commentsSection}>
-                        {/* Discussion Lanes */}
-                        <View style={styles.discussionLanesContainer}>
-                            {dummyDiscussionLanes.map((lane) => (
-                                <TouchableOpacity
-                                    key={lane.id}
-                                    style={[
-                                        styles.discussionLaneCard,
-                                        { backgroundColor: lane.backgroundColor },
-                                        main_Style.genContentElevation,
-                                    ]}
-                                    activeOpacity={0.8}
-                                    onPress={() => openDiscussionLane(lane)}
-                                >
-                                    <View style={styles.discussionLaneContent}>
-                                        <View style={styles.discussionLaneIcon}>
-                                            <Ionicons
-                                                name={lane.icon}
-                                                size={20}
-                                                color="#fff"
-                                            />
-                                        </View>
-                                        <View style={styles.discussionLaneInfo}>
-                                            <Text style={styles.discussionLaneTitle}>
-                                                {lane.title}
-                                            </Text>
-                                            <Text style={styles.discussionLaneCommentCount}>
-                                                {lane.commentCount} {lane.commentCount === 1 ? 'comment' : 'comments'}
-                                            </Text>
-                                        </View>
-                                    </View>
+                        {/* Discussion Lanes (from API, language-aware) */}
+                        {displayDiscussionLanes.length > 0 && (
+                            <View style={styles.discussionLanesContainer}>
+                                {displayDiscussionLanes.map((lane) => (
                                     <TouchableOpacity
-                                        style={styles.discussionLanePlusButton}
-                                        activeOpacity={0.7}
+                                        key={lane.id}
+                                        style={[
+                                            styles.discussionLaneCard,
+                                            { backgroundColor: lane.backgroundColor },
+                                            main_Style.genContentElevation,
+                                        ]}
+                                        activeOpacity={0.8}
                                         onPress={() => openDiscussionLane(lane)}
                                     >
-                                        <Ionicons
-                                            name="add"
-                                            size={24}
-                                            color="#fff"
-                                        />
+                                        <View style={styles.discussionLaneContent}>
+                                            <View style={styles.discussionLaneIcon}>
+                                                <Ionicons
+                                                    name={lane.icon}
+                                                    size={20}
+                                                    color={lane.textColor || '#fff'}
+                                                />
+                                            </View>
+                                            <View style={styles.discussionLaneInfo}>
+                                                <Text style={styles.discussionLaneTitle}>
+                                                    {lane.title}
+                                                </Text>
+                                                <Text style={styles.discussionLaneCommentCount}>
+                                                    {lane.commentCount} {lane.commentCount === 1 ? t('comments.oneComment') || 'comment' : t('comments.manyComments') || 'comments'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.discussionLanePlusButton}
+                                            activeOpacity={0.7}
+                                            onPress={() => openDiscussionLane(lane)}
+                                        >
+                                            <Ionicons
+                                                name="add"
+                                                size={24}
+                                                color={lane.textColor || '#fff'}
+                                            />
+                                        </TouchableOpacity>
                                     </TouchableOpacity>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
                 </View>
             </ScrollView>
@@ -1309,6 +1299,7 @@ const NewsHome = ({ route }) => {
                                     setCommentLoading={setCommentLoading}
                                     onAddCommentPress={() => setModalVisible(true)}
                                     onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
+                                    onBeforeNavigate={closeDiscussionLane}
                                 />
                             </ScrollView>
                             

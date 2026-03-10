@@ -597,6 +597,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginHorizontal: 12,
         paddingVertical: 8,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
     preferenceItem: {
         flexDirection: 'row',

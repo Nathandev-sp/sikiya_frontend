@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert, Platform} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert, Platform, Modal, KeyboardAvoidingView, TouchableWithoutFeedback} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +25,9 @@ import AppScreenBackgroundColor, {
     lightBannerBackgroundColor,
     generalActiveOpacity,
     generalLineHeight,
-    secCardBackgroundColor
+    secCardBackgroundColor,
+    cardBackgroundColor,
+    commentTextSize
 } from '../styles/GeneralAppStyle';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import CommentInputModal from '../../FeedbackComponent/CommentInputModal';
@@ -61,10 +63,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
     // State management
     const [videos, setVideos] = useState([]);
     const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-    const [showComments, setShowComments] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [refreshCommentsKey, setRefreshCommentsKey] = useState(0);
-    const [isLoading, setIsLoading] = useState(!preloadedVideos); // Don't show loading if we have preloaded videos
+    const [isLoading, setIsLoading] = useState(!preloadedVideos); // Don't show loading if we have preloaded videos !preloadedVideos
     const [error, setError] = useState(null);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,6 +76,17 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const [commentQuota, setCommentQuota] = useState(null);
     const [commentQuotaLoading, setCommentQuotaLoading] = useState(false);
     const [commentLoading, setCommentLoading] = useState(false);
+    const [selectedLaneVideo, setSelectedLaneVideo] = useState(null);
+    const [selectedLane, setSelectedLane] = useState(null);
+    const [replyingToComment, setReplyingToComment] = useState(null);
+
+    // Discussion lanes (same as NewsHome) – used in comment modal
+    const DISCUSSION_LANES = [
+        { id: '1', title: 'General Discussion', backgroundColor: '#2563EB', icon: 'chatbubbles-outline', commentCount: 0 },
+        { id: '2', title: 'Fact Check', backgroundColor: '#7C3AED', icon: 'checkmark-circle-outline', commentCount: 0 },
+        { id: '3', title: 'Expert Opinion', backgroundColor: '#FE5F55', icon: 'star-outline', commentCount: 0 },
+        { id: '4', title: 'Questions', backgroundColor: '#7FB069', icon: 'help-circle-outline', commentCount: 0 },
+    ];
     
     // Ad-related state (only for general users)
     const watchedVideosRef = useRef(new Set()); // Track unique videos watched
@@ -462,8 +474,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
             }
             
             setCurrentVideoIndex(visibleIndex);
-            setShowComments(false); // Close comments when switching videos
-            
+
             // Load more videos when user is within 3 videos of the end (only if not blocked by ad)
             if (visibleIndex >= videos.length - 3 && hasMoreVideos && !isLoadingMore && !showAdModal && !videoLimitReached) {
                 loadMoreVideos();
@@ -482,20 +493,32 @@ const LiveNews = ({ preloadedVideos, route }) => {
     };
 
 
-    const handleComments = () => {
-        setShowComments(!showComments);
-    };
-
     const openCommentModal = useCallback(() => {
+        const videoToShow = currentVideo ?? (videos[0] ?? null);
+        if (!videoToShow) return;
         if (isGeneralUser) {
             fetchCommentQuota();
         }
-        setShowComments(false); // Close comments section when opening modal
+        setSelectedLaneVideo(videoToShow);
+        setSelectedLane(DISCUSSION_LANES[0]);
         setModalVisible(true);
-    }, [fetchCommentQuota, isGeneralUser]);
+    }, [fetchCommentQuota, isGeneralUser, currentVideo, videos]);
+
+    const closeCommentSheet = useCallback(() => {
+        setModalVisible(false);
+        setSelectedLaneVideo(null);
+        setSelectedLane(null);
+        setReplyingToComment(null);
+    }, []);
+
+    const getCommentVideoId = useCallback(() => {
+        if (modalVisible && selectedLaneVideo?._id) return selectedLaneVideo._id;
+        return currentVideo?._id;
+    }, [modalVisible, selectedLaneVideo, currentVideo]);
 
     const onSendComment = async (text) => {
-        if (!text || !currentVideo?._id) return;
+        const videoId = getCommentVideoId();
+        if (!text || !videoId) return;
         if (isGeneralUser && commentQuota && (commentQuota.remaining ?? 0) <= 0) {
             Alert.alert(t('video.limitReached'), t('video.commentLimitMessage'));
             return;
@@ -507,20 +530,20 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 comment_content: text,
                 mainComment: true,
             };
+            if (selectedLane?.id) {
+                payload.discussionLaneId = selectedLane.id;
+            }
 
-            const response = await SikiyaAPI.post(`/video/${currentVideo._id}/comment`, payload);
+            const response = await SikiyaAPI.post(`/video/${videoId}/comment`, payload);
 
             if (response.status === 201) {
-                console.log('Comment sent successfully:', response.data);
                 setRefreshCommentsKey(prevKey => prevKey + 1);
-                setModalVisible(false);
-                // Optimistically decrement quota and increment comment count on the current video
                 setCommentQuota(prev => prev ? {
                     ...prev,
                     remaining: prev.remaining !== undefined ? Math.max(0, prev.remaining - 1) : prev.remaining,
                     used: prev.used !== undefined ? prev.used + 1 : prev.used,
                 } : prev);
-                setVideos(prev => prev.map(v => v._id === currentVideo._id
+                setVideos(prev => prev.map(v => v._id === videoId
                     ? { ...v, number_of_comments: (v.number_of_comments || 0) + 1 }
                     : v
                 ));
@@ -538,6 +561,43 @@ const LiveNews = ({ preloadedVideos, route }) => {
             }
         } finally {
             setCommentLoading(false);
+        }
+    };
+
+    const onSendReply = async (text) => {
+        const videoId = getCommentVideoId();
+        if (!text || !replyingToComment?.commentId || !videoId) return;
+        try {
+            setCommentLoading(true);
+            const payload = {
+                comment_video_id: videoId,
+                comment_content: text,
+                reply_to_comment_id: replyingToComment.commentId,
+            };
+            if (selectedLane?.id) {
+                payload.discussionLaneId = selectedLane.id;
+            }
+            const response = await SikiyaAPI.post('/comment/reply', payload);
+            if (response.status === 201 || response.status === 200) {
+                setReplyingToComment(null);
+                setRefreshCommentsKey(prevKey => prevKey + 1);
+                setVideos(prev => prev.map(v => v._id === videoId
+                    ? { ...v, number_of_comments: (v.number_of_comments || 0) + 1 }
+                    : v
+                ));
+            }
+        } catch (error) {
+            console.error('Error sending reply:', error);
+        } finally {
+            setCommentLoading(false);
+        }
+    };
+
+    const handleSendCommentOrReply = (text) => {
+        if (replyingToComment) {
+            onSendReply(text);
+        } else {
+            onSendComment(text);
         }
     };
 
@@ -598,10 +658,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 width={width}
                 height={height}
                 iconColor={iconColor}
-                showComments={showComments && isActive}
                 modalVisible={modalVisible}
                 refreshCommentsKey={refreshCommentsKey}
-                handleComments={handleComments}
                 handleShare={handleShare}
                 handleProfile={handleProfile}
                 onSendComment={onSendComment}
@@ -621,8 +679,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
         setShowAdModal(false);
     };
     
-    // Disable FlatList scrolling when comments are open or ad modal is showing
-    const isScrollingEnabled = !showComments && !showAdModal && !videoLimitReached;
+    // Disable FlatList scrolling when ad modal is showing or video limit reached
+    const isScrollingEnabled = !showAdModal && !videoLimitReached;
 
     if (error) {
         return (
@@ -687,21 +745,127 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 }
             />
             
-            {/* Comment Input Modal - moved outside FlatList like NewsHome */}
-            <CommentInputModal
+            {/* Comment sheet modal (roll-up) with FeedbackContainer + CommentInputModal + lane switcher */}
+            <Modal
+                transparent
                 visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                onSend={onSendComment}
-                placeholder={t('comment.writeCommentPlaceholder')}
-                mode="video"
-                isLoading={commentLoading}
-                quota={isGeneralUser ? commentQuota : null}
-                quotaLoading={commentQuotaLoading}
-                onUnlock={handleUnlockComment}
-                onUpgrade={handleUpgradeComment}
-                userRole={userRole}
-            />
-            
+                animationType="none"
+                onRequestClose={closeCommentSheet}
+            >
+                <View style={styles.modalBackdrop}>
+                    <TouchableWithoutFeedback onPress={closeCommentSheet}>
+                        <View style={StyleSheet.absoluteFill} />
+                    </TouchableWithoutFeedback>
+                    <View
+                        style={[
+                            styles.modalSheet,
+                            { height: height * 0.88 },
+                        ]}
+                    >
+                        {selectedLaneVideo && selectedLane && (
+                            <>
+                                {/* Top bar: selected discussion lane name + icon (like NewsHome) */}
+                                <View style={[styles.modalLaneFlag, { backgroundColor: selectedLane.backgroundColor }]}>
+                                    <Ionicons name={selectedLane.icon} size={18} color="#fff" />
+                                    <Text style={styles.modalLaneFlagText} numberOfLines={1}>
+                                        {selectedLane.title}
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={styles.modalLaneCloseButton}
+                                        onPress={closeCommentSheet}
+                                        activeOpacity={0.7}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="close" size={20} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Discussion lane switcher: horizontal list of discussion lanes (same as NewsHome) */}
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.laneSwitcherScroll}
+                                    contentContainerStyle={styles.laneSwitcherContent}
+                                >
+                                    {DISCUSSION_LANES.map((lane) => {
+                                        const isSelected = lane.id === selectedLane.id;
+                                        return (
+                                            <TouchableOpacity
+                                                key={lane.id}
+                                                style={[
+                                                    styles.discussionLaneCard,
+                                                    { backgroundColor: lane.backgroundColor, width: width * 0.6 },
+                                                ]}
+                                                onPress={() => setSelectedLane(lane)}
+                                                activeOpacity={generalActiveOpacity}
+                                            >
+                                                <View style={styles.discussionLaneContent}>
+                                                    <View style={styles.discussionLaneIcon}>
+                                                        <Ionicons name={lane.icon} size={20} color="#fff" />
+                                                    </View>
+                                                    <View style={styles.discussionLaneInfo}>
+                                                        <Text style={styles.discussionLaneTitle} numberOfLines={1}>
+                                                            {lane.title}
+                                                        </Text>
+                                                        <Text style={styles.discussionLaneCommentCount}>
+                                                            {lane.commentCount} {lane.commentCount === 1 ? t('comments.comment') || 'comment' : t('comments.comments')}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+
+                                <KeyboardAvoidingView
+                                    style={styles.modalContentWrapper}
+                                    behavior="padding"
+                                    keyboardVerticalOffset={Platform.OS === 'ios' ? height * 0.2 : 0}
+                                >
+                                    <ScrollView
+                                        contentContainerStyle={styles.modalScrollContent}
+                                        style={styles.modalCommentContainer}
+                                        showsVerticalScrollIndicator={false}
+                                        keyboardShouldPersistTaps="handled"
+                                        keyboardDismissMode="interactive"
+                                        bounces={true}
+                                        overScrollMode="never"
+                                    >
+                                        <FeedbackContainer
+                                            videoId={selectedLaneVideo._id}
+                                            discussionLaneId={selectedLane.id}
+                                            refreshKey={refreshCommentsKey}
+                                            commentLoading={commentLoading}
+                                            setCommentLoading={setCommentLoading}
+                                            onAddCommentPress={() => {}}
+                                            onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
+                                            onBeforeNavigate={closeCommentSheet}
+                                            hideHeader={true}
+                                            totalCommentCount={selectedLane.commentCount}
+                                        />
+                                    </ScrollView>
+
+                                    <CommentInputModal
+                                        onSend={handleSendCommentOrReply}
+                                        placeholder={t('comment.writeCommentPlaceholder') || t('comments.writeCommentPlaceholder')}
+                                        isLoading={commentLoading}
+                                        quota={isGeneralUser ? commentQuota : null}
+                                        quotaLoading={commentQuotaLoading}
+                                        onUnlock={handleUnlockComment}
+                                        onUpgrade={handleUpgradeComment}
+                                        userRole={userRole}
+                                        modalTitle={replyingToComment ? null : selectedLane.title}
+                                        titleColor={selectedLane.backgroundColor}
+                                        replyToName={replyingToComment?.authorName ?? null}
+                                        onCancelReply={replyingToComment ? () => setReplyingToComment(null) : undefined}
+                                    />
+                                </KeyboardAvoidingView>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
             {/* Rewarded Ad Modal - only for general users and only for comment unlocks */}
             {isGeneralUser && pendingRewardAction === 'comments' && (
                 <RewardedAdModal
@@ -764,10 +928,8 @@ const VideoItemComponent = ({
     width, 
     height, 
     iconColor,
-    showComments,
     modalVisible,
     refreshCommentsKey,
-    handleComments,
     handleShare,
     handleProfile,
     onSendComment,
@@ -1140,24 +1302,25 @@ const VideoItemComponent = ({
                                 size={20} 
                                 color={liked ? "#FF3040" : iconColor} 
                             />
-                        </TouchableOpacity>
-                        {likeCount > 0 && (
+                            {likeCount > 0 && (
                             <Text style={styles.actionCount}>{formatNumber(likeCount)}</Text>
                         )}
+                        </TouchableOpacity>
                     </View>
                     
-                    {/* Comments Button */}
+                    {/* Comments Button - opens slide-up comment modal */}
                     <View style={styles.actionButtonGroup}>
                         <TouchableOpacity 
                             style={[styles.actionButton, main_Style.genButtonElevation]} 
-                            onPress={handleComments}
+                            onPress={openCommentModal}
                             activeOpacity={generalActiveOpacity}
                         >
                             <Ionicons name="chatbubble-outline" size={20} color={iconColor} />
-                        </TouchableOpacity>
-                        {item?.number_of_comments > 0 && (
+                            {item?.number_of_comments > 0 && (
                             <Text style={styles.actionCount}>{formatNumber(item.number_of_comments)}</Text>
-                        )}
+                            )}
+                        </TouchableOpacity>
+                        
                     </View>
                     
                     {/* Share Button */}
@@ -1179,51 +1342,6 @@ const VideoItemComponent = ({
                     </TouchableOpacity>
                 </View>
             </View>
-
-            {/* Comments Island Overlay */}
-            {showComments && (
-                <View style={[styles.commentsIsland, main_Style.genButtonElevation]}>
-                    <View style={styles.commentsHeader}>
-                        <View style={styles.commentsHeaderLeft}>
-                            <Ionicons name="chatbox-ellipses-outline" size={20} color={MainBrownSecondaryColor} />
-                            <Text style={styles.commentsCountText}>
-                                {item?.number_of_comments ? formatNumber(item.number_of_comments) : '0'} {t('comments.comments')}
-                            </Text>
-                        </View>
-                        <View style={styles.commentsHeaderRight}>
-                            <TouchableOpacity 
-                                onPress={openCommentModal || (() => setModalVisible(true))}
-                                style={[styles.addCommentButton, main_Style.genButtonElevation]}
-                                activeOpacity={generalActiveOpacity}
-                            >
-                                <Ionicons name="chatbubbles" size={20} color={MainBrownSecondaryColor} />
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                onPress={handleComments}
-                                style={styles.closeButton}
-                                activeOpacity={generalActiveOpacity}
-                            >
-                                <Ionicons name="close" size={24} color={generalTitleColor} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    
-                    <ScrollView 
-                        style={styles.commentsContent}
-                        contentContainerStyle={styles.commentsContentContainer}
-                        showsVerticalScrollIndicator={false}
-                        nestedScrollEnabled={true}
-                    >
-                        <View style = {{ paddingTop: 8}}></View>
-                        <FeedbackContainer 
-                            videoId={item?._id} 
-                            refreshKey={refreshCommentsKey}
-                            hideHeader={true}
-                            totalCommentCount={item?.number_of_comments || 0}
-                        />
-                    </ScrollView>
-                </View>
-            )}
         </View>
     );
 };
@@ -1334,12 +1452,12 @@ const styles = StyleSheet.create({
     titleContainer: {
         flex: 1,
         marginRight: 12,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backgroundColor:  'rgba(0, 0, 0, 0.85)', //'rgba(0, 0, 0, 0.85)'
         padding: 16,
-        borderRadius: 16,
+        borderRadius: 12,
         backdropFilter: 'blur(10px)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: 'rgba(255, 255, 255, 0.4)',
     },
     articleTitle: {
         fontSize: articleTitleSize,
@@ -1347,7 +1465,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontFamily: articleTitleFont,
         lineHeight: generalLineHeight,
-        marginBottom: 8,
+        marginBottom: 4,
     },
     authorInfo: {
         marginTop: 6,
@@ -1395,7 +1513,7 @@ const styles = StyleSheet.create({
     verticalActionButtons: {
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 14,
+        gap: 12,
     },
     actionButtonGroup: {
         alignItems: 'center',
@@ -1404,13 +1522,13 @@ const styles = StyleSheet.create({
     actionButton: {
         alignItems: 'center',
         justifyContent: 'center',
-        height: 48,
-        width: 48,
-        borderRadius: 24,
+        height: 50,
+        width: 50,
+        borderRadius: 12,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(10px)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderColor: 'rgba(255, 255, 255, 0.4)',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -1424,7 +1542,7 @@ const styles = StyleSheet.create({
         }),
     },
     actionCount: {
-        fontSize: generalSmallTextSize - 1,
+        fontSize: generalSmallTextSize - 2,
         color: '#FFFFFF',
         fontFamily: generalTextFont,
         fontWeight: '700',
@@ -1434,78 +1552,149 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         overflow: 'hidden',
     },
-    commentsIsland: {
-        position: 'absolute',
-        top: '30%',
-        left: 0,
-        right: 0,
-        bottom: 0,
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.35)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
         backgroundColor: AppScreenBackgroundColor,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        paddingTop: 20,
-        paddingBottom: 20,
-        paddingHorizontal: 4,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 12,
-            },
-        }),
+        paddingBottom: 0,
+        overflow: 'hidden',
     },
-    commentsHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.08)',
+    modalLaneFlag: {
+        minHeight: 32,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         paddingHorizontal: 16,
-    },
-    commentsHeaderLeft: {
+        paddingTop: 16,
+        paddingBottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        justifyContent: 'center',
+        gap: 6,
+        position: 'relative',
+        backgroundColor: MainBrownSecondaryColor,
     },
-    commentsCountText: {
-        fontSize: generalTextSize + 1,
-        fontWeight: '700',
-        color: generalTitleColor,
+    modalLaneFlagText: {
+        fontSize: commentTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
         fontFamily: generalTitleFont,
-        letterSpacing: 0.3,
+        flex: 1,
+        textAlign: 'center',
     },
-    commentsHeaderRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    addCommentButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: 'rgba(157, 115, 64, 0.1)',
-        borderWidth: 1.5,
-        borderColor: MainBrownSecondaryColor,
+    modalLaneCloseButton: {
+        position: 'absolute',
+        right: 16,
+        top: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    closeButton: {
-        padding: 6,
+    laneSwitcherScroll: {
+        paddingTop: 2,
+        maxHeight: 56,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+        backgroundColor: cardBackgroundColor,
+    },
+    laneSwitcherContent: {
+        paddingHorizontal: 16,
+        paddingVertical: 4,
+        gap: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    discussionLaneCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.05)',
+        marginRight: 10,
     },
-    commentsContent: {
+    discussionLaneContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
         flex: 1,
-        width: '100%',
+        gap: 10,
+        minWidth: 0,
     },
-    commentsContentContainer: {
-        paddingRight: '0%',
+    discussionLaneIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        //backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    discussionLaneInfo: {
+        flex: 1,
+        minWidth: 0,
+    },
+    discussionLaneTitle: {
+        fontSize: generalSmallTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: '#fff',
+        fontFamily: generalTextFont,
+        marginBottom: 4,
+    },
+    discussionLaneCommentCount: {
+        fontSize: generalSmallTextSize,
+        fontWeight: generalTextFontWeight,
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontFamily: generalTextFont,
+    },
+    laneChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 12,
+        backgroundColor: 'rgba(0,0,0,0.06)',
+        marginRight: 10,
+        minWidth: 100,
+        maxWidth: 160,
+    },
+    laneChipSelected: {
+        backgroundColor: MainBrownSecondaryColor,
+    },
+    laneChipTitle: {
+        fontSize: generalSmallTextSize + 1,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        marginBottom: 2,
+    },
+    laneChipTitleSelected: {
+        color: '#fff',
+    },
+    laneChipCount: {
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+    },
+    laneChipCountSelected: {
+        color: 'rgba(255, 255, 255, 0.85)',
+    },
+    modalContentWrapper: {
+        flex: 1,
+    },
+    modalCommentContainer: {
+        flex: 1,
+        backgroundColor: cardBackgroundColor,
+    },
+    modalScrollContent: {
+        flexGrow: 1,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 24,
+        minHeight: 200,
     },
     loadingMoreContainer: {
         paddingVertical: 24,
@@ -1629,12 +1818,12 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     loadingContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        borderRadius: 12,
+        padding: 4,
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 200,
+        minWidth: 180,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',

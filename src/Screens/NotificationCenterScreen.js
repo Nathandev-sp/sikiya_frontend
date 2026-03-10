@@ -19,6 +19,7 @@ import AppScreenBackgroundColor, {
     generalTitleFontWeight,
     main_Style,
     MainBrownSecondaryColor,
+    MainSecondaryBlueColor,
     secCardBackgroundColor,
     withdrawnTitleColor,
 } from '../styles/GeneralAppStyle';
@@ -27,6 +28,7 @@ import GoBackButton from '../../NavComponents/GoBackButton';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import DateConverter from '../Helpers/DateConverter';
+import sampleNotificationsData from '../../assets/Data/sampleNotifications.json';
 
 const NotificationCenterScreen = () => {
     const navigation = useNavigation();
@@ -53,23 +55,29 @@ const NotificationCenterScreen = () => {
             const response = await SikiyaAPI.get(`/notifications?page=${pageNum}&limit=20`);
             
             if (response.data.success) {
-                const newNotifications = response.data.notifications;
+                const newNotifications = response.data.notifications || [];
                 
                 if (pageNum === 1) {
-                    setNotifications(newNotifications);
+                    if (newNotifications.length > 0) {
+                        setNotifications(newNotifications);
+                        setUnreadCount(response.data.unreadCount ?? 0);
+                        setHasMore(response.data.pagination?.hasNextPage ?? false);
+                    } else {
+                        setNotifications(sampleNotificationsData.notifications);
+                        setUnreadCount(sampleNotificationsData.unreadCount ?? 0);
+                        setHasMore(false);
+                    }
                 } else {
                     setNotifications(prev => [...prev, ...newNotifications]);
+                    setHasMore(response.data.pagination?.hasNextPage ?? false);
                 }
-                
-                setUnreadCount(response.data.unreadCount);
-                setHasMore(response.data.pagination.hasNextPage);
                 setPage(pageNum);
             }
         } catch (error) {
-            // Handle 403 (auth) errors silently - user may not be logged in or backend not ready
+            // Handle 403 (auth) errors or network failure: show sample notifications so UI can be previewed
             if (error.response && error.response.status === 403) {
-                setNotifications([]);
-                setUnreadCount(0);
+                setNotifications(sampleNotificationsData.notifications);
+                setUnreadCount(sampleNotificationsData.unreadCount ?? 0);
                 setHasMore(false);
             } else {
                 // Only show error for non-auth issues
@@ -220,7 +228,7 @@ const NotificationCenterScreen = () => {
                 activeOpacity={generalActiveOpacity}
             >
                 {/* Icon */}
-                <View style={[styles.notificationIcon, { backgroundColor: icon.color + '20' }]}>
+                <View style={[styles.notificationIcon]}>
                     <Ionicons name={icon.name} size={24} color={icon.color} />
                 </View>
 
@@ -341,13 +349,13 @@ const NotificationCenterScreen = () => {
             
             {/* Mark All as Read Button */}
             {unreadCount > 0 && (
-                <View style={styles.actionBar}>
+                <View style={[styles.actionBar, main_Style.genButtonElevation]}>
                     <TouchableOpacity
                         style={styles.markAllButton}
                         onPress={markAllAsRead}
                         activeOpacity={generalActiveOpacity}
                     >
-                        <Ionicons name="checkmark-done" size={20} color={MainBrownSecondaryColor} />
+                        <Ionicons name="checkmark-done" size={20} color={AppScreenBackgroundColor} />
                         <Text style={styles.markAllText}>Mark all as read</Text>
                     </TouchableOpacity>
                 </View>
@@ -452,7 +460,7 @@ const styles = StyleSheet.create({
         height: 44,
     },
     actionBar: {
-        backgroundColor: '#fff',
+        //backgroundColor: '#fff',
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderBottomWidth: 1,
@@ -464,12 +472,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 8,
         paddingHorizontal: 12,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: MainBrownSecondaryColor,
         borderRadius: 8,
     },
     markAllText: {
         fontSize: generalSmallTextSize,
-        color: MainBrownSecondaryColor,
+        color: AppScreenBackgroundColor,
         fontFamily: generalTextFont,
         fontWeight: generalTextFontWeight,
         marginLeft: 6,
@@ -481,32 +489,35 @@ const styles = StyleSheet.create({
     notificationItem: {
         flexDirection: 'row',
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 8,
         padding: 12,
-        marginBottom: 12,
+        marginBottom: 16,
         position: 'relative',
     },
     notificationItemUnread: {
         backgroundColor: '#f8f9ff',
     },
     notificationIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+        //backgroundColor: 'red',
     },
     notificationContent: {
         flex: 1,
         justifyContent: 'center',
+        //backgroundColor: 'red',
+        marginRight: 22,
     },
     notificationTitle: {
         fontSize: generalTextSize,
         fontWeight: generalTextFontWeight,
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 4,
+        marginBottom: 8,
     },
     notificationTitleUnread: {
         fontWeight: '700',
@@ -515,7 +526,7 @@ const styles = StyleSheet.create({
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        marginBottom: 4,
+        marginBottom: 8,
     },
     notificationTime: {
         fontSize: 11,
@@ -526,15 +537,15 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 16,
         right: 16,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: MainBrownSecondaryColor,
+        width: 12 ,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: MainSecondaryBlueColor,
     },
     deleteButton: {
         position: 'absolute',
         bottom: 12,
-        right: 12,
+        right: 8,
         padding: 4,
     },
     emptyState: {
