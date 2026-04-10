@@ -24,10 +24,12 @@ const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refres
     const buildCommentsEndpoint = (page = 1, limit = 10) => {
         if (videoId) {
             let url = `/comments/video/${videoId}?page=${page}&limit=${limit}`;
-            if (discussionLaneId) url += `&discussionLaneId=${encodeURIComponent(discussionLaneId)}`;
+            if (discussionLaneId) url += `&discussionLaneKey=${encodeURIComponent(discussionLaneId)}`;
             return url;
         }
-        return `/comments/article/${articleId}?page=${page}&limit=${limit}`;
+        let url = `/comments/article/${articleId}?page=${page}&limit=${limit}`;
+        if (discussionLaneId) url += `&discussionLaneKey=${encodeURIComponent(discussionLaneId)}`;
+        return url;
     };
 
     useEffect(() => {
@@ -129,12 +131,26 @@ const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refres
 
     // Render footer with loading spinner
     const renderFooter = () => {
-        if (!loadingMore) return null;
-        return (
-            <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={MainSecondaryBlueColor} />
-            </View>
-        );
+        if (loadingMore) {
+            return (
+                <View style={styles.footerLoader}>
+                    <ActivityIndicator size="small" color={MainSecondaryBlueColor} />
+                </View>
+            );
+        }
+
+        // If there are only 1-2 comments, the modal can feel empty.
+        // Add a lightweight prompt to invite participation without changing behavior.
+        if (comments.length > 0 && comments.length < 2) {
+            return (
+                <View style={styles.lowVolumePrompt}>
+                    <Text style={styles.lowVolumeTitle}>{t('comments.keepItGoing')}</Text>
+                    <Text style={styles.lowVolumeSub}>{t('comments.shareYourPerspectivePrompt')}</Text>
+                </View>
+            );
+        }
+
+        return null;
     };
 
     // Render empty state
@@ -246,6 +262,29 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    lowVolumePrompt: {
+        marginTop: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    lowVolumeTitle: {
+        fontSize: generalTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: generalTitleColor,
+        fontFamily: generalTitleFont,
+        marginBottom: 6,
+    },
+    lowVolumeSub: {
+        fontSize: generalSmallTextSize,
+        fontWeight: '400',
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        lineHeight: 18,
     },
     itemSeparator: {
         height: 1,

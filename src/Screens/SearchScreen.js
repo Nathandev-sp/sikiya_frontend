@@ -7,13 +7,17 @@ import AppScreenBackgroundColor, {
     generalTextColor, 
     generalTextFont, 
     generalTextSize,
-    generalTextFontWeight,
     generalLineHeight,
-    MainSecondaryBlueColor, 
     MainBrownSecondaryColor,
     withdrawnTitleColor,
     generalActiveOpacity,
-    mainBrownColor
+    mainBrownColor,
+    homeFeedBackgroundColor,
+    homeScreenPadding,
+    homeCardVerticalGap,
+    PrimBtnColor,
+    generalTitleFont,
+    mainTitleColor,
 } from '../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import ToggleBlock from '../../NavComponents/ToggleBlock';
@@ -469,7 +473,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             ) : (
                 <ScrollView
                     style={styles.scrollViewContainer}
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="always"
                     keyboardDismissMode="on-drag"
@@ -486,13 +490,23 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                 >
                     {selected === 'People' ? (
                         peopleArray.length > 0 ? (
-                            peopleArray.map((journalist, idx) => (
-                                <PeopleDisplay 
-                                    key={journalist._id || idx}
-                                    journalist={journalist}
-                                    onFollowToggle={handleFollowToggle}
-                                />
-                            ))
+                            <>
+                                <View style={styles.listSectionHeaderRow}>
+                                    <View style={styles.listSectionAccent} />
+                                    <Text style={styles.listSectionTitle}>
+                                        {hasSearched && searchQuery.trim()
+                                            ? i18n.t('search.searchResults')
+                                            : i18n.t('search.people')}
+                                    </Text>
+                                </View>
+                                {peopleArray.map((journalist, idx) => (
+                                    <PeopleDisplay 
+                                        key={journalist._id || idx}
+                                        journalist={journalist}
+                                        onFollowToggle={handleFollowToggle}
+                                    />
+                                ))}
+                            </>
                         ) : (
                             <View style={styles.noResultsContainer}>
                                 <Ionicons name="people-outline" size={56} color={withdrawnTitleColor} style={{ opacity: 0.4, marginBottom: 12 }} />
@@ -508,12 +522,22 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                         )
                     ) : (
                         articlesArray.length > 0 ? (
-                            articlesArray.map((article, idx) => (
-                                <SecondaryNewsCart 
-                                    key={article._id || idx} 
-                                    article={article} 
-                                />
-                            ))
+                            <>
+                                <View style={styles.listSectionHeaderRow}>
+                                    <View style={styles.listSectionAccent} />
+                                    <Text style={styles.listSectionTitle}>
+                                        {hasSearched && searchQuery.trim()
+                                            ? i18n.t('search.searchResults')
+                                            : i18n.t('article.articles')}
+                                    </Text>
+                                </View>
+                                {articlesArray.map((article, idx) => (
+                                    <SecondaryNewsCart 
+                                        key={article._id || idx} 
+                                        article={article} 
+                                    />
+                                ))}
+                            </>
                         ) : (
                             <View style={styles.noResultsContainer}>
                                 <Ionicons name="document-text-outline" size={56} color={withdrawnTitleColor} style={{ opacity: 0.4, marginBottom: 12 }} />
@@ -544,30 +568,27 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
 
 const styles = StyleSheet.create({
     searchSectionContainer: {
-        backgroundColor: AppScreenBackgroundColor,
-        paddingBottom: 4,
+        backgroundColor: homeFeedBackgroundColor,
+        paddingBottom: homeCardVerticalGap,
         width: '100%',
         alignSelf: 'center',
-        borderBottomWidth: 0.4,
-        borderBottomColor: MainBrownSecondaryColor,
-        //borderBottomColor: 'rgba(0,0,0,0.06)',
-        shadowColor: '#000',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(102, 70, 44, 0.1)',
+        shadowColor: '#2C2416',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 3,
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
         elevation: 2,
     },
     searchBarContainer: {
-        paddingHorizontal: 12,
-        paddingTop: 2,
-        paddingBottom: 2,
-        //backgroundColor: 'red',
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 4,
+        paddingBottom: 4,
     },
     toggleBlockContainer: {
-        paddingHorizontal: 12,
-        paddingTop: 2,
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 4,
         paddingBottom: 2,
-        //backgroundColor: 'red',
     },
     searchRow: {
         flexDirection: 'row',
@@ -578,12 +599,12 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 8,
+        backgroundColor: '#FDFCF8',
+        borderRadius: homeCardVerticalGap,
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
+        borderColor: 'rgba(102, 70, 44, 0.12)',
     },
     searchInputFocused: {
         borderColor: MainBrownSecondaryColor,
@@ -628,16 +649,42 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     scrollViewContainer: {
+        flex: 1,
+        backgroundColor: homeFeedBackgroundColor,
+    },
+    scrollContent: {
         flexGrow: 1,
-        paddingHorizontal: 12,
+        paddingBottom: homeScreenPadding + 4,
+        paddingTop: homeCardVerticalGap,
+    },
+    listSectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: homeScreenPadding,
         paddingTop: 4,
-        paddingBottom: 16,
+        paddingBottom: 6,
+        gap: 10,
+    },
+    listSectionAccent: {
+        width: 3,
+        height: 18,
+        borderRadius: 2,
+        backgroundColor: PrimBtnColor,
+    },
+    listSectionTitle: {
+        fontSize: 13,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        color: mainTitleColor,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingTop: 50,
+        backgroundColor: homeFeedBackgroundColor,
     },
     loadingText: {
         marginTop: 10,
@@ -650,6 +697,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: 60,
         paddingHorizontal: 32,
+        backgroundColor: homeFeedBackgroundColor,
     },
     errorText: {
         fontSize: generalTextSize,

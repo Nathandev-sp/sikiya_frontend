@@ -1,18 +1,20 @@
 import React, { memo } from "react";
-import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FollowButton from '../Components/FollowButton';
 import i18n from '../utils/i18n';
-import { 
-    articleTitleFont, 
-    generalTextColor, 
-    generalTextFont, 
-    generalTitleFont, 
-    main_Style,
-    mainBrownColor, 
-    withdrawnTitleColor, 
+import {
+    articleTitleFont,
+    generalTextColor,
+    generalTitleFont,
+    generalTitleSize,
+    PrimBtnColor,
     withdrawnTitleSize,
-    articleTextSize 
+    homeScreenPadding,
+    homeCardVerticalGap,
+    homeCardBorderRadius,
+    homeCardShadowStyle,
+    MainSecondaryBlueColor,
 } from "../styles/GeneralAppStyle";
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../utils/imageUrl';
@@ -21,7 +23,6 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
     const { width } = useWindowDimensions();
     const navigation = useNavigation();
 
-    // Format role for display with translations
     const formatRole = (role) => {
         if (!role) return i18n.t('profile.generalUser') || 'General User';
         const roleMap = {
@@ -34,22 +35,19 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
 
-    // Fallback for missing data
     const firstname = journalist.firstname || i18n.t('profile.unknown') || "Unknown";
     const lastname = journalist.lastname || "";
     const fullName = `${firstname} ${lastname}`.trim();
     const role = formatRole(journalist.role);
     const isFollowing = journalist.isFollowing || false;
     const isOwnProfile = journalist.isOwnProfile || false;
-    
-    // Get profile picture URL or use default
-    const profilePicture = journalist.profile_picture 
-        ? getImageUrl(journalist.profile_picture) 
+
+    const profilePicture = journalist.profile_picture
+        ? getImageUrl(journalist.profile_picture)
         : null;
 
-    // Get role icon
     const getRoleIcon = () => {
-        switch(journalist.role) {
+        switch (journalist.role) {
             case 'journalist': return 'newspaper-outline';
             case 'thoughtleader': return 'bulb-outline';
             case 'contributor': return 'create-outline';
@@ -68,54 +66,47 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
     };
 
     return (
-        <TouchableOpacity 
-            activeOpacity={0.7} 
+        <TouchableOpacity
+            activeOpacity={0.7}
             onPress={goToAuthorProfile}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`${i18n.t('profile.profile')}: ${fullName}`}
             accessibilityHint={i18n.t('profile.viewProfile') || 'Tap to view profile'}
         >
-            <View style={[
-                styles.container,
-                main_Style.genContentElevation,
-                { width: width * 0.96 }
-            ]}>
+            <View style={[styles.container, { width: width - homeScreenPadding * 1.4 }]}>
                 <View style={styles.mainRow}>
-                    {/* Profile Picture with Border Frame - Left */}
-                    <View style={styles.profilePicContainer}>
-                        <Image
-                            source={profilePicture 
-                                ? { uri: profilePicture } 
-                                : require('../../assets/functionalImages/ProfilePic.png')
-                            }
-                            style={styles.profilePic}
-                            resizeMode="cover"
-                        />
-                        {/* Verified badge for journalists */}
-                        {journalist.role === 'journalist' && (
-                            <View style={styles.verifiedBadge}>
-                                <Ionicons name="checkmark-circle" size={18} color="#4A90E2" />
-                            </View>
-                        )}
-                    </View>
-                    
-                    {/* Profile Info - Middle */}
-                    <View style={styles.profileInfoContainer}>
-                        <Text style={styles.name} numberOfLines={1}>{fullName}</Text>
-                        
-                        {/* Role Badge */}
-                        <View style={styles.roleBadge}>
-                            <Ionicons 
-                                name={getRoleIcon()} 
-                                size={12} 
-                                color={withdrawnTitleColor} 
+                    <View style={styles.avatarShell}>
+                        <View style={styles.profilePicContainer}>
+                            <Image
+                                source={profilePicture
+                                    ? { uri: profilePicture }
+                                    : require('../../assets/functionalImages/ProfilePic.png')
+                                }
+                                style={styles.profilePic}
+                                resizeMode="cover"
                             />
-                            <Text style={styles.roleText} numberOfLines={1}>{role}</Text>
+                            {journalist.role === 'journalist' && (
+                                <View style={styles.verifiedBadge}>
+                                    <Ionicons name="checkmark-circle" size={15} color={MainSecondaryBlueColor} />
+                                </View>
+                            )}
                         </View>
                     </View>
-                    
-                    {/* Follow Button - Far Right */}
+
+                    <View style={styles.profileInfoContainer}>
+                        <View style={styles.roleBadge}>
+                            <Ionicons
+                                name={getRoleIcon()}
+                                size={10}
+                                color="#FFF"
+                            />
+                            <Text style={styles.roleText} numberOfLines={1}>{role.toUpperCase()}</Text>
+                        </View>
+
+                        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>
+                    </View>
+
                     <View style={styles.rightSection}>
                         {isOwnProfile ? (
                             <View style={styles.selfProfileButton}>
@@ -124,7 +115,8 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
                                 </Text>
                             </View>
                         ) : (
-                            <FollowButton 
+                            <FollowButton
+                                compact
                                 initialFollowed={isFollowing}
                                 onToggle={handleFollowToggle}
                             />
@@ -140,97 +132,112 @@ PeopleDisplay.displayName = 'PeopleDisplay';
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginVertical: 4,
+        backgroundColor: '#FDFCF8',
+        borderRadius: homeCardBorderRadius,
+        marginVertical: homeCardVerticalGap / 2,
         alignSelf: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        overflow: 'visible',
-        borderWidth: 0.2,
-        borderColor: 'rgba(0,0,0,0.06)',
-        
+        paddingVertical: 4,
+        paddingLeft: 5,
+        paddingRight: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(102, 70, 44, 0.12)',
+        borderLeftWidth: 3,
+        borderLeftColor: PrimBtnColor,
+        ...homeCardShadowStyle,
     },
     mainRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    avatarShell: {
+        width: '34%',
+        aspectRatio: 1,
+        maxWidth: 88,
+        borderRadius: 8,
+        backgroundColor: '#F0EDE6',
+        marginRight: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'visible',
+    },
     profilePicContainer: {
         position: 'relative',
-        borderRadius: 32,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         borderWidth: 1,
         borderColor: '#E5E5E5',
-        padding: 0,
         backgroundColor: '#FFF',
     },
     profilePic: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#F5F5F5',
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: '#F0EDE6',
     },
     verifiedBadge: {
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: '#FFF',
+        backgroundColor: '#FDFCF8',
         borderRadius: 10,
         padding: 1,
     },
     profileInfoContainer: {
         flex: 1,
-        marginLeft: 14,
         justifyContent: 'center',
-    },
-    name: {
-        fontSize: articleTextSize,
-        fontWeight: '600',
-        color: generalTextColor,
-        fontFamily: articleTitleFont,
-        marginBottom: 6,
-        letterSpacing: 0.2,
+        paddingRight: 4,
+        minWidth: 0,
     },
     roleBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(157, 115, 64, 0.2)',
         alignSelf: 'flex-start',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-        gap: 5,
-        borderWidth: 1,
-        borderColor: 'rgba(157, 115, 64, 0.15)',
+        backgroundColor: PrimBtnColor,
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 5,
+        marginBottom: 4,
+        gap: 4,
     },
     roleText: {
-        fontSize: withdrawnTitleSize - 0.5,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
+        fontSize: 8,
+        fontWeight: '700',
+        color: '#FFF',
+        fontFamily: generalTitleFont,
+        letterSpacing: 0.8,
+    },
+    name: {
+        fontSize: generalTitleSize - 0.5,
         fontWeight: '600',
-        letterSpacing: 0.3,
+        color: generalTextColor,
+        fontFamily: articleTitleFont,
+        lineHeight: (generalTitleSize - 0.5) * 1.2,
+        letterSpacing: 0.05,
     },
     rightSection: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 12,
+        marginLeft: 6,
+        alignSelf: 'center',
+        paddingRight: 2,
     },
     selfProfileButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 18,
+        paddingVertical: 7,
+        paddingHorizontal: 13,
         borderRadius: 8,
-        backgroundColor: 'rgba(157, 115, 64, 0.9)',
-        borderWidth: 1,
-        borderColor: 'rgba(157, 115, 64, 0.25)',
+        backgroundColor: PrimBtnColor,
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 80,
+        minWidth: 72,
     },
     selfProfileText: {
         fontWeight: '600',
         fontSize: withdrawnTitleSize,
         fontFamily: generalTitleFont,
         letterSpacing: 0.3,
-        color: mainBrownColor,
+        color: '#FFF',
     },
 });
 

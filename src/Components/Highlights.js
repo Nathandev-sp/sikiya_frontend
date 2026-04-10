@@ -1,18 +1,15 @@
 import React,{useEffect, useState, useMemo, useRef, useCallback} from 'react';
-import { View, Image, StyleSheet, Dimensions, Text, FlatList } from 'react-native';
+import { View, Image, StyleSheet, FlatList, useWindowDimensions } from 'react-native';
 import FlashNewsItem from './FlashNewsItem';
 import samples from '../../SampleContent/samples';
 import NewsAPI from '../../API/NewsAPI';
-import { bannerBackgroundColor, cardBackgroundColor, main_Style, MainBrownSecondaryColor, mainTitleColor, secCardBackgroundColor } from '../styles/GeneralAppStyle';
+import { bannerBackgroundColor, cardBackgroundColor, main_Style, MainBrownSecondaryColor, mainTitleColor, secCardBackgroundColor, homeScreenPadding, homeSectionGap, PrimBtnColor } from '../styles/GeneralAppStyle';
 import SikiyaAPI from '../../API/SikiyaAPI';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ITEM_HORIZONTAL_MARGIN = 8.5 + 8.5; // left + right margin from FlashNewsItem styles
-const ITEM_WIDTH = SCREEN_WIDTH * 0.94 + ITEM_HORIZONTAL_MARGIN;
 
 const HighLight = React.memo(({preloadedHeadlines, hideLogo = false}) => {
 
    // Making the API Request ------------------ /top-headlines
+      const { width: windowWidth } = useWindowDimensions();
       const [flashNews, setFlashNews] = useState([]);
       const [currentIndex, setCurrentIndex] = useState(0);
       const initializedRef = useRef(false);
@@ -64,26 +61,41 @@ const HighLight = React.memo(({preloadedHeadlines, hideLogo = false}) => {
         )}
         <View style={styles.stories}>
             <FlatList 
-                horizontal= {true}
-                showsHorizontalScrollIndicator = {false}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
                 nestedScrollEnabled={true}
                 pagingEnabled={true}
-                snapToInterval={ITEM_WIDTH}
-                snapToAlignment="center"
-                decelerationRate='fast'
-                data = {flashNews}
+                snapToInterval={windowWidth}
+                snapToAlignment="start"
+                decelerationRate="fast"
+                data={flashNews}
                 keyExtractor={(flashNew) => flashNew._id}
-                renderItem={({item}) => {
-                    return(
-                        <FlashNewsItem article = {item} /> 
-                    );
-
-                }}            
+                renderItem={({ item }) => (
+                    <View style={[styles.flashPage, { width: windowWidth }]}>
+                        <FlashNewsItem article={item} />
+                    </View>
+                )}
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
                 contentContainerStyle={styles.storiesContent}
             />
-            
+            {flashNews.length > 1 ? (
+              <View
+                style={styles.pageDotsRow}
+                accessibilityRole="adjustable"
+                accessibilityLabel={`Flash news, slide ${currentIndex + 1} of ${flashNews.length}`}
+              >
+                {flashNews.map((_, i) => (
+                  <View
+                    key={flashNews[i]._id || `dot-${i}`}
+                    style={[
+                      styles.pageDot,
+                      i === currentIndex && styles.pageDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            ) : null}
         </View>
     </View>
   );
@@ -119,8 +131,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 16,
-    marginRight: 16,
+    marginLeft: homeScreenPadding,
+    marginRight: homeScreenPadding,
     marginTop: 8,
     marginBottom: 6,
     paddingVertical: 0,
@@ -138,10 +150,34 @@ const styles = StyleSheet.create({
     gap: 8,
     overflow: 'hidden',
     position: 'relative',
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
   storiesContent: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 0,
+  },
+  flashPage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pageDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 4,
+    paddingBottom: 2,
+  },
+  pageDot: {
+    width: 14,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
+  },
+  pageDotActive: {
+    width: 22,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: PrimBtnColor,
   },
   storyContainer: {
     backgroundColor: '#FFF',

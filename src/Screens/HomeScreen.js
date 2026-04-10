@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import NewsCategory from '../Components/NewsCategory';
 import HighLight from '../Components/Highlights';
-import AppScreenBackgroundColor, { articleTitleFont, commentTextSize, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleFont, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor } from '../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleTitleFont, generalActiveOpacity, generalTextColor, generalTextFont, generalTitleFont, main_Style, mainTitleColor, MainBrownSecondaryColor, MainSecondaryBlueColor, PrimBtnColor, withdrawnTitleColor, homeScreenPadding, homeSectionGap, homeCardVerticalGap, homeChipBorderRadius, homeFeedBackgroundColor } from '../styles/GeneralAppStyle';
 import NewsAPI from '../../API/NewsAPI';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
@@ -140,8 +140,7 @@ const HomeScreen = ({route}) => {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     //scrollview snap interval
-    const {width, height} = useWindowDimensions();
-    const snapsize = height * 0.22 + 30;
+    const { height } = useWindowDimensions();
 
     useEffect(() => {
         // Only fetch if we do not have preloaded articles
@@ -344,9 +343,12 @@ const HomeScreen = ({route}) => {
 
     //------------------------------------------
 
+    // Animated wrapper must fit flash carousel (overflow: hidden). Sync with Highlights: chrome + optional page dots row (~18px when 2+ items).
+    // Chrome: stories marginTop(2) + flash marginTop(4) + flash marginBottom(0) + page dots + stories paddingBottom(8).
+    const highlightsSectionHeight = Math.ceil(14 + height * 0.35 + 12 + 12);
     const HomeHeaderHeight = scrollY.interpolate({
         inputRange: [0, 200],
-        outputRange: [306, 0],
+        outputRange: [highlightsSectionHeight, 0],
         extrapolate: 'clamp',
     });
 
@@ -574,7 +576,7 @@ const HomeScreen = ({route}) => {
             
             return (
                 <View style={styles.emptyContainer}>
-                    <Ionicons name="newspaper-outline" size={64} color={generalTextColor} style={{ opacity: 0.3 }} />
+                    <Ionicons name="newspaper-outline" size={64} color={PrimBtnColor} style={{ opacity: 0.35 }} />
                     <Text style={styles.emptyText}>{t('article.noArticles')}</Text>
                     <Text style={styles.emptySubtext}>
                         {t('categories.noArticlesInCategory', { category: categoryLabel })}
@@ -586,11 +588,14 @@ const HomeScreen = ({route}) => {
         return null;
     };
 
-    // Render list header (categories only; highlights & banner rendered outside FlatList)
+    // Render list header (section label + category chips; highlights & banner rendered outside FlatList)
     const renderListHeader = useCallback(() => (
         <>
-            {/* Category Selection Buttons */}
-            <View style={{ marginTop: 8 }}>
+            <View style={styles.listSectionHeaderRow}>
+                <View style={styles.listSectionAccent} />
+                <Text style={styles.listSectionTitle}>{t('homeFeed.latestStories')}</Text>
+            </View>
+            <View style={styles.categoriesScrollWrap}>
                 <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={false}
@@ -602,14 +607,12 @@ const HomeScreen = ({route}) => {
                         const categoryLabel = isExplore 
                             ? t(`navigation.${cat.name}`)
                             : t(`articleCategories.${cat.name}`);
+                        const selectedBg = isExplore ? MainSecondaryBlueColor : cat.color;
                         
                         return (
                             <TouchableOpacity
                                 key={index}
-                                style={[
-                                    styles.categoryButton,
-                                    isSelected && styles.selectedCategoryButton,
-                                ]}
+                                style={styles.categoryButton}
                                 onPress={() => handleCategoryPress(cat.key)}
                                 activeOpacity={generalActiveOpacity}
                                 accessibilityRole="button"
@@ -618,25 +621,18 @@ const HomeScreen = ({route}) => {
                                 accessibilityHint={`${t('categories.filterBy')} ${categoryLabel}`}
                             >
                                 <View style={[
-                                    styles.categoryIconContainer, 
-                                    main_Style.genContentElevation, 
-                                    !isSelected && { borderColor: cat.color },
-                                    isSelected && styles.selectedCategoryIconContainer,
-                                    isSelected && { 
-                                        backgroundColor: cat.color,
-                                        transform: [{ scale: 1.05 }]
-                                    }
+                                    styles.categoryIconContainer,
+                                    isSelected ? { backgroundColor: selectedBg } : styles.categoryChipInactive,
                                 ]}>
                                     <Ionicons 
                                         name={cat.icon} 
-                                        size={22} 
+                                        size={20} 
                                         color={isSelected ? '#fff' : cat.color} 
                                     />
                                     <Text 
                                         style={[
                                             styles.categoryText,
-                                            { color: isSelected ? '#fff' : cat.color },
-                                            isSelected && styles.selectedCategoryText
+                                            isSelected ? styles.categoryTextSelected : styles.categoryTextIdle,
                                         ]}
                                         numberOfLines={1}
                                         ellipsizeMode="tail"
@@ -650,14 +646,13 @@ const HomeScreen = ({route}) => {
                 </ScrollView>
             </View>
             
-            {/* Filtering loader - only shows in bottom half */}
             {filteringCategory && (
                 <View style={styles.filteringLoader}>
                     <BigLoaderAnim />
                 </View>
             )}
         </>
-    ), [selectedCategory, categories, handleCategoryPress, filteringCategory]);
+    ), [selectedCategory, categories, handleCategoryPress, filteringCategory, t]);
 
     // Get current category info for sticky bar
     const currentCategory = useMemo(() => 
@@ -686,18 +681,27 @@ const HomeScreen = ({route}) => {
                 headerHeight={HomeHeaderHeight}
             />
             
-            {/* Sticky Category Indicator Bar */}
-            <View style={styles.stickyCategory}>
-                <View style={[styles.stickyCategoryContent, { borderLeftColor: currentCategory?.color || MainSecondaryBlueColor }]}>
-                    <Ionicons 
-                        name={currentCategory?.icon || 'compass'} 
-                        size={20} 
-                        color={currentCategory?.color || MainSecondaryBlueColor} 
-                    />
-                    <Text style={[styles.stickyCategoryText, { color: currentCategory?.color || MainSecondaryBlueColor }]}>
-                        {currentCategoryLabel}
-                    </Text>
-                </View>
+            {/* Minimal scroll context: accent + label (chips below remain the primary control) */}
+            <View
+                style={styles.stickyCategory}
+                accessibilityRole="text"
+                accessibilityLabel={t('homeFeed.stickyContext', { category: currentCategoryLabel })}
+            >
+                <View
+                    style={[
+                        styles.stickyLeftRule,
+                        { backgroundColor: currentCategory?.color || MainSecondaryBlueColor },
+                    ]}
+                />
+                <Text
+                    style={[
+                        styles.stickyContextTextLarge,
+                        { color: currentCategory?.color || MainSecondaryBlueColor },
+                    ]}
+                    numberOfLines={1}
+                >
+                    {t('homeFeed.stickyContext', { category: currentCategoryLabel })}
+                </Text>
             </View>
             
             <Animated.FlatList
@@ -708,7 +712,8 @@ const HomeScreen = ({route}) => {
                 ListFooterComponent={renderFooter}
                 ListEmptyComponent={renderEmptyState}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 20 }}
+                style={styles.homeArticleList}
+                contentContainerStyle={styles.homeListContent}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
                     { useNativeDriver: false }
@@ -728,7 +733,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginHorizontal: 16,
+        marginHorizontal: homeScreenPadding,
         marginTop: 4,
         marginBottom: 4,
         paddingVertical: 0,
@@ -773,48 +778,74 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontFamily: articleTitleFont,
     },
+    homeArticleList: {
+        backgroundColor: homeFeedBackgroundColor,
+    },
+    homeListContent: {
+        paddingBottom: homeScreenPadding + 4,
+        flexGrow: 1,
+    },
+    listSectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 6,
+        paddingBottom: 4,
+        gap: 10,
+    },
+    listSectionAccent: {
+        width: 3,
+        height: 18,
+        borderRadius: 2,
+        backgroundColor: PrimBtnColor,
+    },
+    listSectionTitle: {
+        fontSize: 13,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        color: mainTitleColor,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+    },
+    categoriesScrollWrap: {
+        marginTop: 4,
+    },
     categoriesContainer: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        gap: 16,
+        paddingHorizontal: homeScreenPadding,
+        paddingVertical: homeCardVerticalGap,
+        gap: homeCardVerticalGap + 4,
     },
     categoryButton: {
-        marginRight: 8,
+        marginRight: homeCardVerticalGap,
     },
     categoryIconContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 20,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 0.5,
-        borderColor: 'rgba(0,0,0,0.08)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: homeChipBorderRadius,
         gap: 8,
-        minWidth: 110,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+        minWidth: 104,
     },
-    selectedCategoryIconContainer: {
-        borderWidth: 0,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
+    categoryChipInactive: {
+        backgroundColor: '#FDFCFA',
+        borderWidth: 1,
+        borderColor: 'rgba(122, 122, 122, 0.32)',
     },
     categoryText: {
-        fontSize: commentTextSize,
+        fontSize: 13,
         fontFamily: generalTitleFont,
         fontWeight: '600',
-        letterSpacing: 0.2,
+        maxWidth: 120,
     },
-    selectedCategoryText: {
+    categoryTextIdle: {
+        color: generalTextColor,
+        letterSpacing: 0.15,
+    },
+    categoryTextSelected: {
+        color: '#fff',
         fontWeight: '700',
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     loadMoreContainer: {
         paddingVertical: 16,
@@ -863,22 +894,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footerLoader: {
-        paddingVertical: 20,
+        paddingVertical: homeSectionGap + 8,
         alignItems: 'center',
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
-        paddingHorizontal: 20,
+        paddingVertical: 48,
+        paddingHorizontal: homeScreenPadding + 4,
+        backgroundColor: homeFeedBackgroundColor,
     },
     emptyText: {
         fontSize: 18,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
+        color: mainTitleColor,
+        fontFamily: generalTitleFont,
         fontWeight: '600',
-        marginTop: 16,
+        marginTop: homeSectionGap,
         textAlign: 'center',
     },
     emptySubtext: {
@@ -886,34 +918,39 @@ const styles = StyleSheet.create({
         color: generalTextColor,
         fontFamily: generalTextFont,
         fontWeight: '400',
-        marginTop: 8,
+        marginTop: homeCardVerticalGap,
         textAlign: 'center',
-        opacity: 0.6,
+        opacity: 0.65,
     },
     filteringLoader: {
-        paddingVertical: 16,
+        paddingVertical: homeSectionGap + 4,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: homeFeedBackgroundColor,
     },
     stickyCategory: {
-        backgroundColor: AppScreenBackgroundColor,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.06)',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-    },
-    stickyCategoryContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        paddingLeft: 12,
-        borderLeftWidth: 3,
+        backgroundColor: homeFeedBackgroundColor,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(44, 36, 22, 0.08)',
+        paddingHorizontal: homeScreenPadding,
+        paddingVertical: 8,
+        gap: 12,
     },
-    stickyCategoryText: {
-        fontSize: generalTextSize + 1,
+    stickyLeftRule: {
+        width: 4,
+        alignSelf: 'stretch',
+        minHeight: 24,
+        borderRadius: 2,
+    },
+    stickyContextTextLarge: {
+        flex: 1,
+        fontSize: 17,
         fontFamily: generalTitleFont,
-        fontWeight: '700',
-        letterSpacing: 0.5,
+        fontWeight: '800',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
 });
 

@@ -10,8 +10,8 @@ import { useLanguage } from '../src/Context/LanguageContext';
 
 // Constants
 const REACTION_COLORS = {
-    like: '#4CAF50',
-    dislike: '#F44336',
+    like: MainBrownSecondaryColor,
+    dislike: '#C2410C',
     default: '#9E9E9E',
 };
 
@@ -240,7 +240,7 @@ const CommentElement = ({
                         testID="like-button"
                     >
                         <Ionicons 
-                            name='heart' 
+                            name={reaction === 'like' ? 'heart' : 'heart-outline'} 
                             size={16} 
                             color={reaction === 'like' ? REACTION_COLORS.like : REACTION_COLORS.default} 
                         />
@@ -290,7 +290,7 @@ const CommentElement = ({
                                 <Ionicons 
                                     name={showSubComments ? 'chevron-up' : 'chevron-down'} 
                                     size={14} 
-                                    color='#007BFF' 
+                                    color={withdrawnTitleColor}
                                 />
                                 <Text style={styles.seeMoreText}>
                                     {showSubComments ? t('comments.seeLess') : t('comments.seeMore')}
@@ -307,7 +307,7 @@ const CommentElement = ({
                                 accessibilityLabel={t('comments.reply')}
                                 testID="reply-button"
                             >
-                                <Ionicons name='arrow-undo' size={14} color='#28A745' />
+                                <Ionicons name='arrow-undo' size={14} color={withdrawnTitleColor} />
                                 <Text style={styles.replyText}>{t('comments.reply')}</Text>
                             </TouchableOpacity>
                         </>
@@ -327,21 +327,21 @@ const styles = StyleSheet.create({
     mainCommentContainer: {
         width: '100%',
         backgroundColor: '#FFF',
-        borderRadius: 8,
+        borderRadius: 12,
         alignSelf: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        marginBottom: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 10,
         zIndex: 10,
         position: 'relative',
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
+        borderColor: 'rgba(0,0,0,0.06)',
     },
     authorProfileRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,
-        paddingTop: 4,
+        marginBottom: 6,
+        paddingTop: 2,
         //backgroundColor: 'red'
     },
     authorProfilePic: {
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     },
     authorName: {
         fontSize: commentTextSize,
-        fontWeight: '600',
+        fontWeight: '700',
         color: generalTitleColor,
         fontFamily: generalTitleFont,
         marginBottom: 2,
@@ -372,11 +372,12 @@ const styles = StyleSheet.create({
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: '400',
+        opacity: 0.85,
     },
     commentTextContainer: {
         paddingHorizontal: 4,
-        paddingVertical: 6,
-        marginBottom: 6,
+        paddingVertical: 8,
+        marginBottom: 8,
         //marginTop: 0,
         //borderRadius: 6,
         //backgroundColor: 'green'
@@ -386,11 +387,11 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
         fontSize: generalTextSize,
         color: generalTextColor,
-        lineHeight: 20,
+        lineHeight: 22,
         flexWrap: 'wrap',
     },
     expandText: {
-        color: '#2196F3',
+        color: MainBrownSecondaryColor,
         fontWeight: '600',
         fontSize: generalSmallTextSize - 1,
         fontFamily: generalTitleFont,
@@ -404,8 +405,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0,0,0,0.03)',
     },
     disabledButton: {
         opacity: 0.6,
@@ -429,14 +432,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 6,
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         backgroundColor: 'transparent',
         minHeight: 32,
     },
     seeMoreText: {
         fontSize: generalSmallTextSize - 1.5,
         fontWeight: '600',
-        color: '#2196F3',
+        color: withdrawnTitleColor,
         fontFamily: generalTitleFont,
         marginLeft: 4,
     },
@@ -452,7 +455,7 @@ const styles = StyleSheet.create({
     replyText: {
         fontSize: generalSmallTextSize - 1.5,
         fontWeight: '600',
-        color: '#28A745',
+        color: withdrawnTitleColor,
         fontFamily: generalTitleFont,
         marginLeft: 4,
     },

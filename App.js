@@ -781,6 +781,9 @@ export default function App() {
     'NotoSans-MediumItalic': require('./assets/Fonts/NotoSans-MediumItalic.ttf'),
     'NotoSans-SemiBoldItalic': require('./assets/Fonts/NotoSans-SemiBoldItalic.ttf'),
     "OpenSans-Bold": require('./assets/Fonts/OpenSans-Bold.ttf'),
+    "Lora-Semibold": require('./assets/Fonts/Lora-SemiBold.ttf'),
+    "Lora-Bold": require('./assets/Fonts/Lora-Bold.ttf'),
+    "RedHatDisplay-Regular": require('./assets/Fonts/RedHatDisplay-Regular.ttf')
   });
 
   if (!fontsloaded) {

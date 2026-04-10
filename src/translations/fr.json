@@ -65,6 +65,7 @@
     "signInError": "Email ou mot de passe invalide",
     "signUpError": "Impossible de créer le compte",
     "verificationCodeSent": "Code de vérification envoyé à votre email",
+    "verifyEmail": "Vérifier l'e-mail",
     "enterVerificationCode": "Entrez le code de vérification",
     "resendCode": "Renvoyer le code",
     "or": "ou",
@@ -251,6 +252,10 @@
     "readArticle": "Lire l'article flash",
     "tapToRead": "Appuyez pour lire l'article complet",
     "defaultLocation": "Localisation indisponible"
+  },
+  "homeFeed": {
+    "latestStories": "Dernières actualités",
+    "stickyContext": "{{category}}"
   },
   "categories": {
     "politics": "Politique",
@@ -447,6 +452,7 @@
     "areaOfExpertisePlaceholder": "Eg. Politique, Sports, Technologie",
     "mediaAffiliationPlaceholder": "Entrez votre entreprise de média",
     "independentJournalist": "Journaliste indépendant",
+    "description": "Description",
     "descriptionPlaceholder": "Votre biographie et votre expérience journalistique",
     "welcomeToSikiya": "Bienvenue sur Sikiya",
     "journalistWelcomeMessage": "Merci de votre intérêt pour rejoindre Sikiya en tant que journaliste. Faites partie de notre mission de publier des articles qui inspirent des discussions réfléchies et constructives sur l'Afrique.",
@@ -548,7 +554,7 @@
     "membershipDescription": "Gérer votre abonnement",
     "commentHistoryDescription": "Gérer la réponse à un commentaire",
     "commentHistory": "Historique des commentaires",
-    "Language": "Langue",
+    "language": "Langue",
     "languageDescription": "Changer la langue de l'application",
     "notificationPreferences": "Préférences de notification",
     "notificationPreferencesDescription": "Gérer vos paramètres de notification",
@@ -875,6 +881,11 @@
     "writeComment": "Écrire un commentaire...",
     "writeCommentPlaceholder": "Écrivez votre commentaire...",
     "writeReplyPlaceholder": "Écrivez votre réponse...",
+    "shareYourPerspective": "Partagez votre point de vue…",
+    "keepItGoing": "Relancez la discussion",
+    "shareYourPerspectivePrompt": "Ajoutez votre avis pour faire avancer la conversation.",
+    "deleteComment": "Supprimer le commentaire",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.",
     "oneComment": "commentaire",
     "manyComments": "commentaires"
   }

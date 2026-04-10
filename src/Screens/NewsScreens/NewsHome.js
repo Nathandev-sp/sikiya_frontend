@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, ActivityIndicator, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -10,15 +10,46 @@ import LikeButton from '../../Components/LikeButton';
 import { useNavigation } from '@react-navigation/native';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import CommentInputModal from '../../../FeedbackComponent/CommentInputModal';
-import ArticleLoadingState from '../../Components/LoadingComps/ArticleLoading';
 import BookmarkIcon from '../../Components/BookmarkIcon';
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from '../../utils/imageUrl';
 import BannerAdComponent from '../../Components/Ads/BannerAd';
+import { useInterstitialAd } from '../../Components/Ads/InterstitialAd';
 import { Context as AuthContext } from '../../Context/AuthContext';
 import i18n from '../../utils/i18n';
 import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 import { useLanguage } from '../../Context/LanguageContext';
+
+let articlesReadCount = 0;
+
+/** Merge GET /articles/:id into list/search payloads so discussion lanes & category always resolve. */
+const mergeArticleDetail = (prev, detail) => {
+    if (!detail) return prev;
+    const j = detail.journalist_id;
+    const builtJournalist =
+        j && typeof j === 'object' && j._id
+            ? {
+                _id: j._id,
+                displayName: j.displayName,
+                firstname: j.firstname,
+                lastname: j.lastname,
+                profile_picture: j.profile_picture,
+                affiliation: j.journalist_affiliation,
+                journalist_affiliation: j.journalist_affiliation,
+                trust_score: j.trust_score,
+            }
+            : null;
+    const base = prev || {};
+    return {
+        ...base,
+        ...detail,
+        journalist: base.journalist ?? builtJournalist ?? detail.journalist,
+        discussionLanes: detail.discussionLanes ?? base.discussionLanes ?? [],
+        category: detail.article_group || base.category || detail.category,
+        article_group: detail.article_group ?? base.article_group,
+        saved: base.saved ?? detail.saved,
+    };
+};
 
 const createStyles = (height) => StyleSheet.create({
     container: {
@@ -41,7 +72,7 @@ const createStyles = (height) => StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.2)',
+        backgroundColor: 'rgba(0,0,0,0.12)',
         zIndex: 1,
     },
     topBar: {
@@ -63,7 +94,9 @@ const createStyles = (height) => StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: AppScreenBackgroundColor,
+        backgroundColor: 'rgba(0,0,0,0.28)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -75,7 +108,9 @@ const createStyles = (height) => StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: AppScreenBackgroundColor,
+        backgroundColor: 'rgba(0,0,0,0.28)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -109,12 +144,12 @@ const createStyles = (height) => StyleSheet.create({
     },
     categoryTag: {
         position: 'absolute',
-        bottom: 80,
+        bottom: 28,
         left: 20,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
-        zIndex: 5,
+        zIndex: 12,
     },
     categoryText: {
         color: '#fff',
@@ -173,8 +208,8 @@ const createStyles = (height) => StyleSheet.create({
         fontSize: articleTitleSize,
         color: generalTextColor,
         fontFamily: articleTitleFont,
-        lineHeight: 24,
-        marginBottom: 8,
+        lineHeight: 28,
+        marginBottom: 12,
     },
     locationTextInContent: {
         color: withdrawnTitleColor,
@@ -190,10 +225,10 @@ const createStyles = (height) => StyleSheet.create({
     },
     contentSection: {
         backgroundColor: AppScreenBackgroundColor,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        marginTop: -30,
-        paddingTop: 20,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        marginTop: -18,
+        paddingTop: 26,
         paddingHorizontal: 16,
         paddingBottom: 20,
         minHeight: height * 0.6,
@@ -204,8 +239,8 @@ const createStyles = (height) => StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
-        paddingBottom: 16,
+        marginBottom: 12,
+        paddingBottom: 18,
         borderBottomWidth: 0.4,
         borderBottomColor: MainBrownSecondaryColor,
     },
@@ -228,7 +263,7 @@ const createStyles = (height) => StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: lightBannerBackgroundColor,
     },
     sourceLogoText: {
         color: '#fff',
@@ -246,30 +281,30 @@ const createStyles = (height) => StyleSheet.create({
         marginBottom: 4,
     },
     sourceName: {
-        fontSize: commentTextSize,
+        fontSize: commentTextSize + 0.5,
         fontWeight: generalTitleFontWeight,
         color: generalTextColor,
         fontFamily: generalTitleFont,
     },
     authorName: {
-        fontSize: withdrawnTitleSize,
+        fontSize: withdrawnTitleSize - 0.5,
         fontWeight: generalTextFontWeight,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
     },
     highlightSection: {
-        backgroundColor: lightBannerBackgroundColor,
+        backgroundColor: '#FBFAF6',
         borderRadius: 16,
-        padding: 16,
-        marginTop: 10,
+        padding: 18,
+        marginTop: 12,
         marginBottom: 20,
         borderLeftWidth: 4,
-        borderLeftColor: MainSecondaryBlueColor,
+        borderLeftColor: MainBrownSecondaryColor,
     },
     highlightLabel: {
         fontSize: commentTextSize,
         fontWeight: generalTitleFontWeight,
-        color: MainSecondaryBlueColor,
+        color: MainBrownSecondaryColor,
         fontFamily: generalTitleFont,
         marginBottom: 8,
         textTransform: 'uppercase',
@@ -284,7 +319,9 @@ const createStyles = (height) => StyleSheet.create({
         textAlign: 'left',
     },
     fullContentSection: {
-        //marginBottom: 20,
+        width: '100%',
+        alignSelf: 'center',
+        maxWidth: 680,
     },
     fullContentLabel: {
         fontSize: generalTitleSize,
@@ -298,7 +335,7 @@ const createStyles = (height) => StyleSheet.create({
         fontWeight: generalTextFontWeight,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        lineHeight: articleLineHeight,
+        lineHeight: articleLineHeight + 4,
         textAlign: 'left',
     },
     commentsSection: {
@@ -367,33 +404,55 @@ const createStyles = (height) => StyleSheet.create({
         marginBottom: 0,
     },
     modalLaneFlag: {
-        minHeight: 32,
-        //width: '100%',
+        minHeight: 44,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 12,
+        paddingTop: 12,
+        paddingBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
+        justifyContent: 'flex-start',
+        gap: 10,
         position: 'relative',
+        backgroundColor: '#FBFAF6',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    modalLaneAccent: {
+        width: 4,
+        alignSelf: 'stretch',
+        borderRadius: 2,
+        backgroundColor: MainBrownSecondaryColor,
+        marginRight: 2,
+    },
+    modalLaneIconWrap: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
     },
     modalLaneFlagText: {
-        fontSize: commentTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: '#fff',
+        fontSize: commentTextSize + 1,
+        fontWeight: '800',
+        color: generalTextColor,
         fontFamily: generalTitleFont,
     },
     modalLaneCloseButton: {
         position: 'absolute',
         right: 16,
-        top: 8,
+        top: 10,
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(0,0,0,0.06)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -467,18 +526,12 @@ const createStyles = (height) => StyleSheet.create({
         marginVertical: 16,
         marginHorizontal: 4,
     },
-    loadingContainer: {
+    /** No spinner: brief blank shell only when opening by id with no preloaded article */
+    articleShellMinimal: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 32,
-    },
-    loadingText: {
-        marginTop: 16,
-        fontSize: generalTextSize,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        backgroundColor: AppScreenBackgroundColor,
+        paddingHorizontal: 16,
+        paddingTop: 8,
     },
     errorContainer: {
         flex: 1,
@@ -524,7 +577,10 @@ const NewsHome = ({ route }) => {
     // Log article journalist data to debug trust score
     //console.log('Article journalist data:', article);
     const [article, setArticle] = useState(articleParam);
-    const [isLoadingArticle, setIsLoadingArticle] = useState(false);
+    /** True only when navigating with articleId and no preloaded article (e.g. notification deep link). */
+    const [pendingInitialArticle, setPendingInitialArticle] = useState(
+        () => Boolean(articleId && articleParam == null)
+    );
     const [commentLoading, setCommentLoading] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
@@ -538,6 +594,7 @@ const NewsHome = ({ route }) => {
     const [discussionModalVisible, setDiscussionModalVisible] = useState(false);
     const [selectedLane, setSelectedLane] = useState(null);
     const [replyingToComment, setReplyingToComment] = useState(null); // { commentId, authorName }
+    const [laneCounts, setLaneCounts] = useState({});
     
     // Pan responder for swipe-to-dismiss
     const modalTranslateY = useRef(new Animated.Value(0)).current;
@@ -583,7 +640,22 @@ const NewsHome = ({ route }) => {
     const userRole = authState?.role || '';
     const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
     const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
-    
+    const { showAd: showInterstitial, isLoaded: interstitialReady } = useInterstitialAd();
+
+    const AD_FREE_ROLES = ['journalist', 'contributor', 'admin', 'publisher'];
+    const shouldShowAds = !AD_FREE_ROLES.includes(userRole);
+
+    useEffect(() => {
+        articlesReadCount += 1;
+    }, []);
+
+    const handleGoBack = useCallback(async () => {
+        if (shouldShowAds && interstitialReady && articlesReadCount % 3 === 0) {
+            await showInterstitial();
+        }
+        navigation.goBack();
+    }, [shouldShowAds, interstitialReady, showInterstitial, navigation]);
+
     // Cooldown timer for ads
     const [adCooldownSeconds, setAdCooldownSeconds] = useState(0);
     const adCooldownTimerRef = useRef(null);
@@ -602,10 +674,28 @@ const NewsHome = ({ route }) => {
                 id: lane._id || lane.key,
                 title,
                 description,
-                commentCount: lane.commentCount ?? 0,
+                commentCount: laneCounts[lane.key] ?? lane.commentCount ?? 0,
             };
         });
-    }, [article?.discussionLanes, lang]);
+    }, [article?.discussionLanes, lang, laneCounts]);
+
+    const fetchLaneCounts = useCallback(async () => {
+        if (!article?._id) return;
+        try {
+            const response = await SikiyaAPI.get(`/comments/article/${article._id}/lane-counts`);
+            if (response.data?.laneCounts) {
+                setLaneCounts(response.data.laneCounts);
+            }
+        } catch (err) {
+            // Non-critical — lane counts from the article payload are the fallback
+        }
+    }, [article?._id]);
+
+    useEffect(() => {
+        if (article?._id && displayDiscussionLanes.length > 0) {
+            fetchLaneCounts();
+        }
+    }, [article?._id, displayDiscussionLanes.length, fetchLaneCounts]);
 
     const getJournalistName = useCallback(() => {
         if (!article?.journalist) return i18n.t('article.unknownAuthor');
@@ -638,25 +728,34 @@ const NewsHome = ({ route }) => {
         setSelectedLane(null);
     }, []);
 
-    // Fetch article by ID if articleId is provided but article is not
+    // Fetch full article when we only have an id, or when the payload has no discussion lanes
+    // (e.g. search / saved / profile lists omit them; home feed includes them).
     useEffect(() => {
-        const fetchArticleById = async () => {
-            if (articleId && !article) {
-                setIsLoadingArticle(true);
-                try {
-                    const response = await SikiyaAPI.get(`/articles/${articleId}`);
-                    setArticle(response.data);
-                } catch (error) {
-                    console.error('Error fetching article:', error);
-                    // Optionally show error message or navigate back
-                } finally {
-                    setIsLoadingArticle(false);
-                }
+        const id = articleId || article?._id;
+        if (!id) return;
+
+        // Only enrich when lanes were never loaded (omit key). Empty [] means "no lanes for category" — do not refetch.
+        const lanesWereLoaded = article != null && article.discussionLanes !== undefined;
+        if (lanesWereLoaded) return;
+
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const response = await SikiyaAPI.get(`/articles/${id}`);
+                if (cancelled) return;
+                setArticle((prev) => mergeArticleDetail(prev, response.data));
+            } catch (error) {
+                console.error('Error fetching article:', error);
+            } finally {
+                if (!cancelled) setPendingInitialArticle(false);
             }
         };
 
-        fetchArticleById();
-    }, [articleId, article]);
+        load();
+        return () => {
+            cancelled = true;
+        };
+    }, [articleId, article?._id, article?.discussionLanes]);
 
     // Get article_other_images directly from the article prop
     const articleOtherImages = article?.article_other_images || [];
@@ -783,24 +882,30 @@ const NewsHome = ({ route }) => {
                 comment_content: text,
                 mainComment: true,
             };
+            if (selectedLane?.key) {
+                payload.discussion_lane_key = selectedLane.key;
+            }
 
             const response = await SikiyaAPI.post('/comment/main/new', payload);
 
             if (response.status === 201) {
-                //console.log('Comment sent successfully:', response.data);
-                setRefreshCommentsKey(prevKey => prevKey + 1); // Increment key to force re-render of comments
+                setRefreshCommentsKey(prevKey => prevKey + 1);
                 setModalVisible(false);
-                // Optimistically decrement quota
                 setCommentQuota(prev => prev ? {
                     ...prev,
                     remaining: prev.remaining !== undefined ? Math.max(0, prev.remaining - 1) : prev.remaining,
                     used: prev.used !== undefined ? prev.used + 1 : prev.used,
                 } : prev);
-                // Optimistically increment article comment count
                 setArticle(prev => ({
                     ...prev,
                     number_of_comments: (prev.number_of_comments || 0) + 1
                 }));
+                if (selectedLane?.key) {
+                    setLaneCounts(prev => ({
+                        ...prev,
+                        [selectedLane.key]: (prev[selectedLane.key] || 0) + 1
+                    }));
+                }
                 await fetchCommentQuota();
             } else {
                 console.error('Error sending comment:', response);
@@ -830,6 +935,9 @@ const NewsHome = ({ route }) => {
                 comment_content: text,
                 reply_to_comment_id: replyingToComment.commentId,
             };
+            if (selectedLane?.key) {
+                payload.discussion_lane_key = selectedLane.key;
+            }
             const response = await SikiyaAPI.post('/comment/reply', payload);
             if (response.status === 201 || response.status === 200) {
                 setReplyingToComment(null);
@@ -838,6 +946,12 @@ const NewsHome = ({ route }) => {
                     ...prev,
                     number_of_comments: (prev.number_of_comments || 0) + 1
                 }));
+                if (selectedLane?.key) {
+                    setLaneCounts(prev => ({
+                        ...prev,
+                        [selectedLane.key]: (prev[selectedLane.key] || 0) + 1
+                    }));
+                }
             }
         } catch (error) {
             console.error('Error sending reply:', error);
@@ -942,21 +1056,23 @@ const NewsHome = ({ route }) => {
 
     //console.log('Fetched article:', article);
 
-    // Show loading state while fetching article
-    if (isLoadingArticle) {
-        return (
-            <SafeAreaView style={main_Style.safeArea}>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={MainBrownSecondaryColor} />
-                    <Text style={styles.loadingText}>
-                        {i18n.t('article.loadingArticle')}
-                    </Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     if (!article) {
+        if (pendingInitialArticle) {
+            return (
+                <SafeAreaView style={styles.container} edges={['top']}>
+                    <View style={styles.articleShellMinimal}>
+                        <TouchableOpacity
+                            onPress={handleGoBack}
+                            style={[styles.topBarButton, main_Style.genButtonElevation, { backgroundColor: 'rgba(0,0,0,0.12)' }]}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            activeOpacity={generalActiveOpacity}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={generalTextColor} />
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            );
+        }
         return (
             <SafeAreaView style={main_Style.safeArea}>
                 <View style={styles.errorContainer}>
@@ -980,11 +1096,13 @@ const NewsHome = ({ route }) => {
         'Business': '#562C2C',
         'Culture': '#F4D35E',
         'World': '#28AFB0',
+        'Africa': '#C17F59',
+        'Entertainment': '#9333EA',
         'Explore': MainSecondaryBlueColor,
     };
 
-    const categoryColor = categoryColors[article.category] || MainSecondaryBlueColor;
-    console.log('article', article);
+    const articleCategory = article.article_group || article.category;
+    const categoryColor = categoryColors[articleCategory] || MainSecondaryBlueColor;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -1010,7 +1128,7 @@ const NewsHome = ({ route }) => {
                         showsHorizontalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <Image
-                                style={[styles.headerImage, { width, height: height * 0.48 }, main_Style.genContentElevation]}
+                                style={[styles.headerImage, { width, height: height * 0.44 }, main_Style.genContentElevation]}
                                 defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
                                 source={{ uri: getImageUrl(item) }}
                                 resizeMode="cover"
@@ -1031,12 +1149,12 @@ const NewsHome = ({ route }) => {
                     {/* Top Bar with Back, Bookmark, Menu */}
                     <View style={styles.topBar}>
                         <TouchableOpacity
-                            onPress={() => navigation.goBack()}
+                            onPress={handleGoBack}
                             style={[styles.topBarButton, main_Style.genButtonElevation]}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             activeOpacity={generalActiveOpacity}
                         >
-                            <Ionicons name="arrow-back" size={24} color={MainBrownSecondaryColor} />
+                            <Ionicons name="arrow-back" size={24} color="#fff" />
                         </TouchableOpacity>
                         <View style={styles.topBarRight}>
                             <View style={styles.bookmarkButtonWrapper}>
@@ -1047,15 +1165,15 @@ const NewsHome = ({ route }) => {
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 activeOpacity={generalActiveOpacity}
                             >
-                                <Ionicons name="share-outline" size={24} color={MainBrownSecondaryColor} />
+                                <Ionicons name="share-outline" size={24} color="#fff" />
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Category Tag */}
-                    {article.category && (
+                    {articleCategory && (
                         <View style={[styles.categoryTag, { backgroundColor: categoryColor }]}>
-                            <Text style={styles.categoryText}>{article.category}</Text>
+                            <Text style={styles.categoryText}>{articleCategory}</Text>
                         </View>
                     )}
 
@@ -1245,11 +1363,17 @@ const NewsHome = ({ route }) => {
                                 <View
                                     style={[
                                         styles.modalLaneFlag,
-                                        { backgroundColor: selectedLane.backgroundColor },
+                                        // keep lane identity via accent + icon; avoid heavy saturated header fill
+                                        { borderBottomColor: 'rgba(0,0,0,0.08)' },
                                     ]}
                                 >
-                                    <Ionicons name={selectedLane.icon} size={18} color="#fff" />
-                                    <Text style={styles.modalLaneFlagText}>{selectedLane.title}</Text>
+                                    <View style={[styles.modalLaneAccent, { backgroundColor: selectedLane.backgroundColor }]} />
+                                    <View style={styles.modalLaneIconWrap}>
+                                        <Ionicons name={selectedLane.icon} size={18} color={selectedLane.backgroundColor} />
+                                    </View>
+                                    <Text style={[styles.modalLaneFlagText, { color: selectedLane.backgroundColor }]} numberOfLines={1}>
+                                        {selectedLane.title}
+                                    </Text>
                                     
                                     <TouchableOpacity 
                                         style={styles.modalLaneCloseButton}
@@ -1257,7 +1381,7 @@ const NewsHome = ({ route }) => {
                                         activeOpacity={0.7}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                     >
-                                        <Ionicons name="close" size={20} color="#fff" />
+                                        <Ionicons name="close" size={20} color={withdrawnTitleColor} />
                                     </TouchableOpacity>
                                 </View>
 
@@ -1294,6 +1418,7 @@ const NewsHome = ({ route }) => {
                             >
                                 <FeedbackContainer
                                     articleId={article._id}
+                                    discussionLaneId={selectedLane?.key}
                                     refreshKey={refreshCommentsKey}
                                     commentLoading={commentLoading}
                                     setCommentLoading={setCommentLoading}
@@ -1305,7 +1430,7 @@ const NewsHome = ({ route }) => {
                             
                             <CommentInputModal
                                 onSend={handleSendCommentOrReply}
-                                placeholder={t('comments.writeComment') || "Write a comment..."}
+                                placeholder={t('comments.shareYourPerspective') || t('comments.writeComment') || "Write a comment..."}
                                 isLoading={commentLoading}
                                 quota={commentQuota}
                                 quotaLoading={quotaLoading}

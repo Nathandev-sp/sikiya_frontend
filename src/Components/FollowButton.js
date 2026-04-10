@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { FollowButtonColor, generalTextFont } from '../styles/GeneralAppStyle';
 
-const FollowButton = ({ initialFollowed = false, onToggle }) => {
+const FollowButton = ({ initialFollowed = false, onToggle, compact = false }) => {
   const [followed, setFollowed] = useState(initialFollowed);
 
   // Update state when initialFollowed prop changes
@@ -22,11 +22,22 @@ const FollowButton = ({ initialFollowed = false, onToggle }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.button, followed ? styles.following : styles.notFollowing]}
+      style={[
+        styles.button,
+        followed ? styles.following : styles.notFollowing,
+        compact && styles.buttonCompact,
+      ]}
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <Text style={[styles.text, followed ? styles.textFollowing : styles.textNotFollowing]}>
+      <Text
+        style={[
+          styles.text,
+          followed ? styles.textFollowing : styles.textNotFollowing,
+          compact && styles.textCompact,
+        ]}
+        numberOfLines={1}
+      >
         {followed ? 'Following' : 'Follow'}
       </Text>
     </TouchableOpacity>
@@ -53,6 +64,12 @@ const styles = StyleSheet.create({
     // Android Elevation
     elevation: 1,
   },
+  buttonCompact: {
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+    minWidth: 96,
+    borderRadius: 8,
+  },
   following: {
     backgroundColor: '#FFFFFF',
     borderColor: '#E0E0E0',
@@ -66,6 +83,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: generalTextFont,
     letterSpacing: 0.3,
+  },
+  textCompact: {
+    fontSize: 12,
+    letterSpacing: 0.25,
   },
   textFollowing: {
     color: '#666666',

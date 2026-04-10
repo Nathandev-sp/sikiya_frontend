@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Text, FlatList, TouchableOpacity, StatusBar, ActivityIndicator, Alert, RefreshControl, Image } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+    View, StyleSheet, Text, SectionList, TouchableOpacity,
+    StatusBar, ActivityIndicator, Alert, RefreshControl, Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AppScreenBackgroundColor, {
-    articleTextSize,
     articleTitleSize,
     cardBackgroundColor,
     commentTextSize,
@@ -24,14 +26,74 @@ import AppScreenBackgroundColor, {
     withdrawnTitleColor,
 } from '../styles/GeneralAppStyle';
 import SikiyaAPI from '../../API/SikiyaAPI';
-import GoBackButton from '../../NavComponents/GoBackButton';
-import VerticalSpacer from '../Components/UI/VerticalSpacer';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
-import DateConverter from '../Helpers/DateConverter';
-import sampleNotificationsData from '../../assets/Data/sampleNotifications.json';
+import { useLanguage } from '../Context/LanguageContext';
+import {
+    genBtnBackgroundColor,
+    defaultButtonHitslop,
+} from '../styles/GeneralAppStyle';
+
+const ICON_MAP = {
+    new_article:               { name: 'newspaper-outline',       color: '#3B82F6' },
+    new_video:                 { name: 'play-circle-outline',     color: '#EF4444' },
+    comment_reply:             { name: 'chatbubbles-outline',     color: '#8B5CF6' },
+    new_comment:               { name: 'chatbubble-outline',      color: '#06B6D4' },
+    new_follower:              { name: 'person-add-outline',      color: '#EC4899' },
+    article_approved:          { name: 'checkmark-circle-outline',color: '#10B981' },
+    video_approved:            { name: 'checkmark-circle-outline',color: '#10B981' },
+    article_rejected:          { name: 'close-circle-outline',    color: '#EF4444' },
+    video_rejected:            { name: 'close-circle-outline',    color: '#EF4444' },
+    article_first_like:        { name: 'heart-outline',           color: '#F43F5E' },
+    article_milestone_likes:   { name: 'trophy-outline',          color: '#F59E0B' },
+    article_milestone_comments:{ name: 'trending-up-outline',     color: '#F59E0B' },
+    video_milestone_comments:  { name: 'trending-up-outline',     color: '#F59E0B' },
+};
+const DEFAULT_ICON = { name: 'notifications-outline', color: MainBrownSecondaryColor };
+
+const getRelativeTime = (dateStr, t) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return t('notifications.justNow') || 'Just now';
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHr < 24) return `${diffHr}h`;
+    if (diffDay < 7) return `${diffDay}d`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+
+const groupByDate = (notifications, t) => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    const today = [];
+    const thisWeek = [];
+    const earlier = [];
+
+    for (const n of notifications) {
+        const d = new Date(n.createdAt);
+        if (d >= todayStart) today.push(n);
+        else if (d >= weekStart) thisWeek.push(n);
+        else earlier.push(n);
+    }
+
+    const sections = [];
+    if (today.length) sections.push({ title: t('notifications.today') || 'Today', data: today });
+    if (thisWeek.length) sections.push({ title: t('notifications.thisWeek') || 'This Week', data: thisWeek });
+    if (earlier.length) sections.push({ title: t('notifications.earlier') || 'Earlier', data: earlier });
+    return sections;
+};
 
 const NotificationCenterScreen = () => {
     const navigation = useNavigation();
+    const isFocused = useIsFocused();
+    const { t } = useLanguage();
+
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -39,51 +101,37 @@ const NotificationCenterScreen = () => {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [fetchError, setFetchError] = useState(null);
 
-    useEffect(() => {
-        fetchNotifications(1, true);
-    }, []);
-
-    const fetchNotifications = async (pageNum = 1, isInitial = false) => {
+    const fetchNotifications = useCallback(async (pageNum = 1, isInitial = false) => {
         try {
-            if (isInitial) {
-                setLoading(true);
-            } else {
-                setLoadingMore(true);
-            }
+            if (isInitial) setLoading(true);
+            else setLoadingMore(true);
+            setFetchError(null);
 
             const response = await SikiyaAPI.get(`/notifications?page=${pageNum}&limit=20`);
-            
+
             if (response.data.success) {
-                const newNotifications = response.data.notifications || [];
-                
+                const items = response.data.notifications || [];
                 if (pageNum === 1) {
-                    if (newNotifications.length > 0) {
-                        setNotifications(newNotifications);
-                        setUnreadCount(response.data.unreadCount ?? 0);
-                        setHasMore(response.data.pagination?.hasNextPage ?? false);
-                    } else {
-                        setNotifications(sampleNotificationsData.notifications);
-                        setUnreadCount(sampleNotificationsData.unreadCount ?? 0);
-                        setHasMore(false);
-                    }
+                    setNotifications(items);
                 } else {
-                    setNotifications(prev => [...prev, ...newNotifications]);
-                    setHasMore(response.data.pagination?.hasNextPage ?? false);
+                    setNotifications(prev => [...prev, ...items]);
                 }
+                setUnreadCount(response.data.unreadCount ?? 0);
+                setHasMore(response.data.pagination?.hasNextPage ?? false);
                 setPage(pageNum);
             }
         } catch (error) {
-            // Handle 403 (auth) errors or network failure: show sample notifications so UI can be previewed
-            if (error.response && error.response.status === 403) {
-                setNotifications(sampleNotificationsData.notifications);
-                setUnreadCount(sampleNotificationsData.unreadCount ?? 0);
-                setHasMore(false);
-            } else {
-                // Only show error for non-auth issues
-                console.error('Error fetching notifications:', error);
-                if (!isInitial) {
-                    Alert.alert('Error', 'Failed to load notifications. Please try again.');
+            console.error('Error fetching notifications:', error);
+            if (pageNum === 1) {
+                setNotifications([]);
+                setUnreadCount(0);
+                const status = error?.response?.status;
+                if (status === 403 || status === 401) {
+                    setFetchError('auth');
+                } else {
+                    setFetchError('network');
                 }
             }
         } finally {
@@ -91,231 +139,195 @@ const NotificationCenterScreen = () => {
             setRefreshing(false);
             setLoadingMore(false);
         }
-    };
+    }, []);
 
-    const handleRefresh = () => {
+    useEffect(() => {
+        if (isFocused) fetchNotifications(1, true);
+    }, [isFocused]);
+
+    const handleRefresh = useCallback(() => {
         setRefreshing(true);
         fetchNotifications(1, false);
-    };
+    }, [fetchNotifications]);
 
-    const handleLoadMore = () => {
-        if (!loadingMore && hasMore) {
-            fetchNotifications(page + 1, false);
-        }
-    };
+    const handleLoadMore = useCallback(() => {
+        if (!loadingMore && hasMore) fetchNotifications(page + 1, false);
+    }, [loadingMore, hasMore, page, fetchNotifications]);
 
-    const markAsRead = async (notificationId) => {
+    const markAsRead = useCallback(async (notificationId) => {
         try {
             await SikiyaAPI.patch(`/notifications/${notificationId}/read`);
-            
-            // Update local state
-            setNotifications(prev => 
-                prev.map(notif => 
-                    notif._id === notificationId 
-                        ? { ...notif, read: true } 
-                        : notif
-                )
+            setNotifications(prev =>
+                prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
             );
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
-    };
+    }, []);
 
-    const markAllAsRead = async () => {
+    const markAllAsRead = useCallback(async () => {
         try {
             await SikiyaAPI.patch('/notifications/mark-all-read');
-            
-            // Update local state
-            setNotifications(prev => 
-                prev.map(notif => ({ ...notif, read: true }))
-            );
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
             setUnreadCount(0);
-            
-            Alert.alert('Success', 'All notifications marked as read');
         } catch (error) {
             console.error('Error marking all as read:', error);
-            Alert.alert('Error', 'Failed to mark all as read. Please try again.');
         }
-    };
+    }, []);
 
-    const deleteNotification = async (notificationId) => {
+    const deleteNotification = useCallback(async (notificationId) => {
         try {
             await SikiyaAPI.delete(`/notifications/${notificationId}`);
-            
-            // Update local state
-            const deletedNotif = notifications.find(n => n._id === notificationId);
-            setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
-            
-            if (deletedNotif && !deletedNotif.read) {
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            }
+            const deleted = notifications.find(n => n._id === notificationId);
+            setNotifications(prev => prev.filter(n => n._id !== notificationId));
+            if (deleted && !deleted.read) setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('Error deleting notification:', error);
-            Alert.alert('Error', 'Failed to delete notification. Please try again.');
         }
-    };
+    }, [notifications]);
 
-    const handleNotificationPress = (notification) => {
-        // Mark as read if not already
-        if (!notification.read) {
-            markAsRead(notification._id);
-        }
+    const handleNotificationPress = useCallback((notification) => {
+        if (!notification.read) markAsRead(notification._id);
 
-        // Navigate based on notification type
         const { type, data } = notification;
-        
-        if (type === 'new_article' && data.articleId) {
-            navigation.navigate('NewsHome', { articleId: data.articleId });
-        } else if (type === 'new_video' && data.videoId) {
-            navigation.navigate('VideoHomeScreen', { videoId: data.videoId });
-        } else if (type === 'comment_reply' && data.articleId) {
-            navigation.navigate('NewsHome', { articleId: data.articleId });
-        } else if (type === 'new_comment' && data.articleId) {
-            navigation.navigate('NewsHome', { articleId: data.articleId });
-        } else if (type === 'new_follower' && data.followerId) {
-            navigation.navigate('AuthorProfileScreen', { authorId: data.followerId });
-        } else if (type === 'article_approved' && data.articleId) {
-            navigation.navigate('NewsHome', { articleId: data.articleId });
-        } else if (type === 'video_approved' && data.videoId) {
-            navigation.navigate('VideoHomeScreen', { videoId: data.videoId });
+        if (!data) return;
+
+        switch (type) {
+            case 'new_article':
+            case 'article_approved':
+            case 'new_comment':
+            case 'article_milestone_comments':
+                if (data.articleId) navigation.navigate('NewsHome', { articleId: data.articleId });
+                break;
+            case 'new_video':
+            case 'video_approved':
+            case 'video_milestone_comments':
+                if (data.videoId) navigation.navigate('VideoHomeScreen', { videoId: data.videoId });
+                break;
+            case 'comment_reply':
+                if (data.articleId) navigation.navigate('NewsHome', { articleId: data.articleId });
+                else if (data.videoId) navigation.navigate('VideoHomeScreen', { videoId: data.videoId });
+                break;
+            case 'new_follower':
+                if (data.followerId) navigation.navigate('AuthorProfile', { authorId: data.followerId });
+                break;
+            case 'article_first_like':
+            case 'article_milestone_likes':
+                if (data.articleId) navigation.navigate('NewsHome', { articleId: data.articleId });
+                break;
+            default:
+                break;
         }
-    };
+    }, [markAsRead, navigation]);
 
-    const renderNotificationItem = ({ item }) => {
-        const getNotificationIcon = (type) => {
-            switch (type) {
-                case 'new_article':
-                    return { name: 'newspaper', color: MainBrownSecondaryColor };
-                case 'new_video':
-                    return { name: 'videocam', color: '#FF6B6B' };
-                case 'comment_reply':
-                    return { name: 'chatbubbles', color: '#4ECDC4' };
-                case 'new_comment':
-                    return { name: 'chatbubble-ellipses', color: '#95E1D3' };
-                case 'new_follower':
-                    return { name: 'person-add', color: '#6C5CE7' };
-                case 'article_approved':
-                    return { name: 'checkmark-circle', color: '#00B894' };
-                case 'video_approved':
-                    return { name: 'checkmark-circle', color: '#00B894' };
-                case 'article_rejected':
-                    return { name: 'close-circle', color: '#FF7675' };
-                case 'video_rejected':
-                    return { name: 'close-circle', color: '#FF7675' };
-                case 'article_first_like':
-                    return { name: 'heart', color: '#FD79A8' };
-                case 'article_milestone_likes':
-                    return { name: 'trophy', color: '#FFD700' };
-                case 'article_milestone_comments':
-                    return { name: 'trophy', color: '#FFD700' };
-                default:
-                    return { name: 'notifications', color: MainBrownSecondaryColor };
-            }
-        };
+    const sections = useMemo(() => groupByDate(notifications, t), [notifications, t]);
 
-        const icon = getNotificationIcon(item.type);
+    const renderSectionHeader = useCallback(({ section }) => (
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        </View>
+    ), []);
+
+    const renderItem = useCallback(({ item }) => {
+        const icon = ICON_MAP[item.type] || DEFAULT_ICON;
         const isUnread = !item.read;
-        
+
         return (
             <TouchableOpacity
-                style={[
-                    styles.notificationItem,
-                    isUnread && styles.notificationItemUnread,
-                    main_Style.genButtonElevation
-                ]}
+                style={[styles.notifRow, isUnread && styles.notifRowUnread]}
                 onPress={() => handleNotificationPress(item)}
+                onLongPress={() => {
+                    Alert.alert(
+                        t('notifications.deleteNotification') || 'Delete Notification',
+                        t('notifications.deleteConfirmation') || 'Are you sure you want to delete this notification?',
+                        [
+                            { text: t('notifications.cancel') || 'Cancel', style: 'cancel' },
+                            { text: t('notifications.delete') || 'Delete', style: 'destructive', onPress: () => deleteNotification(item._id) }
+                        ]
+                    );
+                }}
                 activeOpacity={generalActiveOpacity}
             >
-                {/* Icon */}
-                <View style={[styles.notificationIcon]}>
-                    <Ionicons name={icon.name} size={24} color={icon.color} />
+                <View style={[styles.iconCircle, { backgroundColor: icon.color + '14' }]}>
+                    <Ionicons name={icon.name} size={22} color={icon.color} />
                 </View>
 
-                {/* Content */}
-                <View style={styles.notificationContent}>
-                    <Text style={[styles.notificationTitle, isUnread && styles.notificationTitleUnread]}>
+                <View style={styles.notifBody}>
+                    <Text style={[styles.notifTitle, isUnread && styles.notifTitleUnread]} numberOfLines={2}>
                         {item.title}
                     </Text>
-                    <Text style={styles.notificationBody} numberOfLines={2}>
-                        {item.body}
-                    </Text>
-                    <Text style={styles.notificationTime}>
-                        {DateConverter(item.createdAt)}
-                    </Text>
+                    {item.body ? (
+                        <Text style={styles.notifMessage} numberOfLines={2}>
+                            {item.body}
+                        </Text>
+                    ) : null}
+                    <Text style={styles.notifTime}>{getRelativeTime(item.createdAt, t)}</Text>
                 </View>
 
-                {/* Unread indicator */}
                 {isUnread && <View style={styles.unreadDot} />}
-
-                {/* Delete button */}
-                <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => {
-                        Alert.alert(
-                            'Delete Notification',
-                            'Are you sure you want to delete this notification?',
-                            [
-                                { text: 'Cancel', style: 'cancel' },
-                                { 
-                                    text: 'Delete', 
-                                    style: 'destructive',
-                                    onPress: () => deleteNotification(item._id)
-                                }
-                            ]
-                        );
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <Ionicons name="trash-outline" size={20} color={withdrawnTitleColor} />
-                </TouchableOpacity>
             </TouchableOpacity>
         );
-    };
+    }, [handleNotificationPress, deleteNotification, t]);
 
-    const renderEmptyState = () => (
-        <View style={styles.emptyState}>
-            <Ionicons name="notifications-off-outline" size={60} color={withdrawnTitleColor} />
-            <Text style={styles.emptyStateTitle}>No Notifications</Text>
-            <Text style={styles.emptyStateText}>
-                You're all caught up! You'll see notifications here when something happens.
-            </Text>
-        </View>
-    );
+    const renderEmpty = useCallback(() => {
+        if (fetchError === 'auth') {
+            return (
+                <View style={styles.emptyState}>
+                    <View style={styles.emptyIconCircle}>
+                        <Ionicons name="log-in-outline" size={48} color={withdrawnTitleColor} />
+                    </View>
+                    <Text style={styles.emptyTitle}>Sign in to view notifications</Text>
+                    <Text style={styles.emptyText}>
+                        Your notifications will appear here once you're signed in.
+                    </Text>
+                </View>
+            );
+        }
+        if (fetchError === 'network') {
+            return (
+                <View style={styles.emptyState}>
+                    <View style={styles.emptyIconCircle}>
+                        <Ionicons name="cloud-offline-outline" size={48} color={withdrawnTitleColor} />
+                    </View>
+                    <Text style={styles.emptyTitle}>Connection issue</Text>
+                    <Text style={styles.emptyText}>
+                        Could not load notifications. Pull down to try again.
+                    </Text>
+                </View>
+            );
+        }
+        return (
+            <View style={styles.emptyState}>
+                <View style={styles.emptyIconCircle}>
+                    <Ionicons name="notifications-off-outline" size={48} color={withdrawnTitleColor} />
+                </View>
+                <Text style={styles.emptyTitle}>
+                    {t('notifications.allCaughtUp') || "You're all caught up!"}
+                </Text>
+                <Text style={styles.emptyText}>
+                    {t('notifications.allCaughtUpDescription') || "When there's new activity — like new articles, replies, or followers — it'll show up here."}
+                </Text>
+            </View>
+        );
+    }, [t, fetchError]);
 
-    const renderFooter = () => {
+    const renderFooter = useCallback(() => {
         if (!loadingMore) return null;
-        
         return (
             <View style={styles.footerLoader}>
                 <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
             </View>
         );
-    };
+    }, [loadingMore]);
 
     if (loading) {
         return (
             <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
                 <StatusBar barStyle="dark-content" />
-                {/* Header */}
-                <View style={styles.headerContainer}>
-                    <View style={styles.leftSpacer}>
-                        <GoBackButton buttonStyle={styles.backButtonOverride} />
-                    </View>
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.headerTitle}>Notifications</Text>
-                    </View>
-                    <View style={styles.rightSpacer}>
-                        <Image 
-                            source={require('../../assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1NB.png')}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        />
-                    </View>
-                </View>
+                <Header unreadCount={0} onMarkAll={null} t={t} />
                 <View style={styles.loadingContainer}>
                     <BigLoaderAnim />
-                    <Text style={styles.loadingText}>Loading notifications...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -324,106 +336,94 @@ const NotificationCenterScreen = () => {
     return (
         <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="dark-content" />
-            
-            {/* Header */}
-            <View style={styles.headerContainer}>
-                <View style={styles.leftSpacer}>
-                    <GoBackButton buttonStyle={styles.backButtonOverride} />
-                </View>
-                <View style={styles.titleContainer}>
-                    <Text style={styles.headerTitle}>Notifications</Text>
-                    {unreadCount > 0 && (
-                        <View style={styles.headerBadge}>
-                            <Text style={styles.headerBadgeText}>{unreadCount}</Text>
-                        </View>
-                    )}
-                </View>
-                <View style={styles.rightSpacer}>
-                    <Image 
-                        source={require('../../assets/SikiyaLogoV2/NathanApprovedSikiyaMiniLogo1NB.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                </View>
-            </View>
-            
-            {/* Mark All as Read Button */}
-            {unreadCount > 0 && (
-                <View style={[styles.actionBar, main_Style.genButtonElevation]}>
-                    <TouchableOpacity
-                        style={styles.markAllButton}
-                        onPress={markAllAsRead}
-                        activeOpacity={generalActiveOpacity}
-                    >
-                        <Ionicons name="checkmark-done" size={20} color={AppScreenBackgroundColor} />
-                        <Text style={styles.markAllText}>Mark all as read</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+            <Header unreadCount={unreadCount} onMarkAll={unreadCount > 0 ? markAllAsRead : null} t={t} />
 
-            {/* Notifications List */}
-            <FlatList
-                data={notifications}
-                renderItem={renderNotificationItem}
+            <SectionList
+                sections={sections}
+                renderItem={renderItem}
+                renderSectionHeader={renderSectionHeader}
                 keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.listContent}
+                stickySectionHeadersEnabled={false}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={notifications.length === 0 ? styles.emptyListContent : styles.listContent}
                 refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        tintColor={MainBrownSecondaryColor}
-                    />
+                    <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={MainBrownSecondaryColor} />
                 }
                 onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListEmptyComponent={renderEmptyState}
+                onEndReachedThreshold={0.4}
+                ListEmptyComponent={renderEmpty}
                 ListFooterComponent={renderFooter}
             />
         </SafeAreaView>
     );
 };
 
+const Header = React.memo(({ unreadCount, onMarkAll, t }) => {
+    const navigation = useNavigation();
+    return (
+        <View style={styles.headerContainer}>
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.4}
+                hitSlop={defaultButtonHitslop}
+            >
+                <Ionicons name="arrow-back" size={22} color={MainBrownSecondaryColor} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+                <Text style={styles.headerTitle}>{t('notifications.notifications') || 'Notifications'}</Text>
+                {unreadCount > 0 && (
+                    <View style={styles.headerBadge}>
+                        <Text style={styles.headerBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.headerRight}>
+                {onMarkAll ? (
+                    <TouchableOpacity onPress={onMarkAll} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="checkmark-done-outline" size={24} color={MainBrownSecondaryColor} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 40 }} />
+                )}
+            </View>
+        </View>
+    );
+});
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: AppScreenBackgroundColor,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    loadingText: {
-        marginTop: 10,
-        fontSize: commentTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-    },
+
+    /* ---- Header ---- */
     headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        height: 60,
-        borderBottomWidth: 1,
+        paddingHorizontal: 12,
+        height: 52,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: secCardBackgroundColor,
     },
-    leftSpacer: {
-        width: 44,
-        alignItems: 'flex-start',
+    backButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: genBtnBackgroundColor,
+        borderRadius: 8,
         justifyContent: 'center',
+        alignItems: 'center',
     },
-    backButtonOverride: {
-        position: 'absolute',
-        left: 16,
-        top: -20,
-    },
-    titleContainer: {
+    headerCenter: {
         flex: 1,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        flexDirection: 'row',
     },
     headerTitle: {
         fontSize: articleTitleSize,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
     },
     headerBadge: {
-        backgroundColor: '#FF4444',
+        backgroundColor: '#EF4444',
         borderRadius: 10,
         minWidth: 20,
         height: 20,
@@ -443,134 +443,127 @@ const styles = StyleSheet.create({
     },
     headerBadgeText: {
         color: '#fff',
-        fontSize: 12,
-        fontWeight: 'bold',
+        fontSize: 11,
+        fontWeight: '700',
         fontFamily: generalTitleFont,
     },
-    rightSpacer: {
-        width: 44,
+    headerRight: {
+        width: 40,
         alignItems: 'flex-end',
-        justifyContent: 'center',
     },
-    logo: {
-        position: 'absolute',
-        right: 16,
-        top: -20,
-        width: 44,
-        height: 44,
-    },
-    actionBar: {
-        //backgroundColor: '#fff',
+
+    /* ---- Section headers ---- */
+    sectionHeader: {
         paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        paddingTop: 20,
+        paddingBottom: 8,
     },
-    markAllButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: MainBrownSecondaryColor,
-        borderRadius: 8,
-    },
-    markAllText: {
+    sectionHeaderText: {
         fontSize: generalSmallTextSize,
-        color: AppScreenBackgroundColor,
-        fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
-        marginLeft: 6,
+        fontWeight: '700',
+        color: withdrawnTitleColor,
+        fontFamily: generalTitleFont,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    listContent: {
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-    },
-    notificationItem: {
+
+    /* ---- Notification row ---- */
+    notifRow: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-        position: 'relative',
+        alignItems: 'flex-start',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: secCardBackgroundColor,
     },
-    notificationItemUnread: {
-        backgroundColor: '#f8f9ff',
+    notifRowUnread: {
+        backgroundColor: cardBackgroundColor,
     },
-    notificationIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    iconCircle: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
-        //backgroundColor: 'red',
+        marginTop: 2,
     },
-    notificationContent: {
+    notifBody: {
         flex: 1,
-        justifyContent: 'center',
-        //backgroundColor: 'red',
-        marginRight: 22,
+        paddingRight: 16,
     },
-    notificationTitle: {
+    notifTitle: {
         fontSize: generalTextSize,
         fontWeight: generalTextFontWeight,
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 8,
+        lineHeight: 20,
     },
-    notificationTitleUnread: {
+    notifTitleUnread: {
         fontWeight: '700',
     },
-    notificationBody: {
+    notifMessage: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        marginBottom: 8,
+        marginTop: 3,
+        lineHeight: 18,
     },
-    notificationTime: {
-        fontSize: 11,
+    notifTime: {
+        fontSize: 12,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
+        marginTop: 4,
     },
     unreadDot: {
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        width: 12 ,
-        height: 12,
-        borderRadius: 6,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
         backgroundColor: MainSecondaryBlueColor,
+        marginTop: 8,
     },
-    deleteButton: {
-        position: 'absolute',
-        bottom: 12,
-        right: 8,
-        padding: 4,
+
+    /* ---- List ---- */
+    listContent: {
+        paddingBottom: 40,
     },
+    emptyListContent: {
+        flexGrow: 1,
+    },
+
+    /* ---- Empty state ---- */
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
-        paddingHorizontal: 40,
-        //backgroundColor: 'red',
+        paddingHorizontal: 48,
     },
-    emptyStateTitle: {
-        fontSize: articleTextSize,
+    emptyIconCircle: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        backgroundColor: secCardBackgroundColor,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    emptyTitle: {
+        fontSize: articleTitleSize,
         fontWeight: generalTitleFontWeight,
-        color: generalTextColor,
+        color: generalTitleColor,
         fontFamily: generalTitleFont,
-        marginTop: 20,
         marginBottom: 8,
+        textAlign: 'center',
     },
-    emptyStateText: {
+    emptyText: {
         fontSize: generalTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         textAlign: 'center',
         lineHeight: 22,
     },
+
+    /* ---- Footer ---- */
     footerLoader: {
         paddingVertical: 20,
         alignItems: 'center',
@@ -578,4 +571,3 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationCenterScreen;
-

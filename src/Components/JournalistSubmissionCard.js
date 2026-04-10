@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     cardTitle: {
-        fontSize: commentTextSize,
+        fontSize: generalTextSize,
         fontWeight: '600',
         color: generalTextColor,
-        fontFamily: generalTextFont,
+        fontFamily: generalTitleFont,
         lineHeight: 20,
         //letterSpacing: 0.1,
     },

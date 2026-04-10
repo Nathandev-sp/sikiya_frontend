@@ -253,6 +253,10 @@
     "tapToRead": "Tap to read the full article",
     "defaultLocation": "Location unavailable"
   },
+  "homeFeed": {
+    "latestStories": "Latest stories",
+    "stickyContext": "{{category}}"
+  },
   "categories": {
     "politics": "Politics",
     "economy": "Economy",
@@ -878,6 +882,11 @@
     "writeComment": "Write a comment...",
     "writeCommentPlaceholder": "Write your comment...",
     "writeReplyPlaceholder": "Write your reply...",
+    "shareYourPerspective": "Share your perspective…",
+    "keepItGoing": "Keep it going",
+    "shareYourPerspectivePrompt": "Add your take to move the discussion forward.",
+    "deleteComment": "Delete Comment",
+    "deleteConfirmation": "Are you sure you want to delete this comment? This action cannot be undone.",
     "oneComment": "comment",
     "manyComments": "comments"
   }

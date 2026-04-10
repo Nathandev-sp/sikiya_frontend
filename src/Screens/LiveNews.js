@@ -37,6 +37,7 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { formatNumber } from '../utils/numberFormatter';
 import { Context as AuthContext } from '../Context/AuthContext';
 import { useRewardedAd } from '../Components/Ads/RewardedAd';
+import { useInterstitialAd } from '../Components/Ads/InterstitialAd';
 import RewardedAdModal from '../Components/Ads/RewardedAdModal';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import { useLanguage } from '../Context/LanguageContext';
@@ -49,7 +50,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const videoPlayersRef = useRef({});
     const scrollToVideoIdRef = useRef(null); // Track if we need to scroll to a specific video
     const isScreenFocused = useIsFocused();
-    const { t } = useLanguage();
+    const { t, appLanguage } = useLanguage();
+    const lang = appLanguage === 'fr' ? 'fr' : 'en';
     
     // Auth context for user role
     const { state } = useContext(AuthContext);
@@ -59,6 +61,13 @@ const LiveNews = ({ preloadedVideos, route }) => {
     // Rewarded ad hook (only for general users)
     const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
     const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
+
+    const { showAd: showInterstitial, isLoaded: interstitialReady } = useInterstitialAd();
+    const videosSwipedRef = useRef(0);
+    const interstitialRef = useRef({ showAd: showInterstitial, isLoaded: interstitialReady });
+    useEffect(() => {
+        interstitialRef.current = { showAd: showInterstitial, isLoaded: interstitialReady };
+    }, [showInterstitial, interstitialReady]);
     
     // State management
     const [videos, setVideos] = useState([]);
@@ -79,14 +88,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const [selectedLaneVideo, setSelectedLaneVideo] = useState(null);
     const [selectedLane, setSelectedLane] = useState(null);
     const [replyingToComment, setReplyingToComment] = useState(null);
-
-    // Discussion lanes (same as NewsHome) – used in comment modal
-    const DISCUSSION_LANES = [
-        { id: '1', title: 'General Discussion', backgroundColor: '#2563EB', icon: 'chatbubbles-outline', commentCount: 0 },
-        { id: '2', title: 'Fact Check', backgroundColor: '#7C3AED', icon: 'checkmark-circle-outline', commentCount: 0 },
-        { id: '3', title: 'Expert Opinion', backgroundColor: '#FE5F55', icon: 'star-outline', commentCount: 0 },
-        { id: '4', title: 'Questions', backgroundColor: '#7FB069', icon: 'help-circle-outline', commentCount: 0 },
-    ];
+    const [videoDiscussionLanes, setVideoDiscussionLanes] = useState([]);
+    const [lanesLoading, setLanesLoading] = useState(false);
     
     // Ad-related state (only for general users)
     const watchedVideosRef = useRef(new Set()); // Track unique videos watched
@@ -475,6 +478,14 @@ const LiveNews = ({ preloadedVideos, route }) => {
             
             setCurrentVideoIndex(visibleIndex);
 
+            // Show interstitial ad every 5th video for general users
+            if (isGeneralUser) {
+                videosSwipedRef.current += 1;
+                if (videosSwipedRef.current % 5 === 0 && interstitialRef.current.isLoaded) {
+                    interstitialRef.current.showAd();
+                }
+            }
+
             // Load more videos when user is within 3 videos of the end (only if not blocked by ad)
             if (visibleIndex >= videos.length - 3 && hasMoreVideos && !isLoadingMore && !showAdModal && !videoLimitReached) {
                 loadMoreVideos();
@@ -493,22 +504,48 @@ const LiveNews = ({ preloadedVideos, route }) => {
     };
 
 
-    const openCommentModal = useCallback(() => {
+    const openCommentModal = useCallback(async () => {
         const videoToShow = currentVideo ?? (videos[0] ?? null);
         if (!videoToShow) return;
         if (isGeneralUser) {
             fetchCommentQuota();
         }
         setSelectedLaneVideo(videoToShow);
-        setSelectedLane(DISCUSSION_LANES[0]);
         setModalVisible(true);
-    }, [fetchCommentQuota, isGeneralUser, currentVideo, videos]);
+        setLanesLoading(true);
+
+        try {
+            const response = await SikiyaAPI.get(`/video/${videoToShow._id}`);
+            const rawLanes = response.data?.discussionLanes || [];
+            const mapped = rawLanes.map((lane) => {
+                const tEn = lane.translations?.en;
+                const tFr = lane.translations?.fr;
+                const title = (lang === 'fr' ? tFr?.title : tEn?.title) || tEn?.title || tFr?.title || lane.key || '';
+                return {
+                    ...lane,
+                    id: lane._id || lane.key,
+                    title,
+                    commentCount: lane.commentCount ?? 0,
+                };
+            });
+            setVideoDiscussionLanes(mapped);
+            if (mapped.length > 0) {
+                setSelectedLane(mapped[0]);
+            }
+        } catch (err) {
+            console.error('Error fetching video discussion lanes:', err);
+            setVideoDiscussionLanes([]);
+        } finally {
+            setLanesLoading(false);
+        }
+    }, [fetchCommentQuota, isGeneralUser, currentVideo, videos, lang]);
 
     const closeCommentSheet = useCallback(() => {
         setModalVisible(false);
         setSelectedLaneVideo(null);
         setSelectedLane(null);
         setReplyingToComment(null);
+        setVideoDiscussionLanes([]);
     }, []);
 
     const getCommentVideoId = useCallback(() => {
@@ -530,8 +567,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 comment_content: text,
                 mainComment: true,
             };
-            if (selectedLane?.id) {
-                payload.discussionLaneId = selectedLane.id;
+            if (selectedLane?.key) {
+                payload.discussion_lane_key = selectedLane.key;
             }
 
             const response = await SikiyaAPI.post(`/video/${videoId}/comment`, payload);
@@ -547,6 +584,11 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     ? { ...v, number_of_comments: (v.number_of_comments || 0) + 1 }
                     : v
                 ));
+                if (selectedLane?.key) {
+                    setVideoDiscussionLanes(prev => prev.map(l =>
+                        l.key === selectedLane.key ? { ...l, commentCount: (l.commentCount || 0) + 1 } : l
+                    ));
+                }
                 await fetchCommentQuota();
             } else {
                 console.error('Error sending comment:', response);
@@ -570,14 +612,14 @@ const LiveNews = ({ preloadedVideos, route }) => {
         try {
             setCommentLoading(true);
             const payload = {
-                comment_video_id: videoId,
                 comment_content: text,
+                mainComment: false,
                 reply_to_comment_id: replyingToComment.commentId,
             };
-            if (selectedLane?.id) {
-                payload.discussionLaneId = selectedLane.id;
+            if (selectedLane?.key) {
+                payload.discussion_lane_key = selectedLane.key;
             }
-            const response = await SikiyaAPI.post('/comment/reply', payload);
+            const response = await SikiyaAPI.post(`/video/${videoId}/comment`, payload);
             if (response.status === 201 || response.status === 200) {
                 setReplyingToComment(null);
                 setRefreshCommentsKey(prevKey => prevKey + 1);
@@ -585,6 +627,11 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     ? { ...v, number_of_comments: (v.number_of_comments || 0) + 1 }
                     : v
                 ));
+                if (selectedLane?.key) {
+                    setVideoDiscussionLanes(prev => prev.map(l =>
+                        l.key === selectedLane.key ? { ...l, commentCount: (l.commentCount || 0) + 1 } : l
+                    ));
+                }
             }
         } catch (error) {
             console.error('Error sending reply:', error);
@@ -762,36 +809,39 @@ const LiveNews = ({ preloadedVideos, route }) => {
                             { height: height * 0.88 },
                         ]}
                     >
-                        {selectedLaneVideo && selectedLane && (
+                        {selectedLaneVideo && (
                             <>
-                                {/* Top bar: selected discussion lane name + icon (like NewsHome) */}
-                                <View style={[styles.modalLaneFlag, { backgroundColor: selectedLane.backgroundColor }]}>
-                                    <Ionicons name={selectedLane.icon} size={18} color="#fff" />
-                                    <Text style={styles.modalLaneFlagText} numberOfLines={1}>
-                                        {selectedLane.title}
-                                    </Text>
-                                    <TouchableOpacity
-                                        style={styles.modalLaneCloseButton}
-                                        onPress={closeCommentSheet}
-                                        activeOpacity={0.7}
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                    >
-                                        <Ionicons name="close" size={20} color="#fff" />
-                                    </TouchableOpacity>
-                                </View>
+                                {selectedLane && (
+                                    <View style={[styles.modalLaneFlag, { backgroundColor: selectedLane.backgroundColor }]}>
+                                        <Ionicons name={selectedLane.icon} size={18} color={selectedLane.textColor || '#fff'} />
+                                        <Text style={styles.modalLaneFlagText} numberOfLines={1}>
+                                            {selectedLane.title}
+                                        </Text>
+                                        <TouchableOpacity
+                                            style={styles.modalLaneCloseButton}
+                                            onPress={closeCommentSheet}
+                                            activeOpacity={0.7}
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        >
+                                            <Ionicons name="close" size={20} color={selectedLane.textColor || '#fff'} />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
 
-                                {/* Discussion lane switcher: horizontal list of discussion lanes (same as NewsHome) */}
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    style={styles.laneSwitcherScroll}
-                                    contentContainerStyle={styles.laneSwitcherContent}
-                                >
-                                    {DISCUSSION_LANES.map((lane) => {
-                                        const isSelected = lane.id === selectedLane.id;
-                                        return (
+                                {lanesLoading ? (
+                                    <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                                        <MediumLoadingState />
+                                    </View>
+                                ) : (
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        style={styles.laneSwitcherScroll}
+                                        contentContainerStyle={styles.laneSwitcherContent}
+                                    >
+                                        {videoDiscussionLanes.map((lane) => (
                                             <TouchableOpacity
-                                                key={lane.id}
+                                                key={lane.key || lane.id}
                                                 style={[
                                                     styles.discussionLaneCard,
                                                     { backgroundColor: lane.backgroundColor, width: width * 0.6 },
@@ -801,7 +851,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                             >
                                                 <View style={styles.discussionLaneContent}>
                                                     <View style={styles.discussionLaneIcon}>
-                                                        <Ionicons name={lane.icon} size={20} color="#fff" />
+                                                        <Ionicons name={lane.icon} size={20} color={lane.textColor || '#fff'} />
                                                     </View>
                                                     <View style={styles.discussionLaneInfo}>
                                                         <Text style={styles.discussionLaneTitle} numberOfLines={1}>
@@ -813,37 +863,38 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                                     </View>
                                                 </View>
                                             </TouchableOpacity>
-                                        );
-                                    })}
-                                </ScrollView>
-
-                                <KeyboardAvoidingView
-                                    style={styles.modalContentWrapper}
-                                    behavior="padding"
-                                    keyboardVerticalOffset={Platform.OS === 'ios' ? height * 0.2 : 0}
-                                >
-                                    <ScrollView
-                                        contentContainerStyle={styles.modalScrollContent}
-                                        style={styles.modalCommentContainer}
-                                        showsVerticalScrollIndicator={false}
-                                        keyboardShouldPersistTaps="handled"
-                                        keyboardDismissMode="interactive"
-                                        bounces={true}
-                                        overScrollMode="never"
-                                    >
-                                        <FeedbackContainer
-                                            videoId={selectedLaneVideo._id}
-                                            discussionLaneId={selectedLane.id}
-                                            refreshKey={refreshCommentsKey}
-                                            commentLoading={commentLoading}
-                                            setCommentLoading={setCommentLoading}
-                                            onAddCommentPress={() => {}}
-                                            onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
-                                            onBeforeNavigate={closeCommentSheet}
-                                            hideHeader={true}
-                                            totalCommentCount={selectedLane.commentCount}
-                                        />
+                                        ))}
                                     </ScrollView>
+                                )}
+
+                                {selectedLane && (
+                                    <KeyboardAvoidingView
+                                        style={styles.modalContentWrapper}
+                                        behavior="padding"
+                                        keyboardVerticalOffset={Platform.OS === 'ios' ? height * 0.2 : 0}
+                                    >
+                                        <ScrollView
+                                            contentContainerStyle={styles.modalScrollContent}
+                                            style={styles.modalCommentContainer}
+                                            showsVerticalScrollIndicator={false}
+                                            keyboardShouldPersistTaps="handled"
+                                            keyboardDismissMode="interactive"
+                                            bounces={true}
+                                            overScrollMode="never"
+                                        >
+                                            <FeedbackContainer
+                                                videoId={selectedLaneVideo._id}
+                                                discussionLaneId={selectedLane.key}
+                                                refreshKey={refreshCommentsKey}
+                                                commentLoading={commentLoading}
+                                                setCommentLoading={setCommentLoading}
+                                                onAddCommentPress={() => {}}
+                                                onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
+                                                onBeforeNavigate={closeCommentSheet}
+                                                hideHeader={true}
+                                                totalCommentCount={selectedLane.commentCount}
+                                            />
+                                        </ScrollView>
 
                                     <CommentInputModal
                                         onSend={handleSendCommentOrReply}
@@ -860,6 +911,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                         onCancelReply={replyingToComment ? () => setReplyingToComment(null) : undefined}
                                     />
                                 </KeyboardAvoidingView>
+                                )}
                             </>
                         )}
                     </View>

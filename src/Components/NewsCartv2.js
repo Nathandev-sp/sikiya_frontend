@@ -1,14 +1,14 @@
-import React, { useState, memo } from "react";
-import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Platform} from 'react-native';
+import React, { memo } from "react";
+import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AppScreenBackgroundColor, { articleTitleColor, articleTitleFont, generalLineHeight, generalSmallLineHeight, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainborderColor, mainBrownColor, withdrawnTitleColor, withdrawnTitleFontWeight, withdrawnTitleSize } from "../styles/GeneralAppStyle";
+import { articleTitleFont, generalSmallLineHeight, generalTextColor, generalTextFont, generalTitleFont, generalTitleSize, PrimBtnColor, withdrawnTitleColor, withdrawnTitleSize, homeScreenPadding, homeCardVerticalGap, homeCardBorderRadius, homeCardShadowStyle } from "../styles/GeneralAppStyle";
 import BookmarkIcon from "./BookmarkIcon";
 import DateConverter from "../Helpers/DateConverter";
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
 const NewsCartv2 = memo(({article}) => {
-    const {width, height} = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const navigation = useNavigation();
 
     const goToNewsHome = () => {
@@ -19,7 +19,6 @@ const NewsCartv2 = memo(({article}) => {
     const authorName = article.journalist?.displayName || 'Unknown Author';
     const authorImage = article.journalist?.profile_picture;
     const location = article?.location || "Unknown Location";
-    const category = article?.category;
 
     return(
         <TouchableOpacity 
@@ -29,7 +28,7 @@ const NewsCartv2 = memo(({article}) => {
             accessibilityLabel={`Article: ${article.article_title}`}
             accessibilityRole="button"
         >
-            <View style={[styles.container, main_Style.genButtonElevation, {width: width * 0.96}]}>
+            <View style={[styles.container, { width: width - homeScreenPadding * 1.4 }]}>
                 <View style={styles.introContainer}>
                     {/* Image Container - Left Side */}
                     <View style={styles.imageContainer}>
@@ -45,14 +44,6 @@ const NewsCartv2 = memo(({article}) => {
                     
                     {/* Content Container - Right Side */}
                     <View style={styles.contentContainer}>
-                        {/* Category Badge */}
-                        {category && (
-                            <View style={styles.categoryBadge}>
-                                <Text style={styles.categoryText}>{category.toUpperCase()}</Text>
-                            </View>
-                        )}
-                        
-                        {/* Article Title */}
                         <View style={styles.titleContainer}>
                             <Text 
                                 style={styles.cardTitle}
@@ -110,15 +101,17 @@ NewsCartv2.displayName = 'NewsCartv2';
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginVertical: 4,
+        backgroundColor: '#FDFCF8',
+        borderRadius: homeCardBorderRadius,
+        marginVertical: homeCardVerticalGap / 2,
         alignSelf: 'center',
-        padding: 8,
+        padding: 6,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        
+        borderColor: 'rgba(102, 70, 44, 0.12)',
+        borderLeftWidth: 3,
+        borderLeftColor: PrimBtnColor,
+        ...homeCardShadowStyle,
     },
     introContainer: {
         width: '100%',
@@ -126,10 +119,10 @@ const styles = StyleSheet.create({
         minHeight: 140,
     },
     imageContainer: {
-        width: '45%',
+        width: '42%',
         aspectRatio: 1.1,
         borderRadius: 8,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#F0EDE6',
         overflow: 'hidden',
         marginRight: 12,
         position: 'relative',
@@ -152,28 +145,13 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         paddingVertical: 2,
     },
-    categoryBadge: {
-        alignSelf: 'flex-start',
-        backgroundColor: mainBrownColor,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 6,
-        marginBottom: 8,
-    },
-    categoryText: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: '#FFF',
-        fontFamily: generalTitleFont,
-        letterSpacing: 0.8,
-    },
     titleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
         marginBottom: 6,
     },
     cardTitle: {
-        fontSize: generalTextSize,
+        fontSize: generalTitleSize,
         fontWeight: '600',
         color: generalTextColor,
         lineHeight: generalSmallLineHeight * 1.2,

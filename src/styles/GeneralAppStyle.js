@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-const AppScreenBackgroundColor = '#F9F9F8'; //#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
+const AppScreenBackgroundColor = '#F9F9F8'; //  #F9F9F8//#F8F8F8 #FFFFFF #1B263B  #FDFFFC #7083A5 #FDFFFC	#F0F0F0 #FAF9FC #242424 #EBEBEB #eee4da #B0B4A7 #F8F8F8
 const MainBrownSecondaryColor = '#815837'; //blue from the screen header 66462C #815837 #66462C
 const MainBlueColor = '#344E7B'; // Dark purple color for titles #344E7B
 
@@ -21,16 +21,16 @@ const genBtnBackgroundColor = '#EBEBEB'; // General button background color #567
 const MainSecondaryBlueColor = '#007AA3'; // Updated Main Blue Color
 
 // Selected fonts for the app
-const articleTitleFont = 'NotoSans-SemiBoldItalic';  //OpenSans-SemiBold  //Oswald-SemiBold Montserrat-Medium
-const generalTitleFont = 'OpenSans-SemiBold'; //OpenSans-Bold OpenSans-SemiBold
-const generalTextFont = 'OpenSans-Medium';
+const articleTitleFont = 'Lora-Bold';  //NotoSans-SemiBoldItalic OpenSans-SemiBold  //Oswald-SemiBold Montserrat-Medium
+const generalTitleFont = 'OpenSans-SemiBold'; //OpenSans-SemiBold OpenSans-Bold OpenSans-SemiBold
+const generalTextFont = 'OpenSans-Medium'; //OpenSans-Medium
 //Selected Colours for Text
 const generalTextColor =  '#182842'; // general Text color
 const generalTitleColor = '#575C60';
 const withdrawnTitleColor = '#888';
 const articleTitleColor = '#44484B'; //#3A3D40 #FFFFFF
  // Selected Text sizes
- const articleTitleSize = 17;
+ const articleTitleSize = 18;
  const generalTitleSize = 16;
  const generalTextSize = 15;
  const articleTextSize = 15.5;
@@ -51,7 +51,24 @@ const articleTitleColor = '#44484B'; //#3A3D40 #FFFFFF
  const generalSmallLineHeight = 20;
  const withdrawnLineHeight = 18;
  // selected active opacity
- const generalActiveOpacity = 0.7; // General active opacity for buttons and touchable elements
+ const generalActiveOpacity = 0.8; // General active opacity for buttons and touchable elements
+
+/** Home feed rhythm — use for HomeScreen, NewsCartv2, FlashNewsItem */
+const homeScreenPadding = 16;
+const homeSectionGap = 12;
+const homeCardVerticalGap = 8;
+const homeCardBorderRadius = 12;
+const homeChipBorderRadius = 20;
+/** Slightly warmer than app chrome so the feed feels like one surface */
+const homeFeedBackgroundColor = '#F3F0EA';
+
+const homeCardShadowStyle = {
+    shadowColor: '#2C2416',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.11,
+    shadowRadius: 10,
+    elevation: 4,
+};
 
 // Main Styling for screens and apps ---------------
 const main_Style = StyleSheet.create({
@@ -314,5 +331,12 @@ export {MainBrownSecondaryColor,
         commentTextSize,
         XsmallTextSize,
         largeTextSize,
-        xlargeTextSize
+        xlargeTextSize,
+        homeScreenPadding,
+        homeSectionGap,
+        homeCardVerticalGap,
+        homeCardBorderRadius,
+        homeChipBorderRadius,
+        homeFeedBackgroundColor,
+        homeCardShadowStyle
     };

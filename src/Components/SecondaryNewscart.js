@@ -1,72 +1,61 @@
 import React, { memo } from "react";
-import {View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions, Platform} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import AppScreenBackgroundColor, { 
-    articleTitleColor, 
-    articleTitleFont, 
-    generalLineHeight, 
-    generalSmallLineHeight, 
-    generalTextColor, 
-    generalTextFont, 
-    generalTextSize, 
-    generalTitleFont, 
-    main_Style,
-    mainBrownColor, 
-    withdrawnTitleColor, 
-    withdrawnTitleSize 
+import {
+    articleTitleFont,
+    generalSmallLineHeight,
+    generalTextColor,
+    generalTextFont,
+    generalTitleFont,
+    generalTitleSize,
+    PrimBtnColor,
+    withdrawnTitleColor,
+    withdrawnTitleSize,
+    homeScreenPadding,
+    homeCardVerticalGap,
+    homeCardBorderRadius,
+    homeCardShadowStyle,
 } from "../styles/GeneralAppStyle";
 import BookmarkIcon from "./BookmarkIcon";
 import DateConverter from "../Helpers/DateConverter";
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
 
-const SecondaryNewsCart = memo(({article}) => {
-    const {width} = useWindowDimensions();
+const SecondaryNewsCart = memo(({ article }) => {
+    const { width } = useWindowDimensions();
     const navigation = useNavigation();
 
     const goToNewsHome = () => {
-        navigation.navigate('NewsHome', {articleId: article._id, article: article});
+        navigation.navigate('NewsHome', { articleId: article._id, article: article });
     };
 
-    // Fallback for missing data
     const authorName = article.journalist?.displayName || 'Unknown Author';
     const authorImage = article.journalist?.profile_picture;
-    const category = article?.category;
+    const location = article?.location || "Unknown Location";
 
-    return(
-        <TouchableOpacity 
-            activeOpacity={0.7} 
+    return (
+        <TouchableOpacity
+            activeOpacity={0.7}
             onPress={goToNewsHome}
             accessible={true}
             accessibilityLabel={`Article: ${article.article_title}`}
             accessibilityRole="button"
         >
-            <View style={[styles.container, main_Style.genContentElevation, {width: width * 0.96}]}>
+            <View style={[styles.container, { width: width - homeScreenPadding * 1.4 }]}>
                 <View style={styles.introContainer}>
-                    {/* Image Container - Left Side */}
                     <View style={styles.imageContainer}>
-                        <Image 
+                        <Image
                             style={styles.frontImage}
-                            defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')} 
+                            defaultSource={require('../../assets/functionalImages/FrontImagePlaceholder.png')}
                             source={{ uri: getImageUrl(article.article_front_image) }}
                             resizeMode="cover"
                         />
-                        {/* Subtle gradient overlay */}
                         <View style={styles.imageOverlay} pointerEvents="none" />
                     </View>
-                    
-                    {/* Content Container - Right Side */}
+
                     <View style={styles.contentContainer}>
-                        {/* Category Badge */}
-                        {category && (
-                            <View style={styles.categoryBadge}>
-                                <Text style={styles.categoryText}>{category.toUpperCase()}</Text>
-                            </View>
-                        )}
-                        
-                        {/* Article Title */}
                         <View style={styles.titleContainer}>
-                            <Text 
+                            <Text
                                 style={styles.cardTitle}
                                 numberOfLines={3}
                                 ellipsizeMode="tail"
@@ -74,13 +63,21 @@ const SecondaryNewsCart = memo(({article}) => {
                                 {article.article_title}
                             </Text>
                         </View>
-                        
-                        {/* Author Info with Date */}
+
+                        {location && (
+                            <View style={styles.locationContainer}>
+                                <Ionicons name="location-sharp" size={12} color={withdrawnTitleColor} />
+                                <Text style={styles.locationText} numberOfLines={1}>
+                                    {location}
+                                </Text>
+                            </View>
+                        )}
+
                         <View style={styles.authorContainer}>
                             <View style={styles.authorImageContainer}>
-                                <Image 
+                                <Image
                                     style={styles.authorImage}
-                                    defaultSource={require('../../assets/functionalImages/ProfilePic.png')} 
+                                    defaultSource={require('../../assets/functionalImages/ProfilePic.png')}
                                     source={{ uri: getImageUrl(authorImage) }}
                                 />
                             </View>
@@ -98,8 +95,7 @@ const SecondaryNewsCart = memo(({article}) => {
                         </View>
                     </View>
                 </View>
-                
-                {/* Bookmark Icon */}
+
                 <View style={styles.bookmarkContainer}>
                     <BookmarkIcon articleId={article._id} savedStatus={article.saved} />
                 </View>
@@ -112,27 +108,30 @@ SecondaryNewsCart.displayName = 'SecondaryNewsCart';
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginVertical: 4,
+        backgroundColor: '#FDFCF8',
+        borderRadius: homeCardBorderRadius,
+        marginVertical: homeCardVerticalGap / 2,
         alignSelf: 'center',
         padding: 6,
         overflow: 'hidden',
-        borderWidth: 0.8,
-        borderColor: 'rgba(0,0,0,0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(102, 70, 44, 0.12)',
+        borderLeftWidth: 3,
+        borderLeftColor: PrimBtnColor,
+        ...homeCardShadowStyle,
     },
     introContainer: {
         width: '100%',
         flexDirection: 'row',
-        minHeight: 110,
+        minHeight: 140,
     },
     imageContainer: {
-        width: 140,
-        aspectRatio: 1.2,
+        width: '42%',
+        aspectRatio: 1.1,
         borderRadius: 8,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#F0EDE6',
         overflow: 'hidden',
-        marginRight: 10,
+        marginRight: 12,
         position: 'relative',
     },
     frontImage: {
@@ -153,77 +152,75 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         paddingVertical: 2,
     },
-    categoryBadge: {
-        alignSelf: 'flex-start',
-        backgroundColor: mainBrownColor,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-        marginBottom: 6,
-    },
-    categoryText: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: '#FFF',
-        fontFamily: generalTextFont,
-        letterSpacing: 0.8,
-    },
     titleContainer: {
         flex: 1,
         justifyContent: 'flex-start',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     cardTitle: {
-        fontSize: generalTextSize - 0.5,
+        fontSize: generalTitleSize,
         fontWeight: '600',
         color: generalTextColor,
-        lineHeight: generalSmallLineHeight * 1.15,
+        lineHeight: generalSmallLineHeight * 1.2,
         fontFamily: articleTitleFont,
         letterSpacing: 0.1,
+    },
+    locationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 8,
+    },
+    locationText: {
+        fontSize: withdrawnTitleSize - 0.5,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        fontWeight: '500',
+        flex: 1,
     },
     authorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     authorImageContainer: {
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: 1,
         borderColor: '#E5E5E5',
         padding: 0.5,
-        marginRight: 7,
+        marginRight: 8,
         backgroundColor: '#FFF',
     },
     authorImage: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
     },
     authorInfo: {
         flex: 1,
         justifyContent: 'center',
     },
     authorName: {
-        fontSize: withdrawnTitleSize - 0.5,
+        fontSize: withdrawnTitleSize,
         fontWeight: '600',
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        marginBottom: 2,
+        marginBottom: 3,
     },
     dateRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
+        gap: 4,
     },
     datePosted: {
-        fontSize: withdrawnTitleSize - 1.5,
+        fontSize: withdrawnTitleSize - 1,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: '500',
     },
     bookmarkContainer: {
         position: 'absolute',
-        top: 6,
-        right: 6,
+        top: 8,
+        right: 8,
         zIndex: 10,
     },
 });
