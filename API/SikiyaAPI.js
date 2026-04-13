@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Expo automatically loads .env files and makes EXPO_PUBLIC_* variables available https://sikiya-backend.onrender.com || process.env.EXPO_PUBLIC_API_URL
-const API_URL = 'https://3483-206-223-166-38.ngrok-free.app';
+const API_URL = 'https://fb9e-206-223-166-38.ngrok-free.app';
 
 const SikiyaAPI = axios.create({
     baseURL: API_URL,

@@ -21,7 +21,7 @@ const genBtnBackgroundColor = '#EBEBEB'; // General button background color #567
 const MainSecondaryBlueColor = '#007AA3'; // Updated Main Blue Color
 
 // Selected fonts for the app
-const articleTitleFont = 'Lora-Bold';  //NotoSans-SemiBoldItalic OpenSans-SemiBold  //Oswald-SemiBold Montserrat-Medium
+const articleTitleFont = 'CantataOne-Regular';  //Lora-Bold NotoSans-SemiBoldItalic OpenSans-SemiBold  //Oswald-SemiBold Montserrat-Medium
 const generalTitleFont = 'OpenSans-SemiBold'; //OpenSans-SemiBold OpenSans-Bold OpenSans-SemiBold
 const generalTextFont = 'OpenSans-Medium'; //OpenSans-Medium
 //Selected Colours for Text

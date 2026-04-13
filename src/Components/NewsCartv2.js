@@ -88,10 +88,6 @@ const NewsCartv2 = memo(({article}) => {
                     </View>
                 </View>
                 
-                {/* Bookmark Icon */}
-                <View style={styles.bookmarkContainer}>
-                    <BookmarkIcon articleId={article._id} savedStatus={article.saved} />
-                </View>
             </View>
         </TouchableOpacity>
     );
@@ -101,9 +97,9 @@ NewsCartv2.displayName = 'NewsCartv2';
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FDFCF8',
+        backgroundColor: '#FDFCF8', //#FDFCF8
         borderRadius: homeCardBorderRadius,
-        marginVertical: homeCardVerticalGap / 2,
+        marginVertical: (homeCardVerticalGap / 2) + 2,
         alignSelf: 'center',
         padding: 6,
         overflow: 'hidden',

@@ -59,6 +59,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-shimmer-placeholder": "^2.0.9",
     "react-native-spinkit": "^1.5.1",
+    "react-native-svg": "15.12.1",
     "react-native-tab-view": "^3.5.2",
     "react-native-typewriter": "^0.7.0",
     "react-native-webview": "13.15.0",

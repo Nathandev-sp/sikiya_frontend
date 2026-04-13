@@ -6,15 +6,18 @@ import i18n from '../utils/i18n';
 import {
     articleTitleFont,
     generalTextColor,
+    generalTextFont,
     generalTitleFont,
     generalTitleSize,
     PrimBtnColor,
+    withdrawnTitleColor,
     withdrawnTitleSize,
     homeScreenPadding,
     homeCardVerticalGap,
     homeCardBorderRadius,
     homeCardShadowStyle,
     MainSecondaryBlueColor,
+    MainBrownSecondaryColor,
 } from "../styles/GeneralAppStyle";
 import { useNavigation } from '@react-navigation/native';
 import { getImageUrl } from '../utils/imageUrl';
@@ -46,6 +49,12 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
         ? getImageUrl(journalist.profile_picture)
         : null;
 
+    const affiliation = (
+        journalist.journalist_affiliation ||
+        journalist.affiliation ||
+        ''
+    ).trim();
+
     const getRoleIcon = () => {
         switch (journalist.role) {
             case 'journalist': return 'newspaper-outline';
@@ -59,9 +68,9 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
         navigation.navigate('AuthorProfile', { userId: journalist._id });
     };
 
-    const handleFollowToggle = () => {
+    const handleFollowToggle = (wasFollowing) => {
         if (onFollowToggle && !isOwnProfile) {
-            onFollowToggle(journalist._id, isFollowing);
+            onFollowToggle(journalist._id, wasFollowing);
         }
     };
 
@@ -95,30 +104,44 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
                     </View>
 
                     <View style={styles.profileInfoContainer}>
-                        <View style={styles.roleBadge}>
-                            <Ionicons
-                                name={getRoleIcon()}
-                                size={10}
-                                color="#FFF"
-                            />
-                            <Text style={styles.roleText} numberOfLines={1}>{role.toUpperCase()}</Text>
+                        <View style={styles.roleNameStack}>
+                            <View style={styles.roleBadge}>
+                                <Ionicons
+                                    name={getRoleIcon()}
+                                    size={11}
+                                    color={PrimBtnColor}
+                                />
+                                <Text style={styles.roleText} numberOfLines={1}>{role.toUpperCase()}</Text>
+                            </View>
+                            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>
                         </View>
-
-                        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>
+                        {affiliation ? (
+                            <Text
+                                style={styles.affiliation}
+                                numberOfLines={2}
+                                ellipsizeMode="tail"
+                            >
+                                {affiliation}
+                            </Text>
+                        ) : null}
                     </View>
 
                     <View style={styles.rightSection}>
                         {isOwnProfile ? (
-                            <View style={styles.selfProfileButton}>
-                                <Text style={styles.selfProfileText}>
+                            <View style={styles.selfProfilePill}>
+                                <Ionicons name="person-circle-outline" size={17} color={MainBrownSecondaryColor} />
+                                <Text style={styles.selfProfilePillText}>
                                     {i18n.t('profile.you') || 'You'}
                                 </Text>
                             </View>
                         ) : (
                             <FollowButton
-                                compact
+                                pill
+                                pillSubtle
                                 initialFollowed={isFollowing}
                                 onToggle={handleFollowToggle}
+                                followLabel={i18n.t('profile.follow')}
+                                followingLabel={i18n.t('profile.followingButton')}
                             />
                         )}
                     </View>
@@ -134,7 +157,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FDFCF8',
         borderRadius: homeCardBorderRadius,
-        marginVertical: homeCardVerticalGap / 2,
+        marginVertical: (homeCardVerticalGap / 2) + 2,
         alignSelf: 'center',
         paddingVertical: 4,
         paddingLeft: 5,
@@ -153,27 +176,27 @@ const styles = StyleSheet.create({
     avatarShell: {
         width: '34%',
         aspectRatio: 1,
-        maxWidth: 88,
+        maxWidth: 84,
         borderRadius: 8,
         backgroundColor: '#F0EDE6',
-        marginRight: 10,
+        marginRight: 12,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'visible',
     },
     profilePicContainer: {
         position: 'relative',
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
         borderWidth: 1,
         borderColor: '#E5E5E5',
         backgroundColor: '#FFF',
     },
     profilePic: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
         backgroundColor: '#F0EDE6',
     },
     verifiedBadge: {
@@ -189,24 +212,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingRight: 4,
         minWidth: 0,
+        gap: 6,
+    },
+    roleNameStack: {
+        minWidth: 0,
+        gap: 3,
     },
     roleBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'flex-start',
-        backgroundColor: PrimBtnColor,
-        paddingHorizontal: 7,
-        paddingVertical: 2,
-        borderRadius: 5,
-        marginBottom: 4,
-        gap: 4,
+        gap: 5,
     },
     roleText: {
-        fontSize: 8,
+        fontSize: 9,
         fontWeight: '700',
-        color: '#FFF',
+        color: PrimBtnColor,
         fontFamily: generalTitleFont,
-        letterSpacing: 0.8,
+        letterSpacing: 0.85,
     },
     name: {
         fontSize: generalTitleSize - 0.5,
@@ -216,6 +239,15 @@ const styles = StyleSheet.create({
         lineHeight: (generalTitleSize - 0.5) * 1.2,
         letterSpacing: 0.05,
     },
+    affiliation: {
+        fontSize: withdrawnTitleSize - 1,
+        fontWeight: '400',
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        lineHeight: 18,
+        letterSpacing: 0.1,
+        opacity: 0.88,
+    },
     rightSection: {
         justifyContent: 'center',
         alignItems: 'center',
@@ -223,21 +255,29 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         paddingRight: 2,
     },
-    selfProfileButton: {
-        paddingVertical: 7,
-        paddingHorizontal: 13,
-        borderRadius: 8,
-        backgroundColor: PrimBtnColor,
+    selfProfilePill: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 72,
+        gap: 6,
+        borderRadius: 24,
+        paddingVertical: 9,
+        paddingHorizontal: 14,
+        backgroundColor: '#FFFCF9',
+        borderWidth: 1.5,
+        borderColor: 'rgba(102, 70, 44, 0.22)',
+        shadowColor: '#2C2416',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 2,
     },
-    selfProfileText: {
-        fontWeight: '600',
-        fontSize: withdrawnTitleSize,
-        fontFamily: generalTitleFont,
-        letterSpacing: 0.3,
-        color: '#FFF',
+    selfProfilePillText: {
+        fontWeight: '700',
+        fontSize: 13,
+        fontFamily: generalTextFont,
+        letterSpacing: 0.2,
+        color: MainBrownSecondaryColor,
     },
 });
 

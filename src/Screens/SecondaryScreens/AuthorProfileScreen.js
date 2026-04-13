@@ -1,16 +1,64 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity,StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import SikiyaAPI from "../../../API/SikiyaAPI";
-import AppScreenBackgroundColor, { articleTitleFont, generalTextColor, generalTextFont, generalTitleColor, generalTitleFont, main_Style, mainBrownColor, cardBackgroundColor, generalActiveOpacity, MainBrownSecondaryColor, lightBannerBackgroundColor, genBtnBackgroundColor, articleTitleSize, generalTitleFontWeight, XsmallTextSize, withdrawnTitleSize, generalTextFontWeight, withdrawnTitleColor, generalTextSize, generalSmallTextSize, commentTextSize, generalSmallLineHeight, generalTitleSize, generalLineHeight } from "../../styles/GeneralAppStyle";
-import SecNewsCartMap from "../../Components/SecNewsCartMap";
+import AppScreenBackgroundColor, { articleTitleFont, generalTextColor, generalTextFont, generalTitleFont, main_Style, mainBrownColor, generalActiveOpacity, MainBrownSecondaryColor, lightBannerBackgroundColor, genBtnBackgroundColor, withdrawnTitleSize, generalTextFontWeight, withdrawnTitleColor, generalTextSize, generalSmallTextSize, generalLineHeight, generalTitleSize, generalTitleFontWeight, generalTitleColor, homeFeedBackgroundColor, homeScreenPadding, homeCardVerticalGap, PrimBtnColor, mainTitleColor } from "../../styles/GeneralAppStyle";
+import SecondaryNewsCart from "../../Components/SecondaryNewscart";
 import FollowButton from '../../Components/FollowButton';
 import GoBackButton from "../../../NavComponents/GoBackButton";
 import BigLoaderAnim from "../../Components/LoadingComps/BigLoaderAnim";
-import ArticleLoadingState from "../../Components/LoadingComps/ArticleLoading";
 import { getImageUrl } from "../../utils/imageUrl";
 import i18n from "../../utils/i18n";
+
+const TRUST_RING_SIZE = 78;
+const TRUST_RING_STROKE = 6;
+const TRUST_RING_LABEL_SPACE = 26;
+
+function TrustScoreRing({ percent, label }) {
+    const size = TRUST_RING_SIZE;
+    const stroke = TRUST_RING_STROKE;
+    const r = (size - stroke) / 2;
+    const cx = size / 2;
+    const cy = size / 2;
+    const circumference = 2 * Math.PI * r;
+    const clamped = Math.min(100, Math.max(0, Number(percent) || 0));
+    const offset = circumference * (1 - clamped / 100);
+
+    return (
+        <View style={styles.trustRingWrap}>
+            <View style={styles.trustRingSvgBox}>
+                <Svg width={size} height={size}>
+                    <Circle
+                        cx={cx}
+                        cy={cy}
+                        r={r}
+                        stroke="rgba(102, 70, 44, 0.12)"
+                        strokeWidth={stroke}
+                        fill="none"
+                    />
+                    <Circle
+                        cx={cx}
+                        cy={cy}
+                        r={r}
+                        stroke={PrimBtnColor}
+                        strokeWidth={stroke}
+                        fill="none"
+                        strokeDasharray={`${circumference}`}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        transform={`rotate(-90 ${cx} ${cy})`}
+                    />
+                </Svg>
+                <View style={styles.trustRingCenter} pointerEvents="none">
+                    <Text style={styles.trustRingPercent}>{Math.round(clamped)}%</Text>
+                </View>
+            </View>
+            <Text style={styles.trustRingLabel}>{label}</Text>
+        </View>
+    );
+}
 
 const AuthorProfileScreen = ({ route }) => {
     const { userId } = route.params;
@@ -166,160 +214,151 @@ const AuthorProfileScreen = ({ route }) => {
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
 
+    const heroSubtitle = (user.journalist_affiliation && String(user.journalist_affiliation).trim())
+        || formatRole(user.role);
+    const scorePercent = user.role === 'journalist' ? (user.trust_score ?? 0) : (user.respect_score ?? 0);
+    const scoreLabel = user.role === 'journalist' ? i18n.t('profile.trustScore') : i18n.t('profile.respectScore');
+
+    const infoRows = [
+        {
+            key: 'fullName',
+            label: i18n.t('profile.fullName'),
+            value: `${user.firstname || ''} ${user.lastname || ''}`.trim() || i18n.t('profile.unknown'),
+        },
+        { key: 'role', label: i18n.t('profile.role'), value: formatRole(user.role) },
+        ...(user.journalist_affiliation
+            ? [{ key: 'affiliation', label: i18n.t('profile.affiliation'), value: user.journalist_affiliation }]
+            : []),
+        {
+            key: 'focus',
+            label: i18n.t('profile.areaOfFocus'),
+            value: user.area_of_expertise || i18n.t('profile.notSpecified'),
+        },
+    ];
+
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="dark-content" />
             <ScrollView
                 style={styles.scrollViewContainer}
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: homeScreenPadding + 8 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header with Back Button and Logo */}
                 <View style={styles.headerContainer}>
                     <GoBackButton buttonStyle={styles.backButtonOverride} />
                     <View style={styles.logoContainer}>
-                        <Image 
+                        <Image
                             source={require('../../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
                             style={styles.logo}
                             resizeMode="contain"
                         />
                     </View>
+                    <TouchableOpacity
+                        style={styles.headerShareButton}
+                        activeOpacity={generalActiveOpacity}
+                        accessibilityRole="button"
+                        accessibilityLabel={i18n.t('common.share')}
+                    >
+                        <Ionicons name="share-outline" size={22} color={MainBrownSecondaryColor} />
+                    </TouchableOpacity>
                 </View>
 
-                {/* Profile Card */}
-                <View style={[styles.profileCard, main_Style.genButtonElevation]}>
-                    <Text style={styles.name}>{user.displayName}</Text>
-
-                    <View style={styles.imageAndStatsRow}>
-                        <View style={styles.profileImageContainer}>
-                            <Image
-                                source={user.profile_picture
-                                    ? { uri: getImageUrl(user.profile_picture) }
-                                    : require('../../../assets/functionalImages/ProfilePic.png')}
-                                style={styles.profilePic}
-                            />
-                            {user.isSikiyaCertified && (
-                                <View style={styles.verifiedBadge}>
-                                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.statsRow}>
-                            <View style={styles.statItem}>
-                                <View style={styles.statContent}>
-                                    <Ionicons name="shield-checkmark" size={18} color="#4CAF50" />
-                                    <Text style={styles.statLabel}>
-                                        {user.role === 'journalist' ? i18n.t('profile.trustScore') : i18n.t('profile.respectScore')}
-                                    </Text>
-                                    <Text style={styles.statText}>
-                                        {user.role === 'journalist' ? (user.trust_score || 0) : (user.respect_score || 0)}%
-                                    </Text>
-                                </View>
-                            </View>
-                            <View style={styles.statDivider} />
-                            <View style={styles.statItem}>
-                                <View style={styles.statContent}>
-                                    <Ionicons name="people" size={18} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.statLabel}>{i18n.t('profile.followers')}</Text>
-                                    <Text style={styles.statText}>{formatFollowers(user.number_of_followers)}</Text>
-                                </View>
-                            </View>
-                        </View>
-                    </View>
-
-                    <View style={styles.buttonRow}>
-                        <View style={[styles.followButtonContainer, main_Style.genButtonElevation]}>
-                            {isOwnProfile ? (
-                                <TouchableOpacity style={styles.selfProfileButton} activeOpacity={0.8} disabled>
-                                    <Text style={styles.selfProfileText}>{i18n.t('profile.selfProfile')}</Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <FollowButton initialFollowed={isFollowing} onToggle={handleFollowToggle} />
-                            )}
-                        </View>
-                        <TouchableOpacity style={[styles.shareButton, main_Style.genButtonElevation]} activeOpacity={generalActiveOpacity}>
-                            <Ionicons name="share-outline" size={20} color={MainBrownSecondaryColor} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Full Name, Role, Affiliation and Area of Focus Section */}
-                <View style={styles.infoSection}>
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
-                            <View style={styles.infoHeader}>
-                                <Ionicons name="person" size={16} color={MainBrownSecondaryColor} />
-                                <Text style={styles.infoTitle}>{i18n.t('profile.fullName')}</Text>
-                            </View>
-                            <Text style={styles.infoText} numberOfLines={2}>
-                                {user.firstname} {user.lastname}
-                            </Text>
-                        </View>
-
-                        <View style={styles.infoItem}>
-                            <View style={styles.infoHeader}>
-                                <Ionicons name="medal" size={16} color={MainBrownSecondaryColor} />
-                                <Text style={styles.infoTitle}>{i18n.t('profile.role')}</Text>
-                            </View>
-                            <Text style={styles.infoText} numberOfLines={2}>
-                                {formatRole(user.role)}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        {user.journalist_affiliation && (
-                            <View style={styles.infoItem}>
-                                <View style={styles.infoHeader}>
-                                    <Ionicons name="business" size={16} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.infoTitle}>{i18n.t('profile.affiliation')}</Text>
-                                </View>
-                                <Text style={styles.infoText} numberOfLines={2}>
-                                    {user.journalist_affiliation}
-                                </Text>
+                {/* Profile hero — open layout, no heavy card */}
+                <View style={styles.heroSection}>
+                    <View style={styles.heroAvatarShell}>
+                        <Image
+                            source={user.profile_picture
+                                ? { uri: getImageUrl(user.profile_picture) }
+                                : require('../../../assets/functionalImages/ProfilePic.png')}
+                            style={styles.heroAvatar}
+                        />
+                        {user.isSikiyaCertified && (
+                            <View style={styles.heroVerifiedBadge}>
+                                <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
                             </View>
                         )}
-                        <View style={styles.infoItem}>
-                            <View style={styles.infoHeader}>
-                                <Ionicons name="megaphone" size={16} color={MainBrownSecondaryColor} />
-                                <Text style={styles.infoTitle}>{i18n.t('profile.areaOfFocus')}</Text>
-                            </View>
-                            <Text style={styles.infoText} numberOfLines={2}>
-                                {user.area_of_expertise || i18n.t('profile.notSpecified')}
-                            </Text>
+                    </View>
+
+                    <Text style={styles.heroName} numberOfLines={2}>
+                        {user.displayName}
+                    </Text>
+                    <Text style={styles.heroSubtitle} numberOfLines={2}>
+                        {heroSubtitle}
+                    </Text>
+                    <Text style={styles.heroFollowersMeta}>
+                        {formatFollowers(user.number_of_followers)} · {i18n.t('profile.followers')}
+                    </Text>
+
+                    <View style={styles.heroActionsRow}>
+                        <TrustScoreRing percent={scorePercent} label={scoreLabel} />
+                        <View style={styles.heroFollowWrap}>
+                            {isOwnProfile ? (
+                                <View style={styles.selfProfilePill}>
+                                    <Ionicons name="person-circle-outline" size={18} color={MainBrownSecondaryColor} />
+                                    <Text style={styles.selfProfilePillText}>{i18n.t('profile.selfProfile')}</Text>
+                                </View>
+                            ) : (
+                                <FollowButton
+                                    pill
+                                    initialFollowed={isFollowing}
+                                    onToggle={handleFollowToggle}
+                                    followLabel={i18n.t('profile.follow')}
+                                    followingLabel={i18n.t('profile.followingButton')}
+                                />
+                            )}
                         </View>
                     </View>
                 </View>
 
-                {/* Description Section */}
+                <View style={styles.infoRowsBlock}>
+                    {infoRows.map((row, index) => (
+                        <View
+                            key={row.key}
+                            style={[
+                                styles.infoRowLine,
+                                index === infoRows.length - 1 && styles.infoRowLineLast,
+                            ]}
+                        >
+                            <Text style={styles.infoRowLabel}>{row.label}</Text>
+                            <Text style={styles.infoRowValue} numberOfLines={4}>
+                                {row.value}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+
                 <View style={styles.descriptionSection}>
-                    <View style={styles.sectionHeader}>
-                        <Ionicons name="document-text" size={18} color={MainBrownSecondaryColor} />
-                        <Text style={styles.sectionTitle}>{i18n.t('profile.about')}</Text>
+                    <View style={styles.aboutSectionHeader}>
+                        <View style={styles.aboutAccent} />
+                        <Text style={styles.aboutSectionTitle}>{i18n.t('profile.about')}</Text>
                     </View>
                     <Text style={styles.description}>
                         {user.journalist_description || user.bio || i18n.t('profile.noDescriptionAvailable')}
                     </Text>
                 </View>
 
-                {/* Recent Articles Section */}
+                {/* Recent Articles — layout matches SearchScreen article list (feed background + card spacing) */}
                 {user.articles && user.articles.length > 0 && (
-                    <>
-                        <View style={styles.divider} />
-                        <View style={styles.contentContainer}>
-                            <View style={styles.sectionHeaderRow}>
-                                <View style={styles.sectionHeader}>
-                                    <Ionicons name="newspaper-outline" size={20} color={generalTitleColor} />
-                                    <Text style={styles.recentArticleText}>{i18n.t('profile.recentArticles')}</Text>
-                                </View>
-                                <Text style={styles.articleCount}>
-                                    {user.articles.length} {user.articles.length === 1 ? i18n.t('profile.article') : i18n.t('profile.articles_plural')}
+                    <View style={styles.articlesFeedSection}>
+                        <View style={styles.articlesListHeaderRow}>
+                            <View style={styles.articlesListTitleCluster}>
+                                <View style={styles.listSectionAccent} />
+                                <Text style={styles.listSectionTitle} numberOfLines={1}>
+                                    {i18n.t('profile.recentArticles')}
                                 </Text>
                             </View>
-                            <SecNewsCartMap articles={user.articles}/>
+                            <Text style={styles.articlesCountMeta} numberOfLines={1}>
+                                {user.articles.length}{' '}
+                                {user.articles.length === 1 ? i18n.t('profile.article') : i18n.t('profile.articles_plural')}
+                            </Text>
                         </View>
-                    </>
+                        {user.articles.map((article, idx) => (
+                            <SecondaryNewsCart
+                                key={article._id || idx}
+                                article={article}
+                            />
+                        ))}
+                    </View>
                 )}
             </ScrollView>
         </SafeAreaView>
@@ -388,227 +427,266 @@ const styles = StyleSheet.create({
         width: 120,
         height: 40,
     },
-    profileCard: {
-        backgroundColor: cardBackgroundColor,
-        marginHorizontal: 12,
-        marginTop: 16,
-        marginBottom: 12,
-        padding: 14,
-        borderRadius: 14,
-        
+    headerShareButton: {
+        position: 'absolute',
+        right: 14,
+        top: 2,
+        zIndex: 10,
+        padding: 8,
     },
-    name: {
-        fontSize: articleTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTextColor,
-        fontFamily: articleTitleFont,
-        textAlign: 'center',
+    heroSection: {
+        alignItems: 'center',
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 22,
+        paddingBottom: 14,
+    },
+    heroAvatarShell: {
+        position: 'relative',
         marginBottom: 8,
     },
-    imageAndStatsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 14,
-        gap: 16,
-        
-    },
-    statsRow: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 12,
-        backgroundColor: AppScreenBackgroundColor,
-    },
-    statItem: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    statContent: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    statLabel: {
-        fontSize: withdrawnTitleSize - 1,
-        fontWeight: generalTextFontWeight,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        marginTop: 6,
-        marginBottom: 4,
-        letterSpacing: 0.2,
-    },
-    statText: {
-        fontSize: generalTextSize + 2,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
-        textAlign: 'center',
-        letterSpacing: 0.3,
-    },
-    statDivider: {
-        width: 1,
-        height: 44,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-        marginHorizontal: 12,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    followButtonContainer: {
-        flex: 1,
-    },
-    shareButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: '#F8F8F8',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 0,
-        borderColor: '#D0D0D0',
-        marginLeft: 12,
-        //shadowColor: '#000',
-        //shadowOffset: {
-        //    width: 0,
-        //    height: 1,
-        //},
-        //shadowOpacity: 0.08,
-        //shadowRadius: 2,
-        //elevation: 1,
-        minWidth: 48,
-    },
-    profileImageContainer: {
-        position: 'relative',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 0.5,
-        //backgroundColor: 'red',
-        borderRadius: 50,
-        borderWidth: 2,
-        borderColor: AppScreenBackgroundColor ,
-    },
-    profilePic: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
+    heroAvatar: {
+        width: 118,
+        height: 118,
+        borderRadius: 59,
         backgroundColor: mainBrownColor,
-        borderWidth: 0,
-        borderColor: AppScreenBackgroundColor,
+        borderWidth: 3,
+        borderColor: 'rgba(102, 70, 44, 0.14)',
     },
-    verifiedBadge: {
+    heroVerifiedBadge: {
         position: 'absolute',
         bottom: -2,
         right: -2,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
+        backgroundColor: '#FDFCF8',
+        borderRadius: 14,
+        padding: 1,
     },
-    infoSection: {
-        marginTop: 12,
-        marginBottom: 12,
-        paddingHorizontal: 16,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 12,
-    },
-    infoItem: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.06)',
-        minHeight: 96,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    infoHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    infoTitle: {
-        fontSize: generalSmallTextSize,
-        fontWeight: generalTextFontWeight,
-        color: MainBrownSecondaryColor,
-        marginLeft: 6,
-        fontFamily: generalTitleFont,
-        letterSpacing: 0.2,
-    },
-    infoText: {
-        fontSize: commentTextSize,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
-        lineHeight: generalSmallLineHeight,
+    heroName: {
+        fontSize: 26,
+        fontWeight: '700',
+        color: mainTitleColor,
+        fontFamily: articleTitleFont,
         textAlign: 'center',
+        letterSpacing: 0.2,
+        marginBottom: 4,
+        paddingHorizontal: 8,
     },
-
-    descriptionSection: {
-        marginTop: 4,
-        marginBottom: 12,
-        marginHorizontal: 16,
-        padding: 16,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.06)',
+    heroSubtitle: {
+        fontSize: withdrawnTitleSize + 1.5,
+        fontWeight: '400',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTextFont,
+        textAlign: 'center',
+        lineHeight: 20,
+        opacity: 0.92,
+        paddingHorizontal: 12,
+        marginBottom: 4,
     },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    heroFollowersMeta: {
+        fontSize: generalSmallTextSize - 0.5,
+        fontWeight: '500',
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+        letterSpacing: 0.25,
         marginBottom: 10,
     },
-    sectionTitle: {
-        fontSize: generalTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: MainBrownSecondaryColor,
-        marginLeft: 8,
+    heroActionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 18,
+        width: '100%',
+        paddingHorizontal: 4,
+    },
+    heroFollowWrap: {
+        justifyContent: 'center',
+        minHeight: TRUST_RING_SIZE + TRUST_RING_LABEL_SPACE,
+    },
+    trustRingWrap: {
+        alignItems: 'center',
+    },
+    trustRingSvgBox: {
+        width: TRUST_RING_SIZE,
+        height: TRUST_RING_SIZE,
+        position: 'relative',
+    },
+    trustRingCenter: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    trustRingPercent: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: PrimBtnColor,
         fontFamily: generalTitleFont,
+        letterSpacing: -0.2,
+    },
+    trustRingLabel: {
+        marginTop: 4,
+        fontSize: 9,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 1.1,
+        textTransform: 'uppercase',
+        opacity: 0.9,
+    },
+    selfProfilePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        borderRadius: 24,
+        paddingVertical: 11,
+        paddingHorizontal: 18,
+        backgroundColor: '#FFFCF9',
+        borderWidth: 1.5,
+        borderColor: 'rgba(102, 70, 44, 0.22)',
+        shadowColor: '#2C2416',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    selfProfilePillText: {
+        fontWeight: '700',
+        fontSize: 14,
+        fontFamily: generalTextFont,
         letterSpacing: 0.2,
+        color: MainBrownSecondaryColor,
+    },
+    infoRowsBlock: {
+        marginHorizontal: homeScreenPadding,
+        marginBottom: 8,
+        paddingTop: 4,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(102, 70, 44, 0.12)',
+    },
+    infoRowLine: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        paddingVertical: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(102, 70, 44, 0.1)',
+        gap: 16,
+    },
+    infoRowLineLast: {
+        borderBottomWidth: 0,
+    },
+    infoRowLabel: {
+        flexShrink: 0,
+        width: '36%',
+        maxWidth: 130,
+        fontSize: 11,
+        fontWeight: '500',
+        color: withdrawnTitleColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 0.85,
+        textTransform: 'uppercase',
+        lineHeight: 16,
+        paddingTop: 2,
+    },
+    infoRowValue: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '600',
+        color: mainTitleColor,
+        fontFamily: generalTextFont,
+        textAlign: 'right',
+        lineHeight: 22,
+    },
+    descriptionSection: {
+        marginTop: 8,
+        marginBottom: 14,
+        marginHorizontal: homeScreenPadding,
+        paddingVertical: 22,
+        paddingHorizontal: 22,
+        backgroundColor: 'rgba(253, 252, 248, 0.95)',
+        borderRadius: 14,
+        borderLeftWidth: 3,
+        borderLeftColor: PrimBtnColor,
+        shadowColor: '#2C2416',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 1,
+    },
+    aboutSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 14,
+        gap: 10,
+    },
+    aboutAccent: {
+        width: 2,
+        height: 16,
+        borderRadius: 2,
+        backgroundColor: PrimBtnColor,
+    },
+    aboutSectionTitle: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTitleFont,
+        letterSpacing: 1.4,
+        textTransform: 'uppercase',
     },
     description: {
         fontSize: generalTextSize,
-        color: generalTextColor,
+        color: 'rgba(58, 39, 36, 0.82)',
         textAlign: 'left',
-        lineHeight: generalLineHeight,
+        lineHeight: 26,
         fontFamily: generalTextFont,
+        fontStyle: 'italic',
+        fontWeight: '400',
     },
-    divider: {
-        height: 1,
-        backgroundColor: '#E8E8E8',
-        marginVertical: 4,
-        marginHorizontal: 12,
+    articlesFeedSection: {
+        width: '100%',
+        marginTop: 10,
+        paddingTop: homeCardVerticalGap + 4,
+        paddingBottom: 4,
+        backgroundColor: homeFeedBackgroundColor,
     },
-    contentContainer: {
-        paddingHorizontal: 12,
-        paddingTop: 4,
-    },
-    sectionHeaderRow: {
+    articlesListHeaderRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 2,
-        marginTop: 8,
-        paddingHorizontal: 4,
+        justifyContent: 'space-between',
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 6,
+        paddingBottom: 8,
+        gap: 10,
     },
-    recentArticleText: {
-        fontSize: articleTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        marginLeft: 8,
+    articlesListTitleCluster: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 10,
+        minWidth: 0,
+    },
+    listSectionAccent: {
+        width: 2,
+        height: 18,
+        borderRadius: 2,
+        backgroundColor: PrimBtnColor,
+    },
+    listSectionTitle: {
+        flex: 1,
+        fontSize: 13,
         fontFamily: generalTitleFont,
+        fontWeight: '700',
+        color: mainTitleColor,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
     },
-    articleCount: {
+    articlesCountMeta: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: generalTextFontWeight,
+        flexShrink: 0,
+        maxWidth: '42%',
+        textAlign: 'right',
     },
     notPremiumContainer: {
         flex: 1,
@@ -647,32 +725,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: generalLineHeight,
         paddingHorizontal: 16,
-    },
-    selfProfileButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: MainBrownSecondaryColor,
-        borderWidth: 1,
-        borderColor: MainBrownSecondaryColor,
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 120,
-        shadowColor: MainBrownSecondaryColor,
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    selfProfileText: {
-        fontWeight: '600',
-        fontSize: 12,
-        fontFamily: generalTextFont,
-        letterSpacing: 0.3,
-        color: '#FFFFFF',
     },
 });
 

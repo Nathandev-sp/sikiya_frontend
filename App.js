@@ -783,7 +783,8 @@ export default function App() {
     "OpenSans-Bold": require('./assets/Fonts/OpenSans-Bold.ttf'),
     "Lora-Semibold": require('./assets/Fonts/Lora-SemiBold.ttf'),
     "Lora-Bold": require('./assets/Fonts/Lora-Bold.ttf'),
-    "RedHatDisplay-Regular": require('./assets/Fonts/RedHatDisplay-Regular.ttf')
+    "RedHatDisplay-Regular": require('./assets/Fonts/RedHatDisplay-Regular.ttf'),
+    "CantataOne-Regular": require('./assets/Fonts/CantataOne-Regular.ttf')
   });
 
   if (!fontsloaded) {

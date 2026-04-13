@@ -14,7 +14,6 @@ import {
     homeScreenPadding,
     homeCardVerticalGap,
     homeCardBorderRadius,
-    homeCardShadowStyle,
 } from "../styles/GeneralAppStyle";
 import BookmarkIcon from "./BookmarkIcon";
 import DateConverter from "../Helpers/DateConverter";
@@ -35,7 +34,7 @@ const SecondaryNewsCart = memo(({ article }) => {
 
     return (
         <TouchableOpacity
-            activeOpacity={0.7}
+            activeOpacity={0.96}
             onPress={goToNewsHome}
             accessible={true}
             accessibilityLabel={`Article: ${article.article_title}`}
@@ -96,9 +95,7 @@ const SecondaryNewsCart = memo(({ article }) => {
                     </View>
                 </View>
 
-                <View style={styles.bookmarkContainer}>
-                    <BookmarkIcon articleId={article._id} savedStatus={article.saved} />
-                </View>
+            
             </View>
         </TouchableOpacity>
     );
@@ -110,15 +107,19 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FDFCF8',
         borderRadius: homeCardBorderRadius,
-        marginVertical: homeCardVerticalGap / 2,
+        marginVertical: (homeCardVerticalGap / 2) + 4,
         alignSelf: 'center',
-        padding: 6,
+        padding: 10,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(102, 70, 44, 0.12)',
+        borderWidth: 0.5,
+        borderColor: 'rgba(102, 70, 44, 0.1)',
         borderLeftWidth: 3,
         borderLeftColor: PrimBtnColor,
-        ...homeCardShadowStyle,
+        shadowColor: '#2C2416',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 3,
     },
     introContainer: {
         width: '100%',
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
         fontSize: generalTitleSize,
         fontWeight: '600',
         color: generalTextColor,
-        lineHeight: generalSmallLineHeight * 1.2,
+        lineHeight: generalSmallLineHeight * 1.32,
         fontFamily: articleTitleFont,
         letterSpacing: 0.1,
     },

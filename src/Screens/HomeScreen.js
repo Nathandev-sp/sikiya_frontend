@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
         backgroundColor: PrimBtnColor,
     },
     listSectionTitle: {
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: generalTitleFont,
         fontWeight: '700',
         color: mainTitleColor,
@@ -941,12 +941,12 @@ const styles = StyleSheet.create({
     stickyLeftRule: {
         width: 4,
         alignSelf: 'stretch',
-        minHeight: 24,
+        minHeight: 18,
         borderRadius: 2,
     },
     stickyContextTextLarge: {
         flex: 1,
-        fontSize: 17,
+        fontSize: 15,
         fontFamily: generalTitleFont,
         fontWeight: '800',
         letterSpacing: 1,

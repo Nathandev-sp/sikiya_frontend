@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import DateConverter from '../../Helpers/DateConverter';
 import StarRating from '../../Components/StarRating';
 import FeedbackContainer from '../../../FeedbackComponent/FeedbackContainer';
 import LikeButton from '../../Components/LikeButton';
+import TrustScoreRing from '../../Components/TrustScoreRing';
 import { useNavigation } from '@react-navigation/native';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import CommentInputModal from '../../../FeedbackComponent/CommentInputModal';
@@ -51,6 +52,15 @@ const mergeArticleDetail = (prev, detail) => {
     };
 };
 
+function getJournalistTrustScore(article) {
+    const j = article?.journalist;
+    if (!j) return null;
+    const raw = j.trust_score ?? j.journalist?.trust_score;
+    if (raw == null || raw === '') return null;
+    const n = Number(raw);
+    return Number.isNaN(n) ? null : n;
+}
+
 const createStyles = (height) => StyleSheet.create({
     container: {
         flex: 1,
@@ -63,15 +73,29 @@ const createStyles = (height) => StyleSheet.create({
         position: 'relative',
         width: '100%',
     },
+    headerTopBlurStrip: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        overflow: 'hidden',
+        zIndex: 4,
+        backgroundColor: '#1a1510',
+    },
+    headerTopBlurTint: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.18)',
+    },
+    headerCarouselWrap: {
+        width: '100%',
+    },
     headerImage: {
         width: '100%',
     },
     imageOverlay: {
         position: 'absolute',
-        top: 0,
         left: 0,
         right: 0,
-        bottom: 0,
         backgroundColor: 'rgba(0,0,0,0.12)',
         zIndex: 1,
     },
@@ -84,7 +108,7 @@ const createStyles = (height) => StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: 8,
+        paddingBottom: 4,
         zIndex: 15,
         borderTopRightRadius: 20,
         borderTopLeftRadius: 20,
@@ -94,9 +118,9 @@ const createStyles = (height) => StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.28)',
+        backgroundColor: 'rgba(0,0,0,0.58)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.18)',
+        borderColor: 'rgba(255,255,255,0.22)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -108,9 +132,9 @@ const createStyles = (height) => StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.28)',
+        backgroundColor: 'rgba(0,0,0,0.58)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.18)',
+        borderColor: 'rgba(255,255,255,0.22)',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -179,10 +203,33 @@ const createStyles = (height) => StyleSheet.create({
         borderBottomColor: MainBrownSecondaryColor,
         paddingBottom: 12,
     },
+    locationDateLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        flexShrink: 1,
+        marginRight: 8,
+        gap: 6,
+        minWidth: 0,
+    },
     locationInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
+        flexShrink: 1,
+        minWidth: 0,
+    },
+    dateInlineWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        flexShrink: 0,
+    },
+    metaSeparator: {
+        color: withdrawnTitleColor,
+        fontSize: commentTextSize,
+        fontWeight: '600',
+        opacity: 0.45,
     },
     locationTextOverlay: {
         color: '#fff',
@@ -216,6 +263,7 @@ const createStyles = (height) => StyleSheet.create({
         fontWeight: generalTextFontWeight,
         fontSize: commentTextSize,
         fontFamily: generalTextFont,
+        flexShrink: 1,
     },
     dateTextInContent: {
         color: withdrawnTitleColor,
@@ -273,6 +321,21 @@ const createStyles = (height) => StyleSheet.create({
     },
     sourceDetails: {
         flex: 1,
+    },
+    trustScoreBlock: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 4,
+        paddingLeft: 4,
+    },
+    trustScoreCaption: {
+        marginTop: 3,
+        fontSize: 9,
+        fontFamily: generalTextFont,
+        fontWeight: '600',
+        color: withdrawnTitleColor,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
     sourceNameRow: {
         flexDirection: 'row',
@@ -634,7 +697,12 @@ const NewsHome = ({ route }) => {
     ).current;
     
     const { width, height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const styles = createStyles(height);
+    const topBlurBandHeight = Math.max(insets.top +4, 40);
+    const mainHeroHeight = height * 0.46;
+    const headerTotalHeight = topBlurBandHeight + mainHeroHeight;
+    const topBarPaddingTop = insets.top + 6;
     const navigation = useNavigation();
     const { state: authState } = useContext(AuthContext);
     const userRole = authState?.role || '';
@@ -972,6 +1040,11 @@ const NewsHome = ({ route }) => {
         ? [article.article_front_image, ...articleOtherImages]
         : [article?.article_front_image].filter(Boolean);
 
+    const activeHeaderImageUri =
+        images.length > 0
+            ? getImageUrl(images[Math.min(currentImageIndex, images.length - 1)])
+            : null;
+
     const goToAuthorProfile = () => {
         // Try different possible structures for journalist ID
         let journalistId = null;
@@ -1063,7 +1136,7 @@ const NewsHome = ({ route }) => {
                     <View style={styles.articleShellMinimal}>
                         <TouchableOpacity
                             onPress={handleGoBack}
-                            style={[styles.topBarButton, main_Style.genButtonElevation, { backgroundColor: 'rgba(0,0,0,0.12)' }]}
+                            style={[styles.topBarButton, main_Style.genButtonElevation, { backgroundColor: 'rgba(0,0,0,0.48)' }]}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             activeOpacity={generalActiveOpacity}
                         >
@@ -1105,7 +1178,7 @@ const NewsHome = ({ route }) => {
     const categoryColor = categoryColors[articleCategory] || MainSecondaryBlueColor;
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             <StatusBar barStyle="dark-content" />
             
             <ScrollView
@@ -1114,40 +1187,76 @@ const NewsHome = ({ route }) => {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Immersive Header Section */}
-                <View style={styles.headerContainer}>
-                    {/* Image Carousel */}
-                    <FlatList
-                        ref={flatListRef}
-                        data={images}
-                        keyExtractor={(_, idx) => idx.toString()}
-                        horizontal
-                        pagingEnabled
-                        snapToInterval={width}
-                        snapToAlignment="start"
-                        decelerationRate="fast"
-                        showsHorizontalScrollIndicator={false}
-                        renderItem={({ item }) => (
+                <View style={[styles.headerContainer, { minHeight: headerTotalHeight }]}>
+                    <View style={[styles.headerTopBlurStrip, { height: topBlurBandHeight, width }]}>
+                        {activeHeaderImageUri ? (
                             <Image
-                                style={[styles.headerImage, { width, height: height * 0.44 }, main_Style.genContentElevation]}
                                 defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
-                                source={{ uri: getImageUrl(item) }}
+                                source={{ uri: activeHeaderImageUri }}
                                 resizeMode="cover"
+                                blurRadius={Platform.OS === 'ios' ? 32 : 12}
+                                style={{
+                                    position: 'absolute',
+                                    top: -topBlurBandHeight * 0.35,
+                                    left: 0,
+                                    width,
+                                    height: topBlurBandHeight * 2.4,
+                                }}
+                            />
+                        ) : (
+                            <View
+                                style={[
+                                    StyleSheet.absoluteFillObject,
+                                    { backgroundColor: '#2a2420' },
+                                ]}
                             />
                         )}
-                        onViewableItemsChanged={onViewRef.current}
-                        viewabilityConfig={viewConfigRef.current}
-                        getItemLayout={(_, index) => ({
-                            length: width,
-                            offset: width * index,
-                            index,
-                        })}
+                        <View style={styles.headerTopBlurTint} pointerEvents="none" />
+                    </View>
+
+                    <View style={[styles.headerCarouselWrap, { paddingTop: topBlurBandHeight }]}>
+                        <FlatList
+                            ref={flatListRef}
+                            data={images}
+                            keyExtractor={(_, idx) => idx.toString()}
+                            horizontal
+                            pagingEnabled
+                            snapToInterval={width}
+                            snapToAlignment="start"
+                            decelerationRate="fast"
+                            showsHorizontalScrollIndicator={false}
+                            style={{ height: mainHeroHeight }}
+                            renderItem={({ item }) => (
+                                <Image
+                                    style={[styles.headerImage, { width, height: mainHeroHeight }, main_Style.genContentElevation]}
+                                    defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
+                                    source={{ uri: getImageUrl(item) }}
+                                    resizeMode="cover"
+                                />
+                            )}
+                            onViewableItemsChanged={onViewRef.current}
+                            viewabilityConfig={viewConfigRef.current}
+                            getItemLayout={(_, index) => ({
+                                length: width,
+                                offset: width * index,
+                                index,
+                            })}
+                        />
+                    </View>
+
+                    <View
+                        style={[
+                            styles.imageOverlay,
+                            {
+                                top: topBlurBandHeight,
+                                height: mainHeroHeight,
+                            },
+                        ]}
+                        pointerEvents="none"
                     />
-                    
-                    {/* Dark Overlay over entire image */}
-                    <View style={[styles.imageOverlay, { height: height * 0.5 }]} pointerEvents="none" />
 
                     {/* Top Bar with Back, Bookmark, Menu */}
-                    <View style={styles.topBar}>
+                    <View style={[styles.topBar, { paddingTop: topBarPaddingTop }]}>
                         <TouchableOpacity
                             onPress={handleGoBack}
                             style={[styles.topBarButton, main_Style.genButtonElevation]}
@@ -1158,7 +1267,13 @@ const NewsHome = ({ route }) => {
                         </TouchableOpacity>
                         <View style={styles.topBarRight}>
                             <View style={styles.bookmarkButtonWrapper}>
-                                <BookmarkIcon articleId={article._id} savedStatus={article.saved} size={24} centered={true} />
+                                <BookmarkIcon
+                                    articleId={article._id}
+                                    savedStatus={article.saved}
+                                    size={24}
+                                    centered
+                                    heroHeader
+                                />
                             </View>
                             <TouchableOpacity
                                 style={styles.topBarButton}
@@ -1201,19 +1316,28 @@ const NewsHome = ({ route }) => {
                     {/* Title and post time / location */}
                     <Text style={styles.articleTitleInContent}>{article.article_title}</Text>
                     <View style={styles.locationDateRow}>
-                        <View style={styles.locationInfo}>
-                            <Ionicons name="location" size={14} color={withdrawnTitleColor} />
-                            <Text style={styles.locationTextInContent}>{article.location || i18n.t('flashNews.defaultLocation')}</Text>
+                        <View style={styles.locationDateLeft}>
+                            <View style={styles.locationInfo}>
+                                <Ionicons name="location" size={14} color={withdrawnTitleColor} />
+                                <Text style={styles.locationTextInContent} numberOfLines={1}>
+                                    {article.location || i18n.t('flashNews.defaultLocation')}
+                                </Text>
+                            </View>
+                            <Text style={styles.metaSeparator}>·</Text>
+                            <View style={styles.dateInlineWrap}>
+                                <Ionicons name="time-outline" size={14} color={withdrawnTitleColor} />
+                                <Text style={styles.dateTextInContent}>
+                                    {(() => {
+                                        if (!article.published_on) return '';
+                                        const date = new Date(article.published_on);
+                                        const day = date.getDate();
+                                        const month = date.toLocaleString('en-US', { month: 'short' });
+                                        return `${day} ${month}`;
+                                    })()}
+                                </Text>
+                            </View>
                         </View>
-                        <Text style={styles.dateTextInContent}>
-                            {(() => {
-                                if (!article.published_on) return '';
-                                const date = new Date(article.published_on);
-                                const day = date.getDate();
-                                const month = date.toLocaleString('en-US', { month: 'short' });
-                                return `${day} ${month}`;
-                            })()}
-                        </Text>
+                        <LikeButton articleId={article._id} initialLikes={article.number_of_likes || 0} />
                     </View>
 
                     {/* Source/Author Info */}
@@ -1270,7 +1394,10 @@ const NewsHome = ({ route }) => {
                                 </Text>
                             </View>
                         </TouchableOpacity>
-                        <LikeButton articleId={article._id} initialLikes={article.number_of_likes || 0} />
+                        <View style={styles.trustScoreBlock}>
+                            <TrustScoreRing score={getJournalistTrustScore(article)} />
+                            <Text style={styles.trustScoreCaption}>{i18n.t('profile.trust')}</Text>
+                        </View>
                     </View>
 
                     {/* Article Highlight (Summary/Major Idea) */}

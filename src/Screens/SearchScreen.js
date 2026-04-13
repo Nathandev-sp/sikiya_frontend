@@ -26,9 +26,14 @@ import SecondaryNewsCart from '../Components/SecondaryNewscart';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 
+const SEARCH_PLACEHOLDER_COLOR = 'rgba(58, 39, 36, 0.38)';
+
 const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles }) => {
     const insets = useSafeAreaInsets();
     const searchInputRef = useRef(null);
+    /** Skip redundant random-list fetches when switching tabs if we already loaded browse data once. */
+    const peopleBrowseLoadedRef = useRef(false);
+    const articlesBrowseLoadedRef = useRef(false);
     const [selected, setSelected] = useState('People');
     const [peopleArray, setPeopleArray] = useState([]);
     const [articlesArray, setArticlesArray] = useState([]);
@@ -101,6 +106,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                 });
             } else {
                 setPeopleArray(journalistsWithFollowStatus);
+                peopleBrowseLoadedRef.current = true;
             }
             
             // Update pagination state
@@ -112,6 +118,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             console.error('Error fetching journalists:', err);
             if (!append) {
                 setError('Failed to load journalists');
+                peopleBrowseLoadedRef.current = false;
             }
         } finally {
             setLoading(false);
@@ -153,6 +160,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                 });
             } else {
                 setArticlesArray(articles);
+                articlesBrowseLoadedRef.current = true;
             }
             
             // Update pagination state
@@ -164,6 +172,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             console.error('Error fetching articles:', err);
             if (!append) {
                 setError('Failed to load articles');
+                articlesBrowseLoadedRef.current = false;
             }
         } finally {
             setLoading(false);
@@ -194,6 +203,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             } else {
                 setArticlesArray(articles);
                 setHasSearched(true);
+                articlesBrowseLoadedRef.current = false;
             }
             
             // Update pagination state
@@ -206,6 +216,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             if (!append) {
                 setError('Failed to search articles');
                 setArticlesArray([]);
+                articlesBrowseLoadedRef.current = false;
             }
         } finally {
             setIsSearching(false);
@@ -250,6 +261,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             } else {
                 setPeopleArray(journalistsWithFollowStatus);
                 setHasSearched(true);
+                peopleBrowseLoadedRef.current = false;
             }
             
             // Update pagination state
@@ -262,6 +274,7 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
             if (!append) {
                 setError('Failed to search journalists');
                 setPeopleArray([]);
+                peopleBrowseLoadedRef.current = false;
             }
         } finally {
             setIsSearching(false);
@@ -342,23 +355,23 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
     //console.log("People Array:", peopleArray);
     //console.log("Articles Array:", articlesArray);
 
-    // Load data when component mounts or when tab is selected (only if not searching)
-    useEffect(() => {
-        // Only fetch random data if we haven't searched or if search query is empty
-        if (!hasSearched || !searchQuery.trim()) {
-            if (selected === 'People') {
-                fetchRandomJournalists();
-            } else if (selected === 'Articles') {
-                fetchRandomArticles();
-            }
-            setHasSearched(false);
-        }
-    }, [selected]);
-
-    // Reset search when tab changes
+    // Tab change: reset search field; load browse lists only on first visit per tab (cached in refs + state).
     useEffect(() => {
         setSearchQuery('');
         setHasSearched(false);
+
+        if (selected === 'People') {
+            if (peopleBrowseLoadedRef.current && peopleArray.length > 0) {
+                return;
+            }
+            fetchRandomJournalists();
+        } else if (selected === 'Articles') {
+            if (articlesBrowseLoadedRef.current && articlesArray.length > 0) {
+                return;
+            }
+            fetchRandomArticles();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run only when tab changes; arrays read for cache snapshot
     }, [selected]);
 
     return (
@@ -369,80 +382,69 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
                     <ToggleBlock selected={selected} setSelected={setSelected} />
                 </View>
                 <View style={styles.searchBarContainer}>
-                    <View style={styles.searchRow}>
-                        <TouchableOpacity
-                            activeOpacity={1}
-                            onPress={() => {
-                                // Focus the input when container is pressed
-                                if (searchInputRef.current) {
-                                    searchInputRef.current.focus();
-                                }
-                            }}
-                            style={[styles.searchInputContainer, isSearchFocused && styles.searchInputFocused]}
-                        >
-                            <Ionicons 
-                                name="search" 
-                                size={18} 
-                                color={isSearchFocused ? '#2BA1E6' : withdrawnTitleColor} 
-                                style={styles.searchIcon}
-                            />
-                            <TextInput
-                                ref={searchInputRef}
-                                style={styles.searchInput}
-                                placeholder={i18n.t('search.searchPlaceholder') || 'Search here...'}
-                                placeholderTextColor="#aaa"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                                returnKeyType="search"
-                                onSubmitEditing={handleSearch}
-                                onFocus={() => {
-                                    setIsSearchFocused(true);
-                                }}
-                                onBlur={() => {
-                                    setIsSearchFocused(false);
-                                }}
-                                blurOnSubmit={false}
-                                autoCorrect={false}
-                                autoCapitalize="none"
-                                editable={!isSearching}
-                                selectTextOnFocus={false}
-                                accessibilityLabel={i18n.t('search.searchInput')}
-                            />
-                            {searchQuery.length > 0 && (
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setSearchQuery('');
-                                        setHasSearched(false);
-                                        // Reload random data when clearing search
-                                        if (selected === 'People') {
-                                            fetchRandomJournalists();
-                                        } else if (selected === 'Articles') {
-                                            fetchRandomArticles();
-                                        }
-                                    }}
-                                    style={styles.clearButton}
-                                    activeOpacity={generalActiveOpacity}
-                                >
-                                    <Ionicons name="close-circle" size={18} color={withdrawnTitleColor} />
-                                </TouchableOpacity>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.searchButton, main_Style.genButtonElevation]}
-                            activeOpacity={generalActiveOpacity}
-                            onPress={handleSearch}
-                            onPressIn={(e) => {
-                                // Prevent the TextInput from losing focus
-                                e.stopPropagation();
-                            }}
-                            disabled={isSearching || !searchQuery.trim()}
-                        >
+                    <View
+                        style={[styles.searchInputOuter, isSearchFocused && styles.searchInputOuterFocused]}
+                    >
+                        <Ionicons
+                            name="search"
+                            size={18}
+                            color={isSearchFocused ? MainBrownSecondaryColor : withdrawnTitleColor}
+                            style={styles.searchIcon}
+                        />
+                        <TextInput
+                            ref={searchInputRef}
+                            style={styles.searchInput}
+                            placeholder={i18n.t('search.searchPlaceholder')}
+                            placeholderTextColor={SEARCH_PLACEHOLDER_COLOR}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            returnKeyType="search"
+                            onSubmitEditing={handleSearch}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
+                            blurOnSubmit={false}
+                            autoCorrect={false}
+                            autoCapitalize="none"
+                            editable={!isSearching}
+                            selectTextOnFocus={false}
+                            accessibilityLabel={i18n.t('search.searchInput')}
+                        />
+                        <View style={styles.searchTrailing}>
                             {isSearching ? (
-                                <ActivityIndicator size="small" color={AppScreenBackgroundColor} />
-                            ) : (
-                                <Ionicons name="search" size={20} color={AppScreenBackgroundColor} />
-                            )}
-                        </TouchableOpacity>
+                                <ActivityIndicator size="small" color={MainBrownSecondaryColor} />
+                            ) : null}
+                            {!isSearching && searchQuery.trim().length > 0 ? (
+                                <>
+                                    <TouchableOpacity
+                                        onPress={handleSearch}
+                                        style={styles.inlineSearchGo}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        activeOpacity={generalActiveOpacity}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={i18n.t('search.runSearch')}
+                                    >
+                                        <Ionicons name="arrow-forward-circle" size={24} color={MainBrownSecondaryColor} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setSearchQuery('');
+                                            setHasSearched(false);
+                                            if (selected === 'People') {
+                                                fetchRandomJournalists();
+                                            } else if (selected === 'Articles') {
+                                                fetchRandomArticles();
+                                            }
+                                        }}
+                                        style={styles.clearButton}
+                                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                                        activeOpacity={generalActiveOpacity}
+                                        accessibilityLabel={i18n.t('common.clear')}
+                                    >
+                                        <Ionicons name="close-circle" size={20} color={withdrawnTitleColor} />
+                                    </TouchableOpacity>
+                                </>
+                            ) : null}
+                        </View>
                     </View>
                 </View>
             </View>
@@ -568,8 +570,8 @@ const SearchScreenHello = ({ preloadedSearchJournalist, preloadedSearchArticles 
 
 const styles = StyleSheet.create({
     searchSectionContainer: {
-        backgroundColor: homeFeedBackgroundColor,
-        paddingBottom: homeCardVerticalGap,
+        backgroundColor: AppScreenBackgroundColor,
+        paddingBottom: 6,
         width: '100%',
         alignSelf: 'center',
         borderBottomWidth: 1,
@@ -583,38 +585,38 @@ const styles = StyleSheet.create({
     searchBarContainer: {
         paddingHorizontal: homeScreenPadding,
         paddingTop: 4,
-        paddingBottom: 4,
+        paddingBottom: 10,
     },
     toggleBlockContainer: {
         paddingHorizontal: homeScreenPadding,
         paddingTop: 4,
-        paddingBottom: 2,
+        paddingBottom: 6,
     },
-    searchRow: {
+    searchInputOuter: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-    },
-    searchInputContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FDFCF8',
-        borderRadius: homeCardVerticalGap,
+        minHeight: 44,
         paddingHorizontal: 14,
         paddingVertical: 8,
+        backgroundColor: '#F8F6F3',
+        borderRadius: 22,
         borderWidth: 1,
-        borderColor: 'rgba(102, 70, 44, 0.12)',
+        borderColor: 'rgba(102, 70, 44, 0.2)',
+        shadowColor: '#1A1208',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+        elevation: 5,
     },
-    searchInputFocused: {
+    searchInputOuterFocused: {
         borderColor: MainBrownSecondaryColor,
         borderWidth: 1.5,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FFFCF9',
         shadowColor: MainBrownSecondaryColor,
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
+        shadowOpacity: 0.22,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 7,
     },
     searchIcon: {
         marginRight: 10,
@@ -624,29 +626,23 @@ const styles = StyleSheet.create({
         fontSize: generalTextSize,
         color: generalTextColor,
         fontFamily: generalTextFont,
-        fontWeight: '400',
+        fontWeight: '500',
         paddingVertical: 0,
         lineHeight: generalLineHeight,
+        minWidth: 0,
     },
-    searchButton: {
-        width: 48,
-        height: 38,
-        borderRadius: 8,
-        backgroundColor: MainBrownSecondaryColor,
+    searchTrailing: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginLeft: 6,
+    },
+    inlineSearchGo: {
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: MainBrownSecondaryColor,
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 4,
     },
     clearButton: {
-        marginLeft: 8,
-        padding: 4,
+        padding: 2,
     },
     scrollViewContainer: {
         flex: 1,
@@ -654,19 +650,19 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        paddingBottom: homeScreenPadding + 4,
-        paddingTop: homeCardVerticalGap,
+        paddingBottom: homeScreenPadding + 8,
+        paddingTop: homeCardVerticalGap + 4,
     },
     listSectionHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: homeScreenPadding,
-        paddingTop: 4,
-        paddingBottom: 6,
+        paddingTop: 6,
+        paddingBottom: 8,
         gap: 10,
     },
     listSectionAccent: {
-        width: 3,
+        width: 2,
         height: 18,
         borderRadius: 2,
         backgroundColor: PrimBtnColor,
