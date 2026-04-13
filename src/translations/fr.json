@@ -183,7 +183,9 @@
     "loadingArticle": "Chargement de l'article...",
     "articleNotFound": "Article introuvable",
     "unknownAuthor": "Auteur inconnu",
-    "defaultAffiliation": "Sikiya"
+    "defaultAffiliation": "Sikiya",
+    "discussionLanes": "Lignes de discussion",
+    "discussionLanesHint": "Dites où vous vous situez — puis rejoignez la discussion. Sur les sujets polarisants, choisissez d’abord un camp ; votre vote met à jour les résultats."
   },
   "video": {
     "video": "Vidéo",
@@ -953,7 +955,8 @@
     "deleteComment": "Supprimer le commentaire",
     "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.",
     "oneComment": "commentaire",
-    "manyComments": "commentaires"
+    "manyComments": "commentaires",
+    "joinDiscussion": "Rejoindre la discussion"
   }
 }
 

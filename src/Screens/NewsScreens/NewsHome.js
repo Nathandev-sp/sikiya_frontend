@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import DateConverter from '../../Helpers/DateConverter';
 import StarRating from '../../Components/StarRating';
@@ -20,8 +20,21 @@ import { Context as AuthContext } from '../../Context/AuthContext';
 import i18n from '../../utils/i18n';
 import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 import { useLanguage } from '../../Context/LanguageContext';
+import DiscussionLaneCard from '../../Components/DiscussionLanes/DiscussionLaneCard';
+import { getDiscussionLanePalette } from '../../theme/discussionLanePalette';
 
 let articlesReadCount = 0;
+
+const mergeDiscussionLanesPreserveVotes = (detailLanes, baseLanes) => {
+    if (detailLanes == null || detailLanes.length === 0) {
+        return baseLanes ?? [];
+    }
+    const baseByKey = Object.fromEntries((baseLanes || []).map((l) => [l.key, l]));
+    return detailLanes.map((d) => ({
+        ...d,
+        voteSummary: d.voteSummary ?? baseByKey[d.key]?.voteSummary,
+    }));
+};
 
 /** Stable Mongo-style id string for API URLs (handles string, id, or rare {$oid} shapes). */
 const getArticleIdString = (articleOrId) => {
@@ -57,7 +70,10 @@ const mergeArticleDetail = (prev, detail) => {
         ...base,
         ...detail,
         journalist: base.journalist ?? builtJournalist ?? detail.journalist,
-        discussionLanes: detail.discussionLanes ?? base.discussionLanes ?? [],
+        discussionLanes:
+            detail.discussionLanes !== undefined
+                ? mergeDiscussionLanesPreserveVotes(detail.discussionLanes, base.discussionLanes)
+                : base.discussionLanes ?? [],
         category: detail.article_group || base.category || detail.category,
         article_group: detail.article_group ?? base.article_group,
         saved: base.saved ?? detail.saved,
@@ -543,56 +559,33 @@ const createStyles = (height) => StyleSheet.create({
         alignItems: 'center',
         zIndex: 10,
     },
+    discussionLanesSection: {
+        borderRadius: 16,
+        paddingTop: 14,
+        paddingHorizontal: 12,
+        paddingBottom: 16,
+        marginTop: 8,
+        marginBottom: 20,
+        borderLeftWidth: 4,
+        backgroundColor: '#FFFFFF',
+    },
+    discussionLanesSectionTitle: {
+        fontSize: commentTextSize,
+        fontWeight: generalTitleFontWeight,
+        fontFamily: generalTitleFont,
+        marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+    },
+    discussionLanesSectionHint: {
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        color: withdrawnTitleColor,
+        marginBottom: 12,
+        lineHeight: generalSmallLineHeight,
+    },
     discussionLanesContainer: {
         gap: 12,
-        marginBottom: 20,
-    },
-    discussionLaneCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderRadius: 12,
-        marginHorizontal: 0,
-    },
-    discussionLaneContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-        gap: 12,
-    },
-    discussionLaneIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    discussionLaneInfo: {
-        flex: 1,
-    },
-    discussionLaneTitle: {
-        fontSize: generalTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: '#fff',
-        fontFamily: generalTextFont,
-        marginBottom: 4,
-    },
-    discussionLaneCommentCount: {
-        fontSize: generalSmallTextSize,
-        fontWeight: generalTextFontWeight,
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontFamily: generalTextFont,
-    },
-    discussionLanePlusButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     horizontalRule: {
         height: 0.2,
@@ -669,7 +662,8 @@ const NewsHome = ({ route }) => {
     const [selectedLane, setSelectedLane] = useState(null);
     const [replyingToComment, setReplyingToComment] = useState(null); // { commentId, authorName }
     const [laneCounts, setLaneCounts] = useState({});
-    
+    const [laneVotingKey, setLaneVotingKey] = useState(null);
+
     // Pan responder for swipe-to-dismiss
     const modalTranslateY = useRef(new Animated.Value(0)).current;
     const panResponderRef = useRef(
@@ -760,8 +754,11 @@ const NewsHome = ({ route }) => {
             const tFr = lane.translations?.fr;
             const title = (lang === 'fr' ? tFr?.title : tEn?.title) || tEn?.title || tFr?.title || lane.key || '';
             const description = (lang === 'fr' ? tFr?.description : tEn?.description) || tEn?.description || tFr?.description || '';
+            const laneType = lane.laneType === 'binary' ? 'binary' : 'open';
             return {
                 ...lane,
+                laneType,
+                polarizing: Boolean(lane.polarizing) || laneType === 'binary',
                 id: lane._id || lane.key,
                 title,
                 description,
@@ -813,6 +810,49 @@ const NewsHome = ({ route }) => {
         setSelectedLane(lane);
         setDiscussionModalVisible(true);
     }, []);
+
+    const discussionPalette = React.useMemo(
+        () => getDiscussionLanePalette(article?.article_group),
+        [article?.article_group]
+    );
+
+    const handleBinaryLaneVote = useCallback(
+        async (lane, side) => {
+            const id = getArticleIdString(article);
+            if (!id) return;
+            const hadUserVote = Boolean(lane.voteSummary?.userSide);
+            if (hadUserVote && lane.voteSummary?.userSide === side) {
+                openDiscussionLane(lane);
+                return;
+            }
+            setLaneVotingKey(lane.key);
+            try {
+                const res = await SikiyaAPI.put(
+                    `/articles/${id}/lanes/${encodeURIComponent(lane.key)}/vote`,
+                    { side }
+                );
+                const vs = res.data?.voteSummary;
+                if (!vs) return;
+                setArticle((prev) => ({
+                    ...prev,
+                    discussionLanes: (prev.discussionLanes || []).map((l) =>
+                        l.key === lane.key ? { ...l, voteSummary: vs } : l
+                    ),
+                }));
+                if (!hadUserVote) {
+                    openDiscussionLane({ ...lane, voteSummary: vs });
+                }
+            } catch (err) {
+                Alert.alert(
+                    'Error',
+                    err?.response?.data?.error || err.message || 'Could not save your vote.'
+                );
+            } finally {
+                setLaneVotingKey(null);
+            }
+        },
+        [article, openDiscussionLane]
+    );
 
     const closeDiscussionLane = useCallback(() => {
         setDiscussionModalVisible(false);
@@ -1449,52 +1489,47 @@ const NewsHome = ({ route }) => {
                     </View>
                     <View style={styles.horizontalRule} />
                     
-                    {/* Comments Section */}
+                    {/* Discussion lanes (section + cards) */}
                     <View style={styles.commentsSection}>
-                        {/* Discussion Lanes (from API, language-aware) */}
                         {displayDiscussionLanes.length > 0 && (
-                            <View style={styles.discussionLanesContainer}>
-                                {displayDiscussionLanes.map((lane) => (
-                                    <TouchableOpacity
-                                        key={lane.id}
-                                        style={[
-                                            styles.discussionLaneCard,
-                                            { backgroundColor: lane.backgroundColor },
-                                            main_Style.genContentElevation,
-                                        ]}
-                                        activeOpacity={0.8}
-                                        onPress={() => openDiscussionLane(lane)}
-                                    >
-                                        <View style={styles.discussionLaneContent}>
-                                            <View style={styles.discussionLaneIcon}>
-                                                <Ionicons
-                                                    name={lane.icon}
-                                                    size={20}
-                                                    color={lane.textColor || '#fff'}
-                                                />
-                                            </View>
-                                            <View style={styles.discussionLaneInfo}>
-                                                <Text style={styles.discussionLaneTitle}>
-                                                    {lane.title}
-                                                </Text>
-                                                <Text style={styles.discussionLaneCommentCount}>
-                                                    {lane.commentCount} {lane.commentCount === 1 ? t('comments.oneComment') || 'comment' : t('comments.manyComments') || 'comments'}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <TouchableOpacity
-                                            style={styles.discussionLanePlusButton}
-                                            activeOpacity={0.7}
-                                            onPress={() => openDiscussionLane(lane)}
-                                        >
-                                            <Ionicons
-                                                name="add"
-                                                size={24}
-                                                color={lane.textColor || '#fff'}
-                                            />
-                                        </TouchableOpacity>
-                                    </TouchableOpacity>
-                                ))}
+                            <View
+                                style={[
+                                    styles.discussionLanesSection,
+                                    main_Style.genContentElevation,
+                                    {
+                                        borderLeftColor: discussionPalette.accent,
+                                    },
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.discussionLanesSectionTitle,
+                                        { color: discussionPalette.accent },
+                                    ]}
+                                >
+                                    {t('article.discussionLanes')}
+                                </Text>
+                                <Text style={styles.discussionLanesSectionHint}>
+                                    {t('article.discussionLanesHint')}
+                                </Text>
+                                <View style={styles.discussionLanesContainer}>
+                                    {displayDiscussionLanes.map((lane) => (
+                                        <DiscussionLaneCard
+                                            key={lane.id}
+                                            lane={lane}
+                                            palette={discussionPalette}
+                                            lang={lang}
+                                            commentCount={lane.commentCount ?? 0}
+                                            onOpenOpenLane={openDiscussionLane}
+                                            onBinaryVote={handleBinaryLaneVote}
+                                            onJoinBinaryLane={openDiscussionLane}
+                                            voting={laneVotingKey === lane.key}
+                                            joinDiscussionLabel={t('comments.joinDiscussion')}
+                                            oneCommentLabel={t('comments.oneComment') || 'comment'}
+                                            manyCommentsLabel={t('comments.manyComments') || 'comments'}
+                                        />
+                                    ))}
+                                </View>
                             </View>
                         )}
                     </View>
@@ -1528,11 +1563,11 @@ const NewsHome = ({ route }) => {
                                         { borderBottomColor: 'rgba(0,0,0,0.08)' },
                                     ]}
                                 >
-                                    <View style={[styles.modalLaneAccent, { backgroundColor: selectedLane.backgroundColor }]} />
+                                    <View style={[styles.modalLaneAccent, { backgroundColor: discussionPalette.accent }]} />
                                     <View style={styles.modalLaneIconWrap}>
-                                        <Ionicons name={selectedLane.icon} size={18} color={selectedLane.backgroundColor} />
+                                        <Ionicons name={selectedLane.icon} size={18} color={discussionPalette.accent} />
                                     </View>
-                                    <Text style={[styles.modalLaneFlagText, { color: selectedLane.backgroundColor }]} numberOfLines={1}>
+                                    <Text style={[styles.modalLaneFlagText, { color: discussionPalette.accent }]} numberOfLines={1}>
                                         {selectedLane.title}
                                     </Text>
                                     
@@ -1599,7 +1634,7 @@ const NewsHome = ({ route }) => {
                                 onUpgrade={handleUpgrade}
                                 userRole={userRole}
                                 modalTitle={replyingToComment ? null : selectedLane?.title}
-                                titleColor={selectedLane?.backgroundColor}
+                                titleColor={discussionPalette.accent}
                                 replyToName={replyingToComment?.authorName ?? null}
                                 onCancelReply={replyingToComment ? () => setReplyingToComment(null) : undefined}
                             />

@@ -303,17 +303,26 @@ const HomeScreen = ({route}) => {
 
     // Categories with translation keys
     const categories = [
-        { key: 'Explore', name: 'explore', icon: 'compass', color: MainSecondaryBlueColor },
-        { key: 'Politics', name: 'politics', icon: 'flag', color: '#CB0E01' },
-        { key: 'Economy', name: 'economy', icon: 'trending-up', color: '#51783F' },
-        { key: 'Social', name: 'social', icon: 'people', color: '#7C3AED' },
-        { key: 'Tech', name: 'tech', icon: 'hardware-chip', color: '#2563EB' },
-        { key: 'Business', name: 'business', icon: 'briefcase', color: '#562C2C' },
-        { key: 'Sports', name: 'sports', icon: 'football', color: '#C24A0A' },
-        { key: 'Culture', name: 'culture', icon: 'library', color: '#57755F' },
-        { key: 'Africa', name: 'africa', icon: 'earth-outline', color: MainBrownSecondaryColor },
-        { key: 'World', name: 'world', icon: 'globe', color: '#1A7474' },
-    ];
+        { key: 'Explore', name: 'explore', icon: 'compass', color: '#3B82F6' }, // clean blue
+      
+        { key: 'Politics', name: 'politics', icon: 'flag', color: '#DC2626' }, // stronger modern red
+      
+        { key: 'Economy', name: 'economy', icon: 'trending-up', color: '#2F7D32' }, // richer green
+      
+        { key: 'Social', name: 'social', icon: 'people', color: '#7C3AED' }, // KEEP (this is perfect)
+      
+        { key: 'Tech', name: 'tech', icon: 'hardware-chip', color: '#2563EB' }, // KEEP (very solid)
+      
+        { key: 'Business', name: 'business', icon: 'briefcase', color: '#7C2D12' }, // warmer, less muddy
+      
+        { key: 'Sports', name: 'sports', icon: 'football', color: '#EA580C' }, // 🔥 FIXED (no more yellow)
+      
+        { key: 'Culture', name: 'culture', icon: 'library', color: '#475569' }, // modern slate (better than green-gray)
+      
+        { key: 'Africa', name: 'africa', icon: 'earth-outline', color: '#92400E' }, // warm brown (cleaner)
+      
+        { key: 'World', name: 'world', icon: 'globe', color: '#0F766E' }, // deeper teal
+      ];
 
     const handleCategoryPress = async (categoryKey) => {
         if (categoryKey === selectedCategory) return; // Prevent re-fetching same category
