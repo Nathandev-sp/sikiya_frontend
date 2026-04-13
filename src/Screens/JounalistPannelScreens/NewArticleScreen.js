@@ -1,17 +1,52 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image, TextInput, Alert, KeyboardAvoidingView, Platform, StatusBar, Keyboard } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  TouchableWithoutFeedback,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  Keyboard,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, auth_Style, commentTextSize} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, {
+  generalTitleFont,
+  main_Style,
+  MainBrownSecondaryColor,
+  generalTextFont,
+  withdrawnTitleColor,
+  generalTextColor,
+  generalTextSize,
+  generalSmallTextSize,
+  articleTextSize,
+  generalTitleFontWeight,
+  homeFeedBackgroundColor,
+  PrimBtnColor,
+} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
-import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
+import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import CountryPicker from '../../Components/CountryPicker';
 import CityPicker from '../../Components/CityPicker';
 import ArticleGroupPicker from '../../Components/ArticleGroupPicker';
 import AfricanCountries from '../../../assets/Data/AfricanCountries.json';
-import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import { useLanguage } from '../../Context/LanguageContext';
+import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
+import { SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
+
+const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
+
+const sectionAccent = (index) => ({
+  borderLeftWidth: 3,
+  borderLeftColor: SUBMISSION_SEGMENT_COLORS[index % SUBMISSION_SEGMENT_COLORS.length],
+  paddingLeft: 12,
+});
 
 const NewArticleScreen = ({ navigation }) => {
   const { t } = useLanguage();
@@ -19,8 +54,7 @@ const NewArticleScreen = ({ navigation }) => {
   const titleInputRef = useRef(null);
   const highlightInputRef = useRef(null);
   const fullArticleInputRef = useRef(null);
-  
-  // Form data state
+
   const [articleData, setArticleData] = useState({
     articleTitle: '',
     articleHighlight: '',
@@ -30,12 +64,12 @@ const NewArticleScreen = ({ navigation }) => {
     articleGroup: '',
   });
 
-  // Focus states for inputs
   const [titleFocused, setTitleFocused] = useState(false);
   const [highlightFocused, setHighlightFocused] = useState(false);
   const [fullArticleFocused, setFullArticleFocused] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Function to dismiss keyboard and blur all inputs
   const dismissKeyboard = () => {
     Keyboard.dismiss();
     titleInputRef.current?.blur();
@@ -43,35 +77,21 @@ const NewArticleScreen = ({ navigation }) => {
     fullArticleInputRef.current?.blur();
   };
 
-  // Error states for validation
-  const [errors, setErrors] = useState({});
-
-  // Loading state for submission
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Handle form data changes
   const handleFormChange = (key, value) => {
     setArticleData({ ...articleData, [key]: value });
-    // Clear error when field is filled
     if (value) {
-      setErrors(prev => ({ ...prev, [key]: false }));
+      setErrors((prev) => ({ ...prev, [key]: false }));
     }
-    // Clear city when country changes
     if (key === 'country') {
-      setArticleData(prev => ({ ...prev, city: '' }));
+      setArticleData((prev) => ({ ...prev, city: '' }));
     }
   };
 
-  // Word count helper
   const getWordCount = (text) => {
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text.trim().split(/\s+/).filter((word) => word.length > 0).length;
   };
 
-
-
-  // Handle article submission
   const handleSubmitArticle = async () => {
-    // Validate required fields
     const requiredFields = {
       articleTitle: articleData.articleTitle,
       articleHighlight: articleData.articleHighlight,
@@ -82,13 +102,12 @@ const NewArticleScreen = ({ navigation }) => {
     };
 
     const newErrors = {};
-    Object.keys(requiredFields).forEach(key => {
+    Object.keys(requiredFields).forEach((key) => {
       if (!requiredFields[key]) {
         newErrors[key] = true;
       }
     });
 
-    // Validate title word count (minimum 8 words)
     const titleWordCount = getWordCount(articleData.articleTitle);
     if (titleWordCount < 8) {
       newErrors.articleTitle = true;
@@ -96,7 +115,6 @@ const NewArticleScreen = ({ navigation }) => {
 
     setErrors(newErrors);
 
-    // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       if (titleWordCount < 8 && articleData.articleTitle) {
         Alert.alert(t('newArticle.titleTooShort'), t('newArticle.titleTooShortMessage'));
@@ -107,11 +125,9 @@ const NewArticleScreen = ({ navigation }) => {
       return;
     }
 
-    // Set loading state
     setIsSubmitting(true);
 
     try {
-      // Prepare API payload
       const payload = {
         article_title: articleData.articleTitle,
         article_content: articleData.fullArticle,
@@ -121,26 +137,18 @@ const NewArticleScreen = ({ navigation }) => {
         article_group: articleData.articleGroup,
       };
 
-      // Call API to create article
       const response = await SikiyaAPI.post('/article/new', payload);
-
-      // Get article ID and title from response
       const articleId = response.data._id;
       const articleTitle = response.data.article_title;
 
-      // Navigate to next screen with article ID and title
-      if (navigation) {
-        navigation.navigate('NewArticleImage', { 
-          articleId,
-          articleTitle,
-          articleData // Keep original data for reference if needed
-        });
-      }
+      navigation?.navigate('NewArticleImage', {
+        articleId,
+        articleTitle,
+        articleData,
+      });
     } catch (error) {
       console.error('Error creating article:', error);
       setIsSubmitting(false);
-      
-      // Show error message
       const errorMessage = error.response?.data?.error || error.message || t('newArticle.failedToCreate');
       Alert.alert(t('newArticle.error'), errorMessage);
     } finally {
@@ -148,7 +156,6 @@ const NewArticleScreen = ({ navigation }) => {
     }
   };
 
-  // Show loading screen when submitting
   if (isSubmitting) {
     return (
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
@@ -161,13 +168,17 @@ const NewArticleScreen = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={main_Style.safeArea} edges={['top']}>
-      <StatusBar barStyle={"dark-content"} />
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView 
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={styles.backRow}>
+          <GoBackButton
+            buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }}
+          />
+        </View>
+        <ArticleSubmissionStepHeader step={2} variant="compact" flow="article" />
+
+        <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -175,182 +186,163 @@ const NewArticleScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableWithoutFeedback onPress={dismissKeyboard}>
-            <View style={styles.scrollContentInner}>
-          {/* Header with Back Button and Image */}
-          <View style={styles.headerContainer}>
-            <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
-                  <GoBackButton />
-            </View>
-            <Image 
-              source={require('../../../assets/functionalImages/Sikiya_new_article.png')}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-            <View style={styles.placeholder} />
-            {/* Title Section */}
-            <View style={styles.titleSection}>
-              <Text style={styles.screenTitle}>{t('newArticle.title')}</Text>
-            </View>
-          </View>
+            <View>
+              <View style={styles.screenHead}>
+                <Text style={styles.screenTitle}>{t('newArticle.title')}</Text>
+                <Text style={styles.screenSubtitle}>{t('articleFlow.writeSubtitle')}</Text>
+              </View>
 
-          
+              <View style={[styles.section, sectionAccent(0)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.articleTitle')}</Text>
+                <View
+                  style={[
+                    styles.inputShell,
+                    titleFocused && styles.inputShellFocused,
+                    errors.articleTitle && styles.inputShellError,
+                  ]}
+                >
+                  <Text style={styles.cornerCount}>
+                    {getWordCount(articleData.articleTitle)} {t('newArticle.wordsMin')}
+                  </Text>
+                  <TextInput
+                    ref={titleInputRef}
+                    style={styles.inputTitle}
+                    placeholder={t('newArticle.titlePlaceholder')}
+                    placeholderTextColor="#A8A29E"
+                    value={articleData.articleTitle}
+                    onChangeText={(text) => handleFormChange('articleTitle', text)}
+                    onFocus={() => {
+                      setTitleFocused(true);
+                      scrollRef.current?.scrollTo({ y: 0, animated: true });
+                    }}
+                    onBlur={() => setTitleFocused(false)}
+                  />
+                </View>
+                <Text style={styles.fieldHint}>{t('newArticle.titleDescription')}</Text>
+              </View>
 
-          {/* Article Title Input */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>{t('newArticle.articleTitle')}</Text>
-              <Text style={styles.wordCount}>
-                {getWordCount(articleData.articleTitle)} {t('newArticle.wordsMin')}
-              </Text>
-            </View>
-            <Text style={styles.labelDescription}>
-              {t('newArticle.titleDescription')}
-            </Text>
-            <TextInput
-              ref={titleInputRef}
-              style={[
-                styles.titleInput,
-                titleFocused && styles.inputFocused,
-                errors.articleTitle && styles.inputError
-              ]}
-              placeholder={t('newArticle.titlePlaceholder')}
-              placeholderTextColor="#aaa"
-              value={articleData.articleTitle}
-              onChangeText={(text) => handleFormChange('articleTitle', text)}
-              onFocus={() => {
-                setTitleFocused(true);
-                scrollRef.current?.scrollTo({ y: 0, animated: true });
-              }}
-              onBlur={() => setTitleFocused(false)}
-            />
-          </View>
+              <View style={[styles.section, sectionAccent(1)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.articleHighlight')}</Text>
+                <View
+                  style={[
+                    styles.inputShell,
+                    highlightFocused && styles.inputShellFocused,
+                    errors.articleHighlight && styles.inputShellError,
+                  ]}
+                >
+                  <Text style={styles.cornerCount}>
+                    {getWordCount(articleData.articleHighlight)}/30 {t('newArticle.wordsMax')}
+                  </Text>
+                  <TextInput
+                    ref={highlightInputRef}
+                    style={styles.inputAreaSm}
+                    placeholder={t('newArticle.highlightPlaceholder')}
+                    placeholderTextColor="#A8A29E"
+                    value={articleData.articleHighlight}
+                    onChangeText={(text) => {
+                      const wordCount = getWordCount(text);
+                      if (wordCount <= 30) {
+                        handleFormChange('articleHighlight', text);
+                      } else {
+                        Alert.alert(t('newArticle.wordLimit'), t('newArticle.highlightWordLimit'));
+                      }
+                    }}
+                    multiline
+                    textAlignVertical="top"
+                    onFocus={() => setHighlightFocused(true)}
+                    onBlur={() => setHighlightFocused(false)}
+                  />
+                </View>
+                <Text style={styles.fieldHint}>{t('newArticle.highlightDescription')}</Text>
+              </View>
 
-          {/* Article Highlight */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>{t('newArticle.articleHighlight')}</Text>
-              <Text style={styles.wordCount}>
-                {getWordCount(articleData.articleHighlight)}/30 {t('newArticle.wordsMax')}
-              </Text>
-            </View>
-            <Text style={styles.labelDescription}>
-              {t('newArticle.highlightDescription')}
-            </Text>
-            <TextInput
-              ref={highlightInputRef}
-              style={[
-                styles.textArea, 
-                styles.highlightTextArea,
-                highlightFocused && styles.inputFocused,
-                errors.articleHighlight && styles.inputError
-              ]}
-              placeholder={t('newArticle.highlightPlaceholder')}
-              placeholderTextColor="#aaa"
-              value={articleData.articleHighlight}
-              onChangeText={(text) => {
-                const wordCount = getWordCount(text);
-                if (wordCount <= 30) {
-                  handleFormChange('articleHighlight', text);
-                } else {
-                  Alert.alert(t('newArticle.wordLimit'), t('newArticle.highlightWordLimit'));
-                }
-              }}
-              multiline
-              textAlignVertical="top"
-              onFocus={() => setHighlightFocused(true)}
-              onBlur={() => setHighlightFocused(false)}
-            />
-          </View>
+              <View style={[styles.section, sectionAccent(2)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.fullArticle')}</Text>
+                <View
+                  style={[
+                    styles.inputShell,
+                    fullArticleFocused && styles.inputShellFocused,
+                    errors.fullArticle && styles.inputShellError,
+                  ]}
+                >
+                  <Text style={styles.cornerCount}>
+                    {getWordCount(articleData.fullArticle)}/300 {t('newArticle.wordsMax')}
+                  </Text>
+                  <TextInput
+                    ref={fullArticleInputRef}
+                    style={styles.inputAreaLg}
+                    placeholder={t('newArticle.fullArticlePlaceholder')}
+                    placeholderTextColor="#A8A29E"
+                    value={articleData.fullArticle}
+                    onChangeText={(text) => {
+                      const wordCount = getWordCount(text);
+                      if (wordCount <= 300) {
+                        handleFormChange('fullArticle', text);
+                      } else {
+                        Alert.alert(t('newArticle.wordLimit'), t('newArticle.fullArticleWordLimit'));
+                      }
+                    }}
+                    multiline
+                    textAlignVertical="top"
+                    onFocus={() => setFullArticleFocused(true)}
+                    onBlur={() => setFullArticleFocused(false)}
+                  />
+                </View>
+                <Text style={styles.fieldHint}>{t('newArticle.fullArticleDescription')}</Text>
+              </View>
 
-          {/* Full Article */}
-          <View style={styles.inputSection}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>{t('newArticle.fullArticle')}</Text>
-              <Text style={styles.wordCount}>
-                {getWordCount(articleData.fullArticle)}/300 {t('newArticle.wordsMax')}
-              </Text>
-            </View>
-            <Text style={styles.labelDescription}>
-              {t('newArticle.fullArticleDescription')}
-            </Text>
-            <TextInput
-              ref={fullArticleInputRef}
-              style={[
-                styles.textArea, 
-                styles.fullArticleTextArea,
-                fullArticleFocused && styles.inputFocused,
-                errors.fullArticle && styles.inputError
-              ]}
-              placeholder={t('newArticle.fullArticlePlaceholder')}
-              placeholderTextColor="#aaa"
-              value={articleData.fullArticle}
-              onChangeText={(text) => {
-                const wordCount = getWordCount(text);
-                if (wordCount <= 300) {
-                  handleFormChange('fullArticle', text);
-                } else {
-                  Alert.alert(t('newArticle.wordLimit'), t('newArticle.fullArticleWordLimit'));
-                }
-              }}
-              multiline
-              textAlignVertical="top"
-              onFocus={() => setFullArticleFocused(true)}
-              onBlur={() => setFullArticleFocused(false)}
-            />
-          </View>
+              <View style={[styles.section, sectionAccent(0)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.country')}</Text>
+                <CountryPicker
+                  value={articleData.country}
+                  onSelect={(country) => handleFormChange('country', country)}
+                  countryList={AfricanCountries}
+                  placeholder={t('newArticle.selectCountry')}
+                  label={t('newArticle.country')}
+                  error={errors.country}
+                  onOpen={dismissKeyboard}
+                  containerStyle={styles.pickerSurface}
+                />
+              </View>
 
-          {/* Country Picker */}
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>{t('newArticle.country')}</Text>
-            <CountryPicker
-              value={articleData.country}
-              onSelect={(country) => handleFormChange('country', country)}
-              countryList={AfricanCountries}
-              placeholder={t('newArticle.selectCountry')}
-              label={t('newArticle.country')}
-              error={errors.country}
-              onOpen={dismissKeyboard}
-            />
-          </View>
+              <View style={[styles.section, sectionAccent(1)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.city')}</Text>
+                <CityPicker
+                  value={articleData.city}
+                  onSelect={(city) => handleFormChange('city', city)}
+                  selectedCountry={articleData.country}
+                  placeholder={t('newArticle.selectCity')}
+                  label={t('newArticle.city')}
+                  error={errors.city}
+                  onOpen={dismissKeyboard}
+                  containerStyle={styles.pickerSurface}
+                />
+              </View>
 
-          {/* City Picker */}
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>{t('newArticle.city')}</Text>
-            <CityPicker
-              value={articleData.city}
-              onSelect={(city) => handleFormChange('city', city)}
-              selectedCountry={articleData.country}
-              placeholder={t('newArticle.selectCity')}
-              label={t('newArticle.city')}
-              error={errors.city}
-              onOpen={dismissKeyboard}
-            />
-          </View>
+              <View style={[styles.section, sectionAccent(2)]}>
+                <Text style={styles.sectionLabel}>{t('newArticle.articleCategory')}</Text>
+                <ArticleGroupPicker
+                  value={articleData.articleGroup}
+                  onSelect={(group) => handleFormChange('articleGroup', group)}
+                  placeholder={t('newArticle.selectCategory')}
+                  label={t('newArticle.articleCategory')}
+                  error={errors.articleGroup}
+                  onOpen={dismissKeyboard}
+                  containerStyle={styles.pickerSurface}
+                />
+              </View>
 
-          {/* Article Group Picker */}
-          <View style={styles.inputSection}>
-            <Text style={styles.label}>{t('newArticle.articleCategory')}</Text>
-            <ArticleGroupPicker
-              value={articleData.articleGroup}
-              onSelect={(group) => handleFormChange('articleGroup', group)}
-              placeholder={t('newArticle.selectCategory')}
-              label={t('newArticle.articleCategory')}
-              error={errors.articleGroup}
-              onOpen={dismissKeyboard}
-            />
-          </View>
+              <Pressable
+                style={({ pressed }) => [styles.submitButton, pressed && styles.submitPressed]}
+                onPress={handleSubmitArticle}
+                disabled={isSubmitting}
+                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              >
+                <Text style={styles.submitButtonText}>{t('newArticle.continue')}</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.submitIcon} />
+              </Pressable>
 
-          {/* Continue Button */}
-          <TouchableOpacity 
-            style={[styles.submitButton, main_Style.genButtonElevation]}
-            activeOpacity={0.7}
-            onPress={handleSubmitArticle}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.submitButtonText}>{t('newArticle.continue')}</Text>
-          </TouchableOpacity>
-
-          <View style={styles.bottomSpacer} />
+              <View style={styles.bottomSpacer} />
             </View>
           </TouchableWithoutFeedback>
         </ScrollView>
@@ -360,146 +352,141 @@ const NewArticleScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: homeFeedBackgroundColor,
+  },
+  backRow: {
+    paddingHorizontal: 12,
+    paddingTop: 4,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
-  scrollContentInner: {
-    flexGrow: 1,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    paddingTop: 4,
-    paddingBottom: 8,
-    backgroundColor: cardBackgroundColor,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 32,
-    marginTop: 12,
-  },
-  headerLogo: {
-    marginTop: 12,
-    width: 100,
-    height: 100,
-
-  },
-  placeholder: {
-    width: 40,
-  },
-  titleSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 24,
+  screenHead: {
+    marginBottom: 22,
   },
   screenTitle: {
-    fontSize: largeTextSize,
-    fontWeight: generalTitleFontWeight,
+    fontSize: 22,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
-    textAlign: 'center',
-    //marginBottom: 8,
-    marginTop: 8,
+    fontWeight: '700',
+    color: PrimBtnColor,
+    marginBottom: 6,
   },
-  inputSection: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    //backgroundColor: 'red',
-  },
-  label: {
-    fontSize: generalTextSize,
-    fontWeight: generalTitleFontWeight,
-    fontFamily: generalTitleFont,
-    color: generalTextColor,
-    marginBottom: 4,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  wordCount: {
+  screenSubtitle: {
     fontSize: generalSmallTextSize,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
+    lineHeight: 18,
   },
-  labelDescription: {
-    fontSize: commentTextSize,
+  section: {
+    marginBottom: 26,
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: '#6B6560',
+    marginBottom: 6,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  },
+  inputShell: {
+    borderWidth: 1,
+    borderColor: BORDER_IDLE,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  inputShellFocused: {
+    borderColor: MainBrownSecondaryColor,
+    shadowColor: MainBrownSecondaryColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputShellError: {
+    borderColor: '#DC2626',
+  },
+  cornerCount: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    zIndex: 2,
+    fontSize: 11,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
-    marginBottom: 16,
-    marginTop: 2,
-    fontStyle: 'italic',
   },
-  titleInput: {
+  inputTitle: {
     fontSize: articleTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.8,
-    borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
+    paddingTop: 34,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
   },
-  inputFocused: {
-    borderColor: '#2BA1E6',
-    borderWidth: 1.2,
-    backgroundColor: '#F0F6FA',
-  },
-  inputError: {
-    borderColor: '#F4796B',
-    borderWidth: 1,
-  },
-  textArea: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 12,
+  inputAreaSm: {
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 0.8,
-    borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 12,
-    //backgroundColor: "#FFFFFF",
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
-  },
-  highlightTextArea: {
-    minHeight: 100,
+    paddingTop: 32,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    minHeight: 108,
     maxHeight: 200,
   },
-  fullArticleTextArea: {
-    minHeight: 300,
-    maxHeight: 450,
+  inputAreaLg: {
+    fontSize: generalTextSize,
+    fontFamily: generalTextFont,
+    color: generalTextColor,
+    paddingTop: 36,
+    paddingBottom: 14,
+    paddingHorizontal: 14,
+    minHeight: 280,
+    maxHeight: 420,
+  },
+  fieldHint: {
+    marginTop: 8,
+    fontSize: 12,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    lineHeight: 17,
+  },
+  pickerSurface: {
+    borderWidth: 1,
+    borderColor: BORDER_IDLE,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 0,
+    shadowColor: '#2C2416',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: MainBrownSecondaryColor,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 999,
+    marginTop: 4,
+  },
+  submitPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
+  },
+  submitIcon: {
+    marginLeft: 4,
   },
   submitButtonText: {
     fontSize: generalTextSize,
@@ -508,7 +495,7 @@ const styles = StyleSheet.create({
     color: AppScreenBackgroundColor,
   },
   bottomSpacer: {
-    height: 20,
+    height: 24,
   },
   loadingContainer: {
     flex: 1,
@@ -525,4 +512,3 @@ const styles = StyleSheet.create({
 });
 
 export default NewArticleScreen;
-

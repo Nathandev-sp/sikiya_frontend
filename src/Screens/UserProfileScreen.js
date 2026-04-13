@@ -1,10 +1,11 @@
 import React, {useState, useEffect, useCallback, useRef, useContext, useMemo} from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, StatusBar, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
-import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, lightBannerBackgroundColor, generalSmallTextSize, generalTextFontWeight, articleTitleSize, secCardBackgroundColor, cardBackgroundColor } from '../styles/GeneralAppStyle';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import AppScreenBackgroundColor, { generalTextFont, generalTextColor, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, genBtnBackgroundColor, withdrawnTitleColor, generalSmallTextSize, generalTextFontWeight, articleTitleSize, PrimBtnColor, mainTitleColor, articleTitleFont, withdrawnTitleSize, homeFeedBackgroundColor, homeScreenPadding, homeCardVerticalGap } from '../styles/GeneralAppStyle';
+import { Ionicons } from '@expo/vector-icons';
 import VerticalSpacer from '../Components/UI/VerticalSpacer';
 import SecondaryNewsCart from '../Components/SecondaryNewscart';
+import TrustScoreRing from '../Components/TrustScoreRing';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import GoBackButton from '../../NavComponents/GoBackButton';
 import SikiyaAPI from '../../API/SikiyaAPI';
@@ -28,6 +29,28 @@ const UserProfileScreen = ({route}) => {
     });
 
     const preloadedUserProfile = route?.params?.preloadedUserProfile;
+
+    const roleLabel = useMemo(() => {
+        const role = authState?.role;
+        if (!role) return i18n.t('profile.generalUser');
+        const map = {
+            journalist: i18n.t('profile.journalist'),
+            contributor: i18n.t('profile.contributor'),
+            thoughtleader: i18n.t('profile.thoughtLeader'),
+            general: i18n.t('profile.generalUser'),
+            admin: 'Admin',
+            publisher: 'Publisher',
+        };
+        return map[role] || role.charAt(0).toUpperCase() + role.slice(1);
+    }, [authState?.role]);
+
+    const scoreForRing = userProfile
+        ? (userProfile.trust_score ?? userProfile.respect_score ?? 0)
+        : 0;
+    const scoreRingCaption =
+        authState?.role === 'journalist' || authState?.role === 'contributor'
+            ? i18n.t('profile.trustScore')
+            : i18n.t('profile.respectScore');
 
     const fetchUserProfile = useCallback(async () => {
         try {
@@ -173,34 +196,33 @@ const UserProfileScreen = ({route}) => {
                     </View>
                 </View>
 
-                {/* Profile Card */}
-                <View style={[styles.profileCard, main_Style.genButtonElevation]}>
-                    <View style={styles.profileCardContent}>
-                        {/* Profile photo */}
-                        <View style={styles.profileImageContainer}>
-                            <Image 
-                                key={`${userProfile?.profile_picture || 'default'}-${imageVersion}`}
-                                source={
-                                    userProfile?.profile_picture 
-                                        ? { 
-                                            uri: `${getImageUrl(userProfile.profile_picture)}?v=${imageVersion}`,
-                                          }
-                                        : require('../../assets/functionalImages/ProfilePic.png')
-                                } 
-                                style={styles.profileImage}
-                                resizeMode="cover"
-                            />
+                {/* My profile surface — warm paper + left accent (distinct from author-profile hero, still editorial) */}
+                <View style={[styles.selfSurface, main_Style.genButtonElevation]}>
+                    <View style={styles.selfTopRow}>
+                        <View style={styles.selfAvatarShell}>
+                            <View style={styles.selfAvatarClip}>
+                                <Image
+                                    key={`${userProfile?.profile_picture || 'default'}-${imageVersion}`}
+                                    source={
+                                        userProfile?.profile_picture
+                                            ? {
+                                                  uri: `${getImageUrl(userProfile.profile_picture)}?v=${imageVersion}`,
+                                              }
+                                            : require('../../assets/functionalImages/ProfilePic.png')
+                                    }
+                                    style={styles.selfAvatar}
+                                    resizeMode="cover"
+                                />
+                            </View>
                         </View>
-                        
-                        {/* Right side: Name and Stats */}
-                        <View style={styles.profileInfoContainer}>
-                            <View style={styles.nameContainer}>
-                                <Text style={styles.userName} numberOfLines={1}>
+                        <View style={styles.selfIdentityCol}>
+                            <View style={styles.selfNameRow}>
+                                <Text style={styles.selfDisplayName} numberOfLines={2}>
                                     {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
                                 </Text>
                                 {authState.role === 'contributor' && (
                                     <View style={styles.contributorBadgeWrap}>
-                                        <Image 
+                                        <Image
                                             source={require('../../assets/OnboardingImages/contributorImage.png')}
                                             style={styles.contributorBadgeImage}
                                             resizeMode="contain"
@@ -208,43 +230,42 @@ const UserProfileScreen = ({route}) => {
                                     </View>
                                 )}
                             </View>
-
-                            {/* Impact and Engagement Stats */}
-                            <View style={styles.statsCard}>
-                                <View style={styles.statsRow}>
-                                    <View style={styles.statBlock}>
-                                        <Text style={styles.statNumber}>{(userProfile?.trust_score ?? userProfile?.respect_score ?? 0)}%</Text>
-                                        <Text style={styles.statLabelLeft}>{i18n.t('profile.trustScore')}</Text>
-                                    </View>
-                                    <View style={styles.statDivider} />
-                                    <View style={styles.statBlock}>
-                                        <Text style={styles.statNumber}>{userProfile?.total_upvotes_count ?? 0}</Text>
-                                        <Text style={styles.statLabelLeft}>{i18n.t('profile.totalUpvotes')}</Text>
-                                    </View>
-                                </View>
-                            </View>
+                            <Text style={styles.selfRoleLine} numberOfLines={1}>
+                                {roleLabel}
+                            </Text>
                         </View>
                     </View>
 
-                    {/* Following / Followers */}
-                    <View style={styles.followStatsContainer}>
-                        <View style={styles.followTopBorder} />
-                        <TouchableOpacity 
-                            style={styles.followStatItem}
+                    <View style={styles.selfMetricsRow}>
+                        <View style={styles.selfMetricBlock}>
+                            <TrustScoreRing score={scoreForRing} size={54} strokeWidth={4} />
+                            <Text style={styles.selfMetricCaption}>{scoreRingCaption}</Text>
+                        </View>
+                        <View style={styles.selfMetricDivider} />
+                        <View style={styles.selfMetricBlock}>
+                            <Ionicons name="arrow-up-circle-outline" size={22} color={MainBrownSecondaryColor} style={styles.upvoteIcon} />
+                            <Text style={styles.selfUpvoteNumber}>{userProfile?.total_upvotes_count ?? 0}</Text>
+                            <Text style={styles.selfMetricCaption}>{i18n.t('profile.totalUpvotes')}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.selfFollowRow}>
+                        <TouchableOpacity
+                            style={styles.selfFollowTap}
                             activeOpacity={0.7}
                             onPress={() => navigation.navigate('UserFollow', { follower: 'Following' })}
                         >
-                            <Text style={styles.followStatNumber}>{userProfile?.number_following ?? 0}</Text>
-                            <Text style={styles.followStatLabel}>{i18n.t('profile.following')}</Text>
+                            <Text style={styles.selfFollowNumber}>{userProfile?.number_following ?? 0}</Text>
+                            <Text style={styles.selfFollowLabel}>{i18n.t('profile.following')}</Text>
                         </TouchableOpacity>
-                        <View style={styles.followStatDivider} />
-                        <TouchableOpacity 
-                            style={styles.followStatItem}
+                        <View style={styles.selfFollowDivider} />
+                        <TouchableOpacity
+                            style={styles.selfFollowTap}
                             activeOpacity={0.7}
                             onPress={() => navigation.navigate('UserFollow', { follower: 'Followers' })}
                         >
-                            <Text style={styles.followStatNumber}>{userProfile?.number_of_followers ?? 0}</Text>
-                            <Text style={styles.followStatLabel}>{i18n.t('profile.followers')}</Text>
+                            <Text style={styles.selfFollowNumber}>{userProfile?.number_of_followers ?? 0}</Text>
+                            <Text style={styles.selfFollowLabel}>{i18n.t('profile.followers')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -290,31 +311,37 @@ const UserProfileScreen = ({route}) => {
                     </View>
                 )}
 
-                {/* Saved Articles Section */}
-                <View style={styles.savedSection}>
-                    <View style={styles.savedSectionHeader}>
-                        <Ionicons name="bookmark" size={20} color={MainSecondaryBlueColor} />
-                        <Text style={styles.savedSectionTitle}>{i18n.t('profile.savedArticles')}</Text>
-                        {userProfile?.saved_articles?.length > 0 && (
-                            <Text style={styles.articleCount}>({userProfile.saved_articles.length})</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.articlesContainer}>
+                {/* Saved articles — same feed rhythm as author profile / search */}
+                <View style={styles.savedFeedSection}>
+                    <View style={styles.savedListHeaderRow}>
+                        <View style={styles.savedTitleCluster}>
+                            <View style={styles.savedListAccent} />
+                            <Text style={styles.savedListTitle} numberOfLines={1}>
+                                {i18n.t('profile.savedArticles')}
+                            </Text>
+                        </View>
                         {userProfile?.saved_articles?.length > 0 ? (
-                            userProfile.saved_articles.map(article => (
-                                <SecondaryNewsCart key={article._id} article={article} />
-                            ))
-                        ) : (
-                            <View style={styles.noArticlesContainer}>
-                                <View style={styles.noArticlesIconContainer}>
-                                    <Ionicons name="bookmark-outline" size={48} color={withdrawnTitleColor} />
-                                </View>
-                                <Text style={styles.noArticlesText}>{i18n.t('profile.noSavedArticles')}</Text>
-                                <Text style={styles.noArticlesSubtext}>{i18n.t('profile.noSavedArticlesMessage')}</Text>
-                            </View>
-                        )}
+                            <Text style={styles.savedCountMeta} numberOfLines={1}>
+                                {userProfile.saved_articles.length}{' '}
+                                {userProfile.saved_articles.length === 1
+                                    ? i18n.t('profile.article')
+                                    : i18n.t('profile.articles_plural')}
+                            </Text>
+                        ) : null}
                     </View>
+                    {userProfile?.saved_articles?.length > 0 ? (
+                        userProfile.saved_articles.map((article) => (
+                            <SecondaryNewsCart key={article._id} article={article} />
+                        ))
+                    ) : (
+                        <View style={styles.noArticlesInFeed}>
+                            <View style={styles.noArticlesIconContainer}>
+                                <Ionicons name="bookmark-outline" size={44} color={withdrawnTitleColor} />
+                            </View>
+                            <Text style={styles.noArticlesText}>{i18n.t('profile.noSavedArticles')}</Text>
+                            <Text style={styles.noArticlesSubtext}>{i18n.t('profile.noSavedArticlesMessage')}</Text>
+                        </View>
+                    )}
                 </View>
                 
                 <VerticalSpacer height={20} />
@@ -338,9 +365,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 8,
-        paddingHorizontal: 16,
-        paddingBottom: 8,
+        paddingTop: 10,
+        paddingHorizontal: homeScreenPadding,
+        paddingBottom: 18,
         width: '100%',
     },
     logoContainer: {
@@ -375,200 +402,168 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: genBtnBackgroundColor,
     },
-    profileCard: {
-        backgroundColor: cardBackgroundColor,
-        marginHorizontal: 16,
-        marginTop: 8,
+    selfSurface: {
+        marginHorizontal: homeScreenPadding,
         marginBottom: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.06)',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 3,
-            },
-        }),
-    },
-    profileCardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    profileInfoContainer: {
-        flex: 1,
-        marginLeft: 18,
-        justifyContent: 'center',
-    },
-    nameContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-        gap: 8,
-    },
-    userName: {
-        flex: 1,
-        fontSize: 20,
-        fontWeight: '700',
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
-        letterSpacing: 0.2,
-    },
-    contributorBadgeWrap: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        backgroundColor: 'rgba(129, 88, 55, 0.12)',
-    },
-    contributorBadgeImage: {
-        width: 22,
-        height: 22,
-    },
-    statsCard: {
-        marginTop: 0,
-    },
-    statsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderRadius: 10,
-        paddingVertical: 10,
+        paddingTop: 14,
+        paddingBottom: 2,
         paddingHorizontal: 14,
-    },
-    statBlock: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    statDivider: {
-        width: 1,
-        height: 28,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-        marginHorizontal: 8,
-    },
-    followStatsContainer: {
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        marginTop: 18,
-    },
-    followTopBorder: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        height: StyleSheet.hairlineWidth,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-    },
-    followStatItem: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 14,
-    },
-    followStatNumber: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: MainBrownSecondaryColor,
-        fontFamily: generalTitleFont,
-        marginBottom: 2,
-    },
-    followStatLabel: {
-        fontSize: generalSmallTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-    },
-    followStatDivider: {
-        width: StyleSheet.hairlineWidth,
-        backgroundColor: 'rgba(0,0,0,0.08)',
-    },
-    profileImageContainer: {
-        width: 88,
-        height: 88,
-        borderRadius: 44,
-        overflow: 'hidden',
-        backgroundColor: AppScreenBackgroundColor,
-        borderWidth: 3,
-        borderColor: 'rgba(255,255,255,0.9)',
+        borderRadius: 16,
+        backgroundColor: '#FDFCF8',
+        borderWidth: 1,
+        borderColor: 'rgba(102, 70, 44, 0.1)',
+        borderLeftWidth: 4,
+        borderLeftColor: PrimBtnColor,
         ...Platform.select({
             ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
+                shadowColor: '#2C2416',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08,
+                shadowRadius: 14,
             },
             android: {
                 elevation: 4,
             },
         }),
     },
-    profileImage: {
-        width: '100%',
-        height: '100%',
-    },
-    statsContainer: {
+    selfTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%',
+        marginBottom: 12,
+    },
+    selfAvatarShell: {
+        width: 92,
+        height: 92,
+        borderRadius: 46,
+        backgroundColor: AppScreenBackgroundColor,
+        borderWidth: 2,
+        borderColor: 'rgba(102, 70, 44, 0.14)',
+        overflow: 'hidden',
+        alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 4,
-        paddingHorizontal: 8,
     },
-    statsContainerLeft: {
+    selfAvatarClip: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        overflow: 'hidden',
+        backgroundColor: AppScreenBackgroundColor,
+    },
+    selfAvatar: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+    },
+    selfIdentityCol: {
+        flex: 1,
+        marginLeft: 14,
+        justifyContent: 'center',
+        minWidth: 0,
+    },
+    selfNameRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%',
-        justifyContent: 'flex-start',
-        marginBottom: 4,
-        paddingHorizontal: 0,
-    },
-    statItem: {
-        alignItems: 'center',
-        flex: 1,
-        padding:4,
-        //backgroundColor: 'red',
-    },
-    statItemLeft: {
-        alignItems: 'flex-start',
-        flex: 1,
-        padding:4,
-    },
-    statIconContainer: {
+        gap: 8,
         marginBottom: 6,
     },
-    statNumber: {
-        fontSize: 20,
-        fontWeight: generalTitleFontWeight,
+    selfDisplayName: {
+        flex: 1,
+        fontSize: 24,
+        fontWeight: '700',
+        color: mainTitleColor,
+        fontFamily: articleTitleFont,
+        letterSpacing: 0.15,
+    },
+    selfRoleLine: {
+        fontSize: withdrawnTitleSize + 1,
+        fontWeight: '400',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTextFont,
+        opacity: 0.95,
+    },
+    contributorBadgeWrap: {
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        borderRadius: 8,
+        backgroundColor: 'rgba(129, 88, 55, 0.1)',
+    },
+    contributorBadgeImage: {
+        width: 22,
+        height: 22,
+    },
+    selfMetricsRow: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'space-between',
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        marginBottom: 2,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(102, 70, 44, 0.1)',
+    },
+    selfMetricBlock: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 2,
+    },
+    selfMetricDivider: {
+        width: StyleSheet.hairlineWidth,
+        alignSelf: 'stretch',
+        backgroundColor: 'rgba(102, 70, 44, 0.12)',
+        marginHorizontal: 4,
+    },
+    selfMetricCaption: {
+        marginTop: 3,
+        fontSize: 9,
+        fontWeight: '700',
         color: MainBrownSecondaryColor,
         fontFamily: generalTitleFont,
-        marginBottom: 4,
-    },
-    tierText: {
-        fontSize: 18,
-    },
-    statLabel: {
-        fontSize: generalSmallTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
+        letterSpacing: 0.85,
+        textTransform: 'uppercase',
+        opacity: 0.88,
         textAlign: 'center',
     },
-    statLabelLeft: {
-        fontSize: generalSmallTextSize,
+    upvoteIcon: {
+        marginBottom: 0,
+        opacity: 0.9,
+    },
+    selfUpvoteNumber: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+        fontFamily: generalTitleFont,
+        marginTop: 1,
+        marginBottom: 0,
+    },
+    selfFollowRow: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        marginTop: 4,
+    },
+    selfFollowTap: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+    },
+    selfFollowNumber: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: mainTitleColor,
+        fontFamily: generalTitleFont,
+        marginBottom: 2,
+    },
+    selfFollowLabel: {
+        fontSize: generalSmallTextSize - 0.5,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        fontWeight: generalTextFontWeight,
-        textAlign: 'left',
+        fontWeight: '500',
     },
-    statDivider: {
-        width: 1,
-        height: 50,
-        backgroundColor: '#E0E0E0',
-        marginHorizontal: 16,
+    selfFollowDivider: {
+        width: StyleSheet.hairlineWidth,
+        backgroundColor: 'rgba(102, 70, 44, 0.1)',
     },
     trialBanner: {
         backgroundColor: MainBrownSecondaryColor,
@@ -706,38 +701,57 @@ const styles = StyleSheet.create({
         backgroundColor: MainSecondaryBlueColor,
         borderRadius: 4,
     },
-    savedSection: {
-        marginTop: 0,
+    savedFeedSection: {
+        width: '100%',
+        marginTop: 4,
+        paddingTop: homeCardVerticalGap + 4,
+        paddingBottom: 8,
+        backgroundColor: homeFeedBackgroundColor,
     },
-    savedSectionHeader: {
+    savedListHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 16,
-        marginBottom: 12,
-        gap: 8,
+        justifyContent: 'space-between',
+        paddingHorizontal: homeScreenPadding,
+        paddingTop: 6,
+        paddingBottom: 8,
+        gap: 10,
     },
-    savedSectionTitle: {
-        fontSize: generalTitleSize,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
+    savedTitleCluster: {
+        flexDirection: 'row',
+        alignItems: 'center',
         flex: 1,
+        gap: 10,
+        minWidth: 0,
     },
-    articleCount: {
+    savedListAccent: {
+        width: 2,
+        height: 18,
+        borderRadius: 2,
+        backgroundColor: PrimBtnColor,
+    },
+    savedListTitle: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        color: mainTitleColor,
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+    },
+    savedCountMeta: {
         fontSize: generalSmallTextSize,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         fontWeight: generalTextFontWeight,
+        flexShrink: 0,
+        maxWidth: '42%',
+        textAlign: 'right',
     },
-    articlesContainer: {
-        marginHorizontal: 12,
-    },
-    noArticlesContainer: {
-        padding: 48,
+    noArticlesInFeed: {
+        paddingVertical: 40,
+        paddingHorizontal: homeScreenPadding,
         alignItems: 'center',
-        //backgroundColor: lightBannerBackgroundColor,
-        borderRadius: 16,
-        marginHorizontal: 12,
     },
     noArticlesIconContainer: {
         width: 80,

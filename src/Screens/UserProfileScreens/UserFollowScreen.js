@@ -14,7 +14,10 @@ import AppScreenBackgroundColor, {
     articleTitleSize,
     secCardBackgroundColor,
     lightBannerBackgroundColor,
-    generalTextFontWeight
+    generalTextFontWeight,
+    homeFeedBackgroundColor,
+    homeScreenPadding,
+    homeCardVerticalGap,
 } from '../../styles/GeneralAppStyle';
 import { Ionicons } from '@expo/vector-icons';
 import GoBackButton from '../../../NavComponents/GoBackButton';
@@ -165,11 +168,11 @@ const UserFollowScreen = ({ route }) => {
             </View>
             
             {loading ? (
-                <View style={styles.loadingContainer}>
+                <View style={[styles.loadingContainer, styles.listSurface]}>
                     <BigLoaderAnim />
                 </View>
             ) : error ? (
-                <View style={styles.errorContainer}>
+                <View style={[styles.errorContainer, styles.listSurface]}>
                     <View style={styles.errorIconContainer}>
                         <Ionicons name="alert-circle-outline" size={48} color={withdrawnTitleColor} />
                     </View>
@@ -178,7 +181,7 @@ const UserFollowScreen = ({ route }) => {
                 </View>
             ) : (
                 <ScrollView
-                    style={styles.scrollView}
+                    style={[styles.scrollView, styles.listSurface]}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={true}
                 >
@@ -222,6 +225,10 @@ const UserFollowScreen = ({ route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    listSurface: {
+        flex: 1,
+        backgroundColor: homeFeedBackgroundColor,
     },
     headerContainer: {
         flexDirection: 'row',
@@ -270,7 +277,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 20,
+        flexGrow: 1,
+        paddingTop: homeCardVerticalGap + 4,
+        paddingBottom: homeScreenPadding + 8,
     },
     loadingContainer: {
         flex: 1,

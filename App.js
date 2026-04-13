@@ -22,7 +22,8 @@ import NotificationCenterScreen from './src/Screens/NotificationCenterScreen'; /
 
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
-import { StatusBar, Platform } from 'react-native';
+import { StatusBar, Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { MainBrownSecondaryColor, MainSecondaryColor } from './src/styles/GeneralAppStyle';
 
 // Authentication imports----------------------------
@@ -47,6 +48,7 @@ import NewArticleImageScreen from './src/Screens/JounalistPannelScreens/NewArtic
 import NewArticleDisclaimerScreen from './src/Screens/JounalistPannelScreens/NewArticleDisclaimer';
 import NewVideoDisclaimerScreen from './src/Screens/JounalistPannelScreens/NewVideoDisclaimerScreen';
 import NewVideoTitleScreen from './src/Screens/JounalistPannelScreens/NewVideoTitleScreen';
+import ArticleSubmissionTermsReader from './src/Screens/JounalistPannelScreens/ArticleSubmissionTermsReader';
 //import NewVideoScreen from './src/Screens/JounalistPannelScreens/NewVideoScreen';
 
 // --------------------------------------------------
@@ -209,6 +211,7 @@ function LiveNewsStackNav({preloadedVideos}) {
       <LiveNewsStack.Screen name="LiveNews" component={LiveNews} options={{headerShown: false}} initialParams={{preloadedVideos}} />
       <LiveNewsStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
       <LiveNewsStack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <LiveNewsStack.Screen name="NewsHome" component={NewsHome} options={{headerShown: false}} />
       <LiveNewsStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
     </LiveNewsStack.Navigator>
   );
@@ -269,6 +272,11 @@ function JournalistPanelStackNav() {
       <JournalistPanelStack.Screen name="NewVideoTitle" component={NewVideoTitleScreen} options={{headerShown: false}} />
       <JournalistPanelStack.Screen name="NewVideo" component={NewShortVideoScreen} options={{headerShown: false}} />
       <JournalistPanelStack.Screen name="NotificationCenter" component={NotificationCenterScreen} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="NewsHome" component={NewsHome} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="LiveNews" component={LiveNews} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <JournalistPanelStack.Screen name="ArticleTerms" component={ArticleSubmissionTermsReader} options={{headerShown: false}} />
     </JournalistPanelStack.Navigator>
   )
 }
@@ -305,17 +313,43 @@ function UserProfileStackNav({preloadedUserProfile}) {
 
 
 // Creating the botton tab navuigator -------------------------
-const Tab = createBottomTabNavigator()
+const Tab = createBottomTabNavigator();
+
+/** Filled when active + subtle scale; outline + soft gray when inactive (same base size). */
+function TabBarGlyph({ focused, nameActive, nameInactive, size, activeColor, inactiveColor }) {
+  return (
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        transform: [{ scale: focused ? 1.05 : 1 }],
+      }}
+    >
+      <Ionicons
+        name={focused ? nameActive : nameInactive}
+        size={size}
+        color={focused ? activeColor : inactiveColor}
+      />
+    </View>
+  );
+}
+
+const TAB_ICON_SIZE = 24;
+const TAB_ICON_SIZE_LIVE = 25;
+const TAB_INACTIVE_GRAY = '#B8B3AB';
 
 function MyTabs({preloadedHomeArticles, preloadedSearchJournalist, preloadedSearchArticles, preloadedUserProfile, preloadedShortVideos, preloadedJournalistData, preloadedHeadlines, preloadedVideos}) {
 
   //Implementing restricted access so that jounalists can see their articles
   const { state } = useContext(AuthContext);
   const isJournalist = state.role === 'journalist';
-  
- 
-    return (
-   
+  const insets = useSafeAreaInsets();
+  const tabBarBottomPad = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 8);
+  const tabBarPaddingTop = 12;
+  const tabBarIconRowMin = 46;
+  const tabBarTotalHeight = tabBarPaddingTop + tabBarIconRowMin + tabBarBottomPad;
+
+  return (
       <Tab.Navigator
         screenOptions={({ route, navigation }) => {
           // Check if we're in a submission screen by looking at the navigation state
@@ -333,40 +367,68 @@ function MyTabs({preloadedHomeArticles, preloadedSearchJournalist, preloadedSear
             }
           }
 
-          return {
-          tabBarIcon: ({ focused, color}) => {
-            let icon;
-            const onColor = MainBrownSecondaryColor  //#9D7340 #2B4570 #AD7520
-            const offColor = 'gray'
-  
-            if (route.name === 'Home') {
-              icon = focused ? <Ionicons name="home" size={23} color={onColor} /> : <Ionicons name="home-outline" size={22} color={offColor} />
-              return icon
-  
-            } else if (route.name === 'Journalist panel') {
-              icon = focused ? <Ionicons name="albums" size={23} color={onColor} /> : <Ionicons name="albums-outline" size={22} color={offColor} />;
-              return icon
-  
-            } else if (route.name === 'Live') {
-              icon = focused ? <Ionicons name="play-circle" size={26} color={onColor} /> : <Ionicons name="play-circle-outline" size={25} color={offColor} />;
-              return icon 
-  
-            } else if (route.name === 'Search') {
-              icon = focused ? <Ionicons name="search" size={24} color={onColor} /> : <Ionicons name="search-outline" size={23} color={offColor} />;
-              return icon
+          const onColor = MainBrownSecondaryColor;
+          const offColor = TAB_INACTIVE_GRAY;
 
-            } else if (route.name === 'UserProfileGroup') {
-              icon = focused ? <Ionicons name="person" size={22} color={onColor} /> : <Ionicons name="person-outline" size={21} color={offColor} />;
-              return icon
+          return {
+          tabBarIcon: ({ focused }) => {
+            const g = (nameActive, nameInactive, size = TAB_ICON_SIZE) => (
+              <TabBarGlyph
+                focused={focused}
+                nameActive={nameActive}
+                nameInactive={nameInactive}
+                size={size}
+                activeColor={onColor}
+                inactiveColor={offColor}
+              />
+            );
+
+            if (route.name === 'Home') {
+              return g('home', 'home-outline');
             }
+            if (route.name === 'Journalist panel') {
+              return g('albums', 'albums-outline');
+            }
+            if (route.name === 'Live') {
+              return g('play-circle', 'play-circle-outline', TAB_ICON_SIZE_LIVE);
+            }
+            if (route.name === 'Search') {
+              return g('search', 'search-outline');
+            }
+            if (route.name === 'UserProfileGroup') {
+              return g('person', 'person-outline');
+            }
+            return null;
         },
-        tabBarActiveTintColor: 'black',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: onColor,
+        tabBarInactiveTintColor: offColor,
         tabBarShowLabel: false,
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
+          paddingVertical: 6,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
+        },
         tabBarStyle: shouldHideTabBar ? { display: 'none' } : {
-          backgroundColor: AppScreenBackgroundColor,  //#02040F rich black #111944 #0E0308nice black
-          height: 70,
-          paddingTop: 6,
+          backgroundColor: AppScreenBackgroundColor,
+          height: tabBarTotalHeight,
+          paddingTop: tabBarPaddingTop,
+          paddingBottom: tabBarBottomPad,
+          paddingHorizontal: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: 'rgba(44, 36, 22, 0.1)',
+          ...Platform.select({
+            ios: {
+              shadowColor: '#2C2416',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 5,
+            },
+            android: {
+              elevation: 8,
+            },
+          }),
         },
         };
         }}
@@ -794,8 +856,10 @@ export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <StatusBar barStyle="dark-content" backgroundColor="white" />
-        <AppContent />
+        <SafeAreaProvider>
+          <StatusBar barStyle="dark-content" backgroundColor="white" />
+          <AppContent />
+        </SafeAreaProvider>
       </LanguageProvider>
     </AuthProvider>
   );

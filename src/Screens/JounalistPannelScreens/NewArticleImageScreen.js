@@ -1,15 +1,43 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, StatusBar, KeyboardAvoidingView, Platform} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Image,
+  TextInput,
+  Alert,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import AppScreenBackgroundColor, { generalTitleColor, generalTitleFont, main_Style, MainBrownSecondaryColor, generalTextFont, secCardBackgroundColor, cardBackgroundColor, withdrawnTitleColor, generalTextColor, largeTextSize, generalTextFontWeight, generalTitleFontWeight, generalTextSize, generalSmallTextSize, articleTextSize, lightBannerBackgroundColor, commentTextSize, generalTitleSize} from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, {
+  generalTitleFont,
+  main_Style,
+  MainBrownSecondaryColor,
+  generalTextFont,
+  withdrawnTitleColor,
+  generalTextColor,
+  generalTextSize,
+  generalSmallTextSize,
+  generalTitleFontWeight,
+  lightBannerBackgroundColor,
+  homeFeedBackgroundColor,
+  PrimBtnColor,
+} from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import { useLanguage } from '../../Context/LanguageContext';
-import VerticalSpacer from '../../Components/UI/VerticalSpacer';
+import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
+import { SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
+
+const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
 
 const NewArticleImageScreen = ({ navigation, route }) => {
   const { t } = useLanguage();
@@ -21,79 +49,66 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   const [proofPhoto, setProofPhoto] = useState(null);
   const [proofText, setProofText] = useState('');
 
-  // Image keys from S3 uploads
   const [heroImageKey, setHeroImageKey] = useState(null);
   const [additionalImageKeys, setAdditionalImageKeys] = useState([]);
   const [proofImageKey, setProofImageKey] = useState(null);
 
-  // Upload states
   const [uploadingHero, setUploadingHero] = useState(false);
   const [uploadingAdditional, setUploadingAdditional] = useState(false);
   const [uploadingProof, setUploadingProof] = useState(false);
 
-  // Focus states for inputs
   const [proofTextFocused, setProofTextFocused] = useState(false);
-
-  // Error states for validation
   const [errors, setErrors] = useState({});
-
-  // Loading state for submission
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Image picker function with aspect ratio (1.25 width, 0.8 height for big images, 1.25:0.9 for additional)
   const pickImage = async (setImageFunction, onImageSelected, aspect = [1.25, 0.8]) => {
-    Alert.alert(
-      t('articleImages.selectPhoto'),
-      t('articleImages.chooseOption'),
-      [
-        {
-          text: t('articleImages.camera'),
-          onPress: async () => {
-            const { status } = await ImagePicker.requestCameraPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.cameraPermissionMessage'));
-              return;
-            }
-            const result = await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: aspect,
-              quality: 0.8,
-            });
-            if (!result.canceled && onImageSelected) {
-              await onImageSelected(result.assets[0].uri);
-            } else if (!result.canceled) {
-              setImageFunction(result.assets[0].uri);
-            }
+    Alert.alert(t('articleImages.selectPhoto'), t('articleImages.chooseOption'), [
+      {
+        text: t('articleImages.camera'),
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.cameraPermissionMessage'));
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect,
+            quality: 0.8,
+          });
+          if (!result.canceled && onImageSelected) {
+            await onImageSelected(result.assets[0].uri);
+          } else if (!result.canceled) {
+            setImageFunction(result.assets[0].uri);
           }
         },
-        {
-          text: t('articleImages.gallery'),
-          onPress: async () => {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.galleryPermissionMessage'));
-              return;
-            }
-            const result = await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: aspect,
-              quality: 0.8,
-            });
-            if (!result.canceled && onImageSelected) {
-              await onImageSelected(result.assets[0].uri);
-            } else if (!result.canceled) {
-              setImageFunction(result.assets[0].uri);
-            }
+      },
+      {
+        text: t('articleImages.gallery'),
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert(t('articleImages.permissionNeeded'), t('articleImages.galleryPermissionMessage'));
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect,
+            quality: 0.8,
+          });
+          if (!result.canceled && onImageSelected) {
+            await onImageSelected(result.assets[0].uri);
+          } else if (!result.canceled) {
+            setImageFunction(result.assets[0].uri);
           }
         },
-        { text: t('articleImages.cancel'), style: "cancel" }
-      ]
-    );
+      },
+      { text: t('articleImages.cancel'), style: 'cancel' },
+    ]);
   };
 
-  // Upload hero image to S3
   const uploadHeroImage = async (uri) => {
     if (!articleId) {
       Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
@@ -107,11 +122,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
       const formData = new FormData();
-      formData.append('image', {
-        uri,
-        name: filename,
-        type,
-      });
+      formData.append('image', { uri, name: filename, type });
 
       const response = await SikiyaAPI.post(`/article/${articleId}/upload-hero-image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -119,7 +130,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
 
       setHeroImageKey(response.data.imageKey);
       setMainPhoto(uri);
-      console.log('Hero image uploaded successfully. Key:', response.data.imageKey);
     } catch (error) {
       console.error('Error uploading hero image:', error);
       Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadHero'));
@@ -128,7 +138,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     }
   };
 
-  // Upload additional images to S3
   const uploadAdditionalImage = async (uri, index) => {
     if (!articleId) {
       Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
@@ -142,30 +151,21 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
       const formData = new FormData();
-      formData.append('images', {
-        uri,
-        name: filename,
-        type,
-      });
+      formData.append('images', { uri, name: filename, type });
 
       const response = await SikiyaAPI.post(`/article/${articleId}/upload-additional-images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // Update the image keys array
       const newKeys = [...additionalImageKeys];
       if (response.data.imageKeys && response.data.imageKeys.length > 0) {
-        // The API returns an array, we need to add the new key(s)
-        newKeys[index] = response.data.imageKeys[0]; // First key from the response
+        newKeys[index] = response.data.imageKeys[0];
         setAdditionalImageKeys(newKeys);
       }
 
-      // Update the photo in state
       const newPhotos = [...additionalPhotos];
       newPhotos[index] = uri;
       setAdditionalPhotos(newPhotos);
-      
-      console.log('Additional image uploaded successfully. Key:', response.data.imageKeys[0]);
     } catch (error) {
       console.error('Error uploading additional image:', error);
       Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadImage'));
@@ -174,7 +174,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     }
   };
 
-  // Upload proof image to S3
   const uploadProofImage = async (uri) => {
     if (!articleId) {
       Alert.alert(t('articleImages.error'), t('articleImages.articleIdMissing'));
@@ -188,11 +187,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
       const formData = new FormData();
-      formData.append('image', {
-        uri,
-        name: filename,
-        type,
-      });
+      formData.append('image', { uri, name: filename, type });
 
       const response = await SikiyaAPI.post(`/article/${articleId}/upload-proof-image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -200,7 +195,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
 
       setProofImageKey(response.data.imageKey);
       setProofPhoto(uri);
-      console.log('Proof image uploaded successfully. Key:', response.data.imageKey);
     } catch (error) {
       console.error('Error uploading proof image:', error);
       Alert.alert(t('articleImages.uploadFailed'), error.response?.data?.error || t('articleImages.failedToUploadProof'));
@@ -210,34 +204,42 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   };
 
   const handleMainPhotoPress = () => {
-    pickImage(null, uploadHeroImage, [1.25, 0.8]); // Big image aspect ratio
+    pickImage(null, uploadHeroImage, [1.25, 0.8]);
   };
 
   const handleAdditionalPhotoPress = (index) => {
-    pickImage(null, (uri) => uploadAdditionalImage(uri, index), [1.25, 0.9]); // Additional images keep 1.25:0.9
+    pickImage(null, (uri) => uploadAdditionalImage(uri, index), [1.25, 0.9]);
   };
 
-  // Handle article submission
-  const handleSubmitArticle = async () => {
-    // Validate required fields
-    const newErrors = {};
-    
-    // Hero image is required
-    if (!heroImageKey) {
-      newErrors.heroImageKey = true;
-    }
+  const clearHero = () => {
+    setMainPhoto(null);
+    setHeroImageKey(null);
+    setErrors((prev) => ({ ...prev, heroImageKey: false }));
+  };
 
-    // Both proof image AND proof text are required
-    if (!proofImageKey) {
-      newErrors.proofImageKey = true;
-    }
-    if (!proofText) {
-      newErrors.proofText = true;
-    }
+  const clearAdditional = (index) => {
+    const newPhotos = [...additionalPhotos];
+    newPhotos[index] = null;
+    setAdditionalPhotos(newPhotos);
+    const newKeys = [...additionalImageKeys];
+    newKeys[index] = undefined;
+    setAdditionalImageKeys(newKeys);
+  };
+
+  const clearProofPhoto = () => {
+    setProofPhoto(null);
+    setProofImageKey(null);
+    setErrors((prev) => ({ ...prev, proofImageKey: false }));
+  };
+
+  const handleSubmitArticle = async () => {
+    const newErrors = {};
+    if (!heroImageKey) newErrors.heroImageKey = true;
+    if (!proofImageKey) newErrors.proofImageKey = true;
+    if (!proofText) newErrors.proofText = true;
 
     setErrors(newErrors);
 
-    // If there are errors, scroll to first error
     if (Object.keys(newErrors).length > 0) {
       const missingFields = [];
       if (newErrors.heroImageKey) missingFields.push(t('articleImages.mainPhoto'));
@@ -248,29 +250,16 @@ const NewArticleImageScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Set loading state
     setIsSubmitting(true);
 
     try {
-      // Update article with proof text
       if (proofText) {
         await SikiyaAPI.put(`/article/${articleId}/update-proof`, {
-          article_proof_text: proofText
+          article_proof_text: proofText,
         });
       }
-
-      // Log the image keys for debugging
-      //console.log('Article ID:', articleId);
-      //console.log('Hero Image Key:', heroImageKey);
-      //console.log('Additional Image Keys:', additionalImageKeys);
-      //console.log('Proof Image Key:', proofImageKey);
-      //console.log('Proof Text:', proofText);
-
-      // Navigate back to journalist panel screen
       setIsSubmitting(false);
-      if (navigation) {
-        navigation.navigate('JournalistPanel');
-      }
+      navigation?.navigate('JournalistPanel');
     } catch (error) {
       console.error('Error updating article:', error);
       setIsSubmitting(false);
@@ -281,7 +270,6 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     }
   };
 
-  // Show loading screen when submitting
   if (isSubmitting) {
     return (
       <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right', 'bottom']}>
@@ -294,195 +282,195 @@ const NewArticleImageScreen = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView style={main_Style.safeArea} edges={['top']}>
-      <StatusBar barStyle={"dark-content"} />
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
-        <ScrollView 
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
+        <View style={styles.backRow}>
+          <GoBackButton buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }} />
+        </View>
+        <ArticleSubmissionStepHeader step={3} variant="compact" flow="article" />
+
+        <ScrollView
           ref={scrollRef}
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header with Back Button and Image */}
-          <View style={styles.headerContainer}>
-            <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
-                  <GoBackButton />
-            </View>
-            <Image 
-              source={require('../../../assets/functionalImages/Sikiya_new_article.png')}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-            <View style={styles.placeholder} />
-            {/* Title Section */}
-            <View style={styles.titleSection}>
-              <Text style={styles.screenTitle}>{articleTitle || t('articleImages.title')}</Text>
+          <View style={styles.screenHead}>
+            <Text style={styles.screenTitle} numberOfLines={2}>
+              {articleTitle || t('articleImages.title')}
+            </Text>
+            <Text style={styles.screenSubtitle}>{t('articleFlow.mediaSubtitle')}</Text>
+          </View>
+
+          <View style={styles.blockTitleRow}>
+            <View style={[styles.accentBar, { backgroundColor: SUBMISSION_SEGMENT_COLORS[0] }]} />
+            <View style={styles.blockTitleCol}>
+              <Text style={styles.blockTitle}>{t('articleImages.heroSectionTitle')}</Text>
+              <Text style={styles.blockHint}>{t('articleImages.heroSectionHint')}</Text>
             </View>
           </View>
 
-          
-
-          {/* Photo Upload Section */}
-          <View style={styles.photoSection}>
-            <Text style={styles.label}>{t('articleImages.photos')}</Text>
-            <Text style={styles.labelDescription}>
-              {t('articleImages.photosDescription')}
-            </Text>
-            
-            {/* Main Photo */}
-            <TouchableOpacity 
-              style={[
-                styles.mainPhotoContainer,
-                errors.heroImageKey && styles.photoError
-              ]}
-              onPress={handleMainPhotoPress}
-              activeOpacity={0.7}
-              disabled={uploadingHero}
-            >
-              {uploadingHero ? (
-                <View style={styles.photoPlaceholder}>
-                  <MediumLoadingState />
-                  <Text style={styles.photoPlaceholderText}>{t('articleImages.uploading')}</Text>
+          <Pressable
+            style={[
+              styles.heroZone,
+              errors.heroImageKey && styles.zoneError,
+              !mainPhoto && styles.heroZoneEmpty,
+            ]}
+            onPress={handleMainPhotoPress}
+            disabled={uploadingHero}
+          >
+            {uploadingHero ? (
+              <View style={styles.heroInner}>
+                <MediumLoadingState />
+                <Text style={styles.uploadingLabel}>{t('articleImages.uploading')}</Text>
+              </View>
+            ) : mainPhoto ? (
+              <View style={styles.heroPreviewWrap}>
+                <Image source={{ uri: mainPhoto }} style={styles.heroImage} />
+                <View style={styles.heroActions}>
+                    <Pressable style={styles.heroChip} onPress={handleMainPhotoPress}>
+                    <Ionicons name="image-outline" size={16} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
+                    <Text style={styles.heroChipText}>{t('articleImages.replacePhoto')}</Text>
+                  </Pressable>
+                  <Pressable style={[styles.heroChip, styles.heroChipDanger]} onPress={clearHero}>
+                    <Ionicons name="trash-outline" size={16} color="#B91C1C" style={{ marginRight: 6 }} />
+                    <Text style={styles.heroChipTextDanger}>{t('articleImages.removePhoto')}</Text>
+                  </Pressable>
                 </View>
-              ) : mainPhoto ? (
-                <Image source={{ uri: mainPhoto }} style={styles.mainPhoto} />
+              </View>
+            ) : (
+              <View style={styles.heroInner}>
+                <View style={styles.addCircle}>
+                  <Ionicons name="add" size={32} color={MainBrownSecondaryColor} />
+                </View>
+                <Text style={styles.addMainLabel}>{t('articleImages.addMainPhoto')}</Text>
+              </View>
+            )}
+          </Pressable>
+
+          <View style={styles.sectionDivider} />
+
+          <View style={styles.blockTitleRow}>
+            <View style={[styles.accentBar, { backgroundColor: SUBMISSION_SEGMENT_COLORS[1] }]} />
+            <View style={styles.blockTitleCol}>
+              <Text style={styles.blockTitle}>{t('articleImages.additionalSectionTitle')}</Text>
+              <Text style={styles.blockHint}>{t('articleImages.additionalSectionHint')}</Text>
+            </View>
+          </View>
+
+          <View style={styles.extraRow}>
+            {[0, 1, 2].map((index) =>
+              additionalPhotos[index] ? (
+                <View key={index} style={[styles.extraChip, styles.extraChipFilled]}>
+                  <Pressable style={styles.extraThumbPress} onPress={() => handleAdditionalPhotoPress(index)} disabled={uploadingAdditional}>
+                    <Image source={{ uri: additionalPhotos[index] }} style={styles.extraThumb} />
+                  </Pressable>
+                  <Pressable style={styles.extraRemove} onPress={() => clearAdditional(index)} hitSlop={8}>
+                    <Ionicons name="close-circle" size={22} color="rgba(0,0,0,0.55)" />
+                  </Pressable>
+                </View>
               ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name="camera" size={32} color={withdrawnTitleColor} />
-                  <Text style={styles.photoPlaceholderText}>{t('articleImages.mainPhotoLabel')}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* Additional Photos */}
-            <View style={styles.additionalPhotosContainer}>
-              {additionalPhotos.map((photo, index) => (
-                <TouchableOpacity
+                <Pressable
                   key={index}
-                  style={styles.additionalPhotoContainer}
+                  style={styles.extraChip}
                   onPress={() => handleAdditionalPhotoPress(index)}
-                  activeOpacity={0.7}
                   disabled={uploadingAdditional}
                 >
-                  {uploadingAdditional && !photo ? (
-                    <View style={styles.photoPlaceholder}>
-                      <MediumLoadingState />
-                    </View>
-                  ) : photo ? (
-                    <Image source={{ uri: photo }} style={styles.additionalPhoto} />
+                  {uploadingAdditional ? (
+                    <MediumLoadingState />
                   ) : (
-                    <View style={styles.photoPlaceholder}>
-                      <Ionicons name="image" size={24} color={withdrawnTitleColor} />
-                    </View>
+                    <>
+                      <Ionicons name="add" size={22} color={MainBrownSecondaryColor} />
+                      <Text style={styles.extraChipText}>{t('articleImages.addPhotoAction')}</Text>
+                    </>
                   )}
-                </TouchableOpacity>
-              ))}
-            </View>
+                </Pressable>
+              )
+            )}
           </View>
 
-          {/* Horizontal Rule */}
-          <View style={styles.horizontalRule} />
+          <View style={styles.sectionDivider} />
 
-          {/* Proof Section */}
-          <View style={styles.proofSection}>
-            <View style={styles.proofHeader}>
-              <Ionicons name="lock-closed" size={20} color={MainBrownSecondaryColor} />
-              <Text style={styles.proofTitle}>{t('articleImages.proof')}</Text>
+          <View style={styles.proofBlock}>
+            <View style={styles.proofTitleRow}>
+              <Ionicons name="shield-checkmark-outline" size={22} color={SUBMISSION_SEGMENT_COLORS[2]} style={{ marginRight: 10 }} />
+              <Text style={styles.proofTitle}>{t('articleImages.proofRequiredTitle')}</Text>
             </View>
+            <Text style={styles.proofWhy}>{t('articleImages.proofWhyMatters')}</Text>
 
-            {/* Disclaimer Text */}
-            <View style={[styles.disclaimerContainer, main_Style.genContentElevation]}>
-              <Text style={styles.disclaimerText}>
-                {t('articleImages.disclaimer1')}{'\n'}
-                {t('articleImages.disclaimer2')}{'\n'}
-                {t('articleImages.disclaimer3')}{'\n'}
-                {t('articleImages.disclaimer4')}
-              </Text>
-            </View>
-
-            {/* Proof Photo */}
-            <Text style={styles.labelDescription}>
-              {t('articleImages.proofPhotoDescription')}
-            </Text>
-            <TouchableOpacity 
-              style={[
-                styles.proofPhotoContainer,
-                errors.proofImageKey && styles.photoError
-              ]}
-              onPress={() => pickImage(null, uploadProofImage, [1.25, 0.8])} // Big image aspect ratio
-              activeOpacity={0.7}
+            <Text style={styles.subLabel}>{t('articleImages.proofPhotoLabel')}</Text>
+            <Pressable
+              style={[styles.proofPhotoZone, errors.proofImageKey && styles.zoneError]}
+              onPress={() => pickImage(null, uploadProofImage, [1.25, 0.8])}
               disabled={uploadingProof}
             >
               {uploadingProof ? (
-                <View style={styles.photoPlaceholder}>
+                <View style={styles.heroInner}>
                   <MediumLoadingState />
-                  <Text style={styles.photoPlaceholderText}>{t('articleImages.uploading')}</Text>
+                  <Text style={styles.uploadingLabel}>{t('articleImages.uploading')}</Text>
                 </View>
               ) : proofPhoto ? (
-                <Image source={{ uri: proofPhoto }} style={styles.proofPhoto} />
+                <View style={styles.heroPreviewWrap}>
+                  <Image source={{ uri: proofPhoto }} style={styles.proofImage} />
+                  <View style={styles.heroActions}>
+                    <Pressable style={styles.heroChip} onPress={() => pickImage(null, uploadProofImage, [1.25, 0.8])}>
+                      <Text style={styles.heroChipText}>{t('articleImages.replacePhoto')}</Text>
+                    </Pressable>
+                    <Pressable style={[styles.heroChip, styles.heroChipDanger]} onPress={clearProofPhoto}>
+                      <Text style={styles.heroChipTextDanger}>{t('articleImages.removePhoto')}</Text>
+                    </Pressable>
+                  </View>
+                </View>
               ) : (
-                <View style={styles.photoPlaceholder}>
-                  <Ionicons name="camera" size={32} color={withdrawnTitleColor} />
-                  <Text style={styles.photoPlaceholderText}>{t('articleImages.proofPhotoLabel')}</Text>
+                <View style={styles.heroInner}>
+                  <Ionicons name="camera-outline" size={28} color={MainBrownSecondaryColor} />
+                  <Text style={styles.addMainLabel}>{t('articleImages.proofPhotoDescription')}</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
-            {/* Proof Text */}
-            <View>
-              <Text style={styles.label}>{t('articleImages.proofOfArticle')}</Text>
-              <Text style={styles.labelDescription}>
-                {t('articleImages.proofDescription')}
-              </Text>
+            <Text style={styles.proofTextHelper}>{t('articleImages.proofTextHelper')}</Text>
+            <Text style={styles.subLabel}>{t('articleImages.proofOfArticle')}</Text>
+            <View
+              style={[
+                styles.proofInputShell,
+                proofTextFocused && styles.proofInputFocused,
+                errors.proofText && styles.zoneError,
+              ]}
+            >
               <TextInput
-                style={[
-                  styles.textArea, 
-                  styles.proofTextArea,
-                  proofTextFocused && styles.inputFocused,
-                  errors.proofText && styles.inputError
-                ]}
+                style={styles.proofTextArea}
                 placeholder={t('articleImages.proofPlaceholder')}
-                placeholderTextColor="#aaa"
+                placeholderTextColor="#A8A29E"
                 value={proofText}
                 onChangeText={(text) => {
                   setProofText(text);
-                  if (text) {
-                    setErrors(prev => ({ ...prev, proofText: false }));
-                  }
+                  if (text) setErrors((prev) => ({ ...prev, proofText: false }));
                 }}
                 multiline
-                numberOfLines={6}
                 textAlignVertical="top"
                 onFocus={() => {
                   setProofTextFocused(true);
-                  // Scroll to bring input into view above keyboard
-                  setTimeout(() => {
-                    scrollRef.current?.scrollTo({ y: 800, animated: true });
-                  }, 400);
+                  setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
                 }}
                 onBlur={() => setProofTextFocused(false)}
               />
             </View>
           </View>
 
-          {/* Submit Button */}
-          <TouchableOpacity 
-            style={[styles.submitButton, main_Style.genButtonElevation]}
-            activeOpacity={0.7}
+          <Pressable
+            style={({ pressed }) => [styles.submitButton, pressed && styles.submitPressed]}
             onPress={handleSubmitArticle}
             disabled={isSubmitting}
+            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
           >
             <Text style={styles.submitButtonText}>{t('articleImages.submitArticle')}</Text>
-          </TouchableOpacity>
+            <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          </Pressable>
 
           <View style={styles.bottomSpacer} />
-          
-          <VerticalSpacer height={50} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -490,235 +478,301 @@ const NewArticleImageScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
+  safe: {
     flex: 1,
+    backgroundColor: homeFeedBackgroundColor,
   },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
+  backRow: {
+    paddingHorizontal: 12,
     paddingTop: 4,
-    paddingBottom: 8,
-    backgroundColor: cardBackgroundColor,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 32,
-    marginTop: 12,
   },
-  headerLogo: {
-    marginTop: 12,
-    width: 100,
-    height: 100,
+  scrollView: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
-  placeholder: {
-    width: 40,
-  },
-  titleSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 16,
+  screenHead: {
+    marginBottom: 20,
   },
   screenTitle: {
-    fontSize: largeTextSize,
+    fontSize: 20,
+    fontFamily: generalTitleFont,
     fontWeight: '700',
-    fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
-    textAlign: 'center',
-    marginTop: 8,
+    color: PrimBtnColor,
+    lineHeight: 26,
   },
-  photoSection: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+  screenSubtitle: {
+    marginTop: 6,
+    fontSize: generalSmallTextSize,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    lineHeight: 18,
   },
-  label: {
-    fontSize: generalTextSize,
-    fontWeight: generalTitleFontWeight,
-    fontFamily: generalTitleFont,
-    color: generalTextColor,
+  blockTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
-  labelDescription: {
-    fontSize: commentTextSize,
+  accentBar: {
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+    marginRight: 10,
+    marginTop: 2,
+  },
+  blockTitleCol: {
+    flex: 1,
+  },
+  blockTitle: {
+    fontSize: 15,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: PrimBtnColor,
+    marginBottom: 4,
+  },
+  blockHint: {
+    fontSize: 12,
     fontFamily: generalTextFont,
     color: withdrawnTitleColor,
-    marginBottom: 24,
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  mainPhotoContainer: {
-    width: '100%',
-    aspectRatio: 1.25 / 0.8, // 1.25 width : 0.8 height ratio
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
     marginBottom: 12,
+    lineHeight: 17,
+  },
+  heroZone: {
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 16,
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
+    minHeight: 200,
+    backgroundColor: '#FFFFFF',
   },
-  photoError: {
-    borderColor: '#F4796B',
-    borderWidth: 1,
+  heroZoneEmpty: {
+    borderWidth: 2,
+    borderColor: 'rgba(129, 88, 55, 0.35)',
+    borderStyle: 'dashed',
+    backgroundColor: lightBannerBackgroundColor,
   },
-  mainPhoto: {
-    width: '100%',
-    height: '100%',
+  zoneError: {
+    borderColor: '#DC2626',
+    borderWidth: 1.5,
   },
-  additionalPhotosContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  additionalPhotoContainer: {
-    flex: 1,
-    height: 100,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
-  },
-  additionalPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  photoPlaceholder: {
-    flex: 1,
+  heroInner: {
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: "#FFFFFF",
+    padding: 24,
   },
-  photoPlaceholderText: {
-    marginTop: 8,
-    fontSize: generalTextSize,
-    fontFamily: generalTextFont,
-    color: withdrawnTitleColor,
+  heroPreviewWrap: {
+    width: '100%',
   },
-  horizontalRule: {
-    height: 1,
-    backgroundColor: cardBackgroundColor,
-    marginHorizontal: 16,
-    marginVertical: 12,
+  heroImage: {
+    width: '100%',
+    aspectRatio: 1.25 / 0.8,
+    backgroundColor: '#EEE',
   },
-  proofSection: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    marginTop: 12,
+  proofImage: {
+    width: '100%',
+    aspectRatio: 1.25 / 0.8,
+    backgroundColor: '#EEE',
   },
-  proofHeader: {
+  heroActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: BORDER_IDLE,
+  },
+  heroChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: lightBannerBackgroundColor,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 88, 55, 0.25)',
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  heroChipDanger: {
+    backgroundColor: '#FEF2F2',
+    borderColor: 'rgba(185, 28, 28, 0.25)',
+  },
+  heroChipText: {
+    fontSize: 13,
+    fontFamily: generalTitleFont,
+    fontWeight: '600',
+    color: MainBrownSecondaryColor,
+  },
+  heroChipTextDanger: {
+    fontSize: 13,
+    fontFamily: generalTitleFont,
+    fontWeight: '600',
+    color: '#B91C1C',
+  },
+  addCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 88, 55, 0.2)',
+  },
+  addMainLabel: {
+    fontSize: 15,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: MainBrownSecondaryColor,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+  },
+  uploadingLabel: {
+    marginTop: 8,
+    fontSize: generalSmallTextSize,
+    color: withdrawnTitleColor,
+    fontFamily: generalTextFont,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: 'rgba(44, 36, 22, 0.1)',
+    marginVertical: 24,
+  },
+  extraRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -5,
+  },
+  extraChip: {
+    flex: 1,
+    minWidth: '28%',
+    maxWidth: '32%',
+    marginHorizontal: 5,
+    marginBottom: 10,
+    aspectRatio: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(129, 88, 55, 0.3)',
+    borderStyle: 'dashed',
+    backgroundColor: lightBannerBackgroundColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+  },
+  extraChipFilled: {
+    borderStyle: 'solid',
+    borderColor: BORDER_IDLE,
+    backgroundColor: '#FFFFFF',
+    padding: 0,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  extraThumbPress: {
+    width: '100%',
+    height: '100%',
+  },
+  extraChipText: {
+    marginTop: 6,
+    fontSize: 11,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: MainBrownSecondaryColor,
+    textAlign: 'center',
+  },
+  extraThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  extraRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 12,
+  },
+  proofBlock: {
+    marginBottom: 8,
+  },
+  proofTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   proofTitle: {
-    fontSize: articleTextSize+3,
-    fontWeight: generalTitleFontWeight,
+    fontSize: 17,
     fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
-    marginLeft: 8,
-    //marginTop: 12,
+    fontWeight: '700',
+    color: PrimBtnColor,
+    flex: 1,
   },
-  disclaimerContainer: {
-    backgroundColor: lightBannerBackgroundColor,
-    borderRadius: 8,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-    borderWidth: 0.5,
-    borderColor: '#ccc',
-    marginBottom: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: MainBrownSecondaryColor,
-    ...main_Style.genContentElevation,
-  },
-  disclaimerText: {
-    fontSize: commentTextSize,
+  proofWhy: {
+    fontSize: 14,
     fontFamily: generalTextFont,
-    color: generalTextColor,
-    lineHeight: 24,
+    color: '#5C564E',
+    lineHeight: 21,
+    marginBottom: 18,
   },
-  proofPhotoContainer: {
-    width: '100%',
-    aspectRatio: 1.25 / 0.8, // 1.25 width : 0.8 height ratio
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    marginBottom: 16,
+  subLabel: {
+    fontSize: 12,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: '#6B6560',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  proofPhotoZone: {
+    borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
+    borderColor: BORDER_IDLE,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 8,
+  },
+  proofTextHelper: {
+    fontSize: 13,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    lineHeight: 19,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  proofInputShell: {
+    borderWidth: 1,
+    borderColor: BORDER_IDLE,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  proofInputFocused: {
     borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 24,
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
+    shadowColor: MainBrownSecondaryColor,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  proofPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  textArea: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    padding: 12,
+  proofTextArea: {
+    minHeight: 140,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     fontSize: generalTextSize,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    borderWidth: 1,
-    borderColor: MainBrownSecondaryColor,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#FFFFFF",
-    //Adding some content
-    zIndex: 8,
-    shadowColor: '#000000', // iOS shadow properties
-    shadowOffset: { width: 0, height: 0.2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 0.3
-  },
-  proofTextArea: {
-    minHeight: 120,
-  },
-  inputFocused: {
-    borderColor: '#2BA1E6',
-    borderWidth: 1.5,
-    backgroundColor: '#F0F6FA',
-  },
-  inputError: {
-    borderColor: '#F4796B',
-    borderWidth: 1,
   },
   submitButton: {
-    backgroundColor: MainBrownSecondaryColor,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: MainBrownSecondaryColor,
+    paddingVertical: 16,
+    borderRadius: 999,
+    marginTop: 20,
+  },
+  submitPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
   },
   submitButtonText: {
     fontSize: generalTextSize,
@@ -726,9 +780,7 @@ const styles = StyleSheet.create({
     fontFamily: generalTitleFont,
     color: AppScreenBackgroundColor,
   },
-  bottomSpacer: {
-    height: 20,
-  },
+  bottomSpacer: { height: 28 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -744,5 +796,3 @@ const styles = StyleSheet.create({
 });
 
 export default NewArticleImageScreen;
-
-

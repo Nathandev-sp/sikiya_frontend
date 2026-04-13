@@ -685,9 +685,19 @@
     "decisionDate": "Date de décision",
     "decisionMessage": "Message de décision",
     "notAvailable": "N/D",
-    "untitled": "Sans titre"
+    "untitled": "Sans titre",
+    "view": "Voir",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "decisionShort": "Mis à jour",
+    "actionSoonTitle": "Bientôt disponible",
+    "actionSoonMessage": "La modification et la suppression des soumissions depuis l’application seront disponibles dans une prochaine mise à jour."
   },
   "journalistPanel": {
+    "thisMonth": "Ce mois-ci",
+    "statArticles": "Articles",
+    "statVideos": "Vidéos",
+    "submissionsSubtitle": "Brouillons et contenus publiés au même endroit.",
     "totalArticles": "Articles totaux",
     "monthlyArticles": "Articles mensuels",
     "monthlyReaders": "Lecteurs mensuels",
@@ -702,7 +712,33 @@
     "noSubmissionsYet": "Vos articles et vidéos soumis apparaîtront ici",
     "loadingMore": "Chargement de plus..."
   },
+  "submissionFlow": {
+    "stepPrefix": "Étape {{current}} sur {{total}}"
+  },
+  "articleFlow": {
+    "stepOf": "Étape {{current}} sur {{total}}",
+    "stepLabel1": "Consignes",
+    "stepLabel2": "Détails",
+    "stepLabel3": "Médias et preuve",
+    "writeSubtitle": "Titre, accroche et texte",
+    "mediaSubtitle": "Image de couverture, photos et vérification"
+  },
+  "videoFlow": {
+    "stepLabel1": "Consignes",
+    "stepLabel2": "Détails",
+    "stepLabel3": "Téléversement et preuve",
+    "detailsSubtitle": "Titre, lieu et catégorie",
+    "mediaSubtitle": "Votre vidéo et vérification"
+  },
   "articleDisclaimer": {
+    "beforeYouPublish": "Avant de publier",
+    "bullet1": "Utilisez des images nettes et de bonne qualité",
+    "bullet2": "Veillez à l’exactitude de vos informations",
+    "bullet3": "Les articles sont relus avant publication",
+    "bullet4": "Fournissez des preuves (images ou sources)",
+    "bullet5": "Vous autorisez Sikiya à publier et diffuser votre article",
+    "agreeTermsPrefix": "J’accepte les ",
+    "agreeTermsLink": "conditions et consignes",
     "title": "Avertissement relatif à l’article",
     "imageQuality": "Téléversez des images claires et de bonne qualité",
     "accuracy": "Fournissez des informations aussi exactes que possible, selon vos connaissances",
@@ -766,6 +802,17 @@
     "proofPhoto": "photo de preuve",
     "proofText": "texte de preuve",
     "failedToUpdate": "Échec de la mise à jour de l'article. Veuillez réessayer.",
+    "heroSectionTitle": "Photo de couverture",
+    "heroSectionHint": "Cette image s’affiche en tête de votre article.",
+    "addMainPhoto": "Ajouter la photo principale",
+    "replacePhoto": "Remplacer",
+    "removePhoto": "Retirer",
+    "additionalSectionTitle": "Photos supplémentaires",
+    "additionalSectionHint": "Facultatif — jusqu’à trois images.",
+    "addPhotoAction": "Ajouter une photo",
+    "proofRequiredTitle": "Preuve (obligatoire)",
+    "proofWhyMatters": "Permet de vérifier votre article et d’améliorer votre score de confiance.",
+    "proofTextHelper": "Indiquez les sources, dates, lieux ou la façon dont vous avez obtenu l’information.",
     "photos": "Photos",
     "photosDescription": "Téléversez une photo principale et jusqu'à 3 photos supplémentaires pour accompagner votre article",
     "uploading": "Téléversement...",
@@ -783,6 +830,14 @@
     "submitArticle": "Soumettre l'article"
   },
   "videoDisclaimer": {
+    "beforeYouPublish": "Avant de publier",
+    "bullet1": "Utilisez une vidéo stable (bonne lumière et son)",
+    "bullet2": "Veillez à l’exactitude du titre et du contexte",
+    "bullet3": "Les vidéos sont relues avant publication",
+    "bullet4": "Fournissez une preuve (photo ou notes sur le terrain)",
+    "bullet5": "Vous autorisez Sikiya à publier et diffuser votre vidéo",
+    "agreeTermsPrefix": "J’accepte les ",
+    "agreeTermsLink": "conditions et consignes",
     "title": "Avertissement relatif à la vidéo",
     "videoQuality": "Téléversez des vidéos de bonne qualité",
     "accuracy": "Fournissez des informations aussi exactes que possible, selon vos connaissances",
@@ -814,6 +869,14 @@
     "failedToCreate": "Échec de la création de la vidéo. Veuillez réessayer."
   },
   "videoUpload": {
+    "videoSectionTitle": "Votre vidéo",
+    "videoSectionHint": "Jusqu’à 1 minute. Paysage ou vertical.",
+    "addVideo": "Ajouter une vidéo",
+    "replaceVideo": "Remplacer",
+    "removeVideo": "Retirer",
+    "proofRequiredTitle": "Preuve (obligatoire)",
+    "proofWhyMatters": "Permet de vérifier votre vidéo et d’améliorer votre score de confiance.",
+    "proofTextHelper": "Indiquez les sources, dates, lieux ou comment vous avez obtenu les images.",
     "title": "Nouvelle vidéo",
     "submittingVideo": "Soumission de la vidéo...",
     "error": "Erreur",

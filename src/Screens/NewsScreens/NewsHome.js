@@ -23,6 +23,18 @@ import { useLanguage } from '../../Context/LanguageContext';
 
 let articlesReadCount = 0;
 
+/** Stable Mongo-style id string for API URLs (handles string, id, or rare {$oid} shapes). */
+const getArticleIdString = (articleOrId) => {
+    if (articleOrId == null) return '';
+    const raw = typeof articleOrId === 'object' && articleOrId !== null
+        ? (articleOrId._id ?? articleOrId.id)
+        : articleOrId;
+    if (raw == null) return '';
+    if (typeof raw === 'string') return raw;
+    if (typeof raw === 'object' && raw.$oid) return String(raw.$oid);
+    return String(raw);
+};
+
 /** Merge GET /articles/:id into list/search payloads so discussion lanes & category always resolve. */
 const mergeArticleDetail = (prev, detail) => {
     if (!detail) return prev;
@@ -651,7 +663,6 @@ const NewsHome = ({ route }) => {
     const [quotaLoading, setQuotaLoading] = useState(false);
     const flatListRef = useRef(null);
     const [refreshCommentsKey, setRefreshCommentsKey] = useState(0); // Key to force re-render of comments
-    const viewTrackedRef = useRef(false); // Track if view has been recorded
     const startTimeRef = useRef(null); // Track when user started reading
     const readTimeIntervalRef = useRef(null); // Interval for tracking read time
     const [discussionModalVisible, setDiscussionModalVisible] = useState(false);
@@ -716,6 +727,18 @@ const NewsHome = ({ route }) => {
     useEffect(() => {
         articlesReadCount += 1;
     }, []);
+
+    // Same NewsHome instance can get new params (e.g. open another article from Author Profile); keep state in sync.
+    useEffect(() => {
+        const { article: nextArticle, articleId: nextArticleId } = route.params || {};
+        if (nextArticle != null) {
+            setArticle(nextArticle);
+            setPendingInitialArticle(false);
+        } else if (nextArticleId != null && String(nextArticleId).length > 0) {
+            setArticle(null);
+            setPendingInitialArticle(true);
+        }
+    }, [route.params?.article, route.params?.articleId]);
 
     const handleGoBack = useCallback(async () => {
         if (shouldShowAds && interstitialReady && articlesReadCount % 3 === 0) {
@@ -796,14 +819,29 @@ const NewsHome = ({ route }) => {
         setSelectedLane(null);
     }, []);
 
+    /** Prefer route params so id is correct on first paint when the screen is reused (state may still hold the previous article). */
+    const activeArticleId = React.useMemo(() => {
+        const p = route.params || {};
+        if (p.articleId != null && String(p.articleId).length > 0) {
+            return String(p.articleId);
+        }
+        const fromParamArticle = getArticleIdString(p.article);
+        if (fromParamArticle) return fromParamArticle;
+        return getArticleIdString(article);
+    }, [route.params?.articleId, route.params?.article, article?._id, article?.id]);
+
     // Fetch full article when we only have an id, or when the payload has no discussion lanes
     // (e.g. search / saved / profile lists omit them; home feed includes them).
     useEffect(() => {
-        const id = articleId || article?._id;
+        const id = activeArticleId;
         if (!id) return;
 
         // Only enrich when lanes were never loaded (omit key). Empty [] means "no lanes for category" — do not refetch.
-        const lanesWereLoaded = article != null && article.discussionLanes !== undefined;
+        // Require article id to match resolved id so we don't skip fetch after params swap on a reused screen.
+        const articleMatches =
+            article != null && getArticleIdString(article) === String(id);
+        const lanesWereLoaded =
+            articleMatches && article.discussionLanes !== undefined;
         if (lanesWereLoaded) return;
 
         let cancelled = false;
@@ -823,7 +861,7 @@ const NewsHome = ({ route }) => {
         return () => {
             cancelled = true;
         };
-    }, [articleId, article?._id, article?.discussionLanes]);
+    }, [activeArticleId, article?.discussionLanes, article?._id, article?.id]);
 
     // Get article_other_images directly from the article prop
     const articleOtherImages = article?.article_other_images || [];
@@ -1072,60 +1110,56 @@ const NewsHome = ({ route }) => {
         }
     };
 
-    // Track article view and reading time
+    // Track article view and reading time (per activeArticleId — ref no longer blocks a second article on a reused screen)
     useEffect(() => {
-        if (!article?._id || viewTrackedRef.current) return;
+        if (!activeArticleId) return;
 
-        // Track view when article loads
         const trackView = async () => {
             try {
-                await SikiyaAPI.post(`/article/${article._id}/track/view`);
-                viewTrackedRef.current = true;
+                await SikiyaAPI.post(`/article/${activeArticleId}/track/view`);
             } catch (error) {
                 console.error('Error tracking article view:', error);
             }
         };
-
         trackView();
 
-        // Start tracking reading time
         startTimeRef.current = Date.now();
 
-        // Calculate estimated reading time based on content length
-        // Average reading speed: ~200 words per minute
-        const wordCount = (article.article_content || '').split(/\s+/).length;
-        const estimatedMinutes = Math.max(1, Math.ceil(wordCount / 200)); // At least 1 minute
+        const contentMatchesId = getArticleIdString(article) === activeArticleId;
+        const contentForEstimate = contentMatchesId ? article?.article_content || '' : '';
+        const wordCount = contentForEstimate.split(/\s+/).filter(Boolean).length;
+        // Floor so list/deep-link payloads without content yet still credit reading until merge fills body
+        const estimatedMinutes = Math.max(10, Math.ceil(wordCount / 200));
 
-        // Track read time every 30 seconds or when component unmounts
         readTimeIntervalRef.current = setInterval(async () => {
             try {
-                const timeSpent = (Date.now() - startTimeRef.current) / (1000 * 60); // Convert to minutes
-                if (timeSpent >= 0.5) { // Track if at least 30 seconds
-                    await SikiyaAPI.post(`/article/${article._id}/track/read`, {
-                        minutes_read: Math.min(timeSpent, estimatedMinutes) // Cap at estimated time
+                const timeSpent = (Date.now() - startTimeRef.current) / (1000 * 60);
+                if (timeSpent >= 0.5) {
+                    await SikiyaAPI.post(`/article/${activeArticleId}/track/read`, {
+                        minutes_read: Math.min(timeSpent, estimatedMinutes),
                     });
-                    startTimeRef.current = Date.now(); // Reset timer
+                    startTimeRef.current = Date.now();
                 }
             } catch (error) {
                 console.error('Error tracking article read time:', error);
             }
-        }, 30000); // Every 30 seconds
+        }, 30000);
 
-        // Cleanup: Track final read time on unmount
         return () => {
             if (readTimeIntervalRef.current) {
                 clearInterval(readTimeIntervalRef.current);
+                readTimeIntervalRef.current = null;
             }
             if (startTimeRef.current) {
                 const finalTimeSpent = (Date.now() - startTimeRef.current) / (1000 * 60);
                 if (finalTimeSpent >= 0.5) {
-                    SikiyaAPI.post(`/article/${article._id}/track/read`, {
-                        minutes_read: Math.min(finalTimeSpent, estimatedMinutes)
-                    }).catch(err => console.error('Error tracking final read time:', err));
+                    SikiyaAPI.post(`/article/${activeArticleId}/track/read`, {
+                        minutes_read: Math.min(finalTimeSpent, estimatedMinutes),
+                    }).catch((err) => console.error('Error tracking final read time:', err));
                 }
             }
         };
-    }, [article?._id]);
+    }, [activeArticleId]);
 
     //console.log('Fetched article:', article);
 
@@ -1178,7 +1212,7 @@ const NewsHome = ({ route }) => {
     const categoryColor = categoryColors[articleCategory] || MainSecondaryBlueColor;
 
     return (
-        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+        <SafeAreaView style={styles.container} edges={['left', 'right']}>
             <StatusBar barStyle="dark-content" />
             
             <ScrollView

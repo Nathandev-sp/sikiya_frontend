@@ -1,244 +1,234 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, StatusBar} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, StatusBar, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AppScreenBackgroundColor, { 
-  generalTitleColor, 
-  generalTitleFont, 
-  main_Style, 
-  MainBrownSecondaryColor, 
-  generalTextFont, 
-  secCardBackgroundColor, 
-  cardBackgroundColor, 
-  withdrawnTitleColor, 
-  generalTextColor, 
-  largeTextSize, 
-  generalTextFontWeight, 
-  generalTitleFontWeight, 
-  generalTextSize, 
-  generalSmallTextSize, 
-  articleTextSize,
-  lightBannerBackgroundColor,
-  generalActiveOpacity,
-  defaultButtonHitslop,
-  MainSecondaryBlueColor,
-  commentTextSize
+import AppScreenBackgroundColor, {
+  generalTitleFont,
+  MainBrownSecondaryColor,
+  generalTextFont,
+  generalTextColor,
+  generalTextSize,
+  generalTitleFontWeight,
+  homeFeedBackgroundColor,
+  PrimBtnColor,
 } from '../../styles/GeneralAppStyle';
+import { SUBMISSION_BULLET_COLORS, SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useLanguage } from '../../Context/LanguageContext';
+import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
+
+const BULLET_KEYS = ['bullet1', 'bullet2', 'bullet3', 'bullet4', 'bullet5'];
 
 const NewVideoDisclaimerScreen = ({ navigation }) => {
   const { t } = useLanguage();
   const [agreed, setAgreed] = useState(false);
+  const ctaScale = useRef(new Animated.Value(0.97)).current;
+
+  useEffect(() => {
+    Animated.spring(ctaScale, {
+      toValue: agreed ? 1 : 0.97,
+      friction: 7,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  }, [agreed, ctaScale]);
 
   const handleContinue = () => {
-    if (!agreed) {
-      return;
-    }
-    if (navigation) {
-      // Navigate to NewVideoTitleScreen to continue with video details
-      navigation.navigate('NewVideoTitle');
-    }
+    if (!agreed) return;
+    navigation?.navigate('NewVideoTitle');
+  };
+
+  const openTerms = () => {
+    navigation?.navigate('ArticleTerms');
   };
 
   return (
-    <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'bottom']}>
-      <StatusBar barStyle={"dark-content"} />
-      {/* Header with Back Button and Image */}
-      <View style={styles.headerContainer}>
-        <View style={{position: 'absolute', top: -44, left: 2, zIndex: 10}}>
-          <GoBackButton />
-        </View>
-        <Image 
-          source={require('../../../assets/functionalImages/Sikiya_new_video.png')}
-          style={styles.headerLogo}
-          resizeMode="contain"
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.backRow}>
+        <GoBackButton
+          buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }}
         />
-        <View style={styles.placeholder} />
-        {/* Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.screenTitle}>{t('videoDisclaimer.title')}</Text>
-        </View>
       </View>
 
-      {/* Disclaimer Content */}
-      <View style={styles.disclaimerContainer}>
-        {/* Video Quality Section */}
-        <View style={styles.section}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="videocam" size={32} color={MainSecondaryBlueColor} />
-          </View>
-          <Text style={styles.sectionText}>{t('videoDisclaimer.videoQuality')}</Text>
-        </View>
+      <ArticleSubmissionStepHeader step={1} variant="full" flow="video" />
 
-        {/* Accuracy Section */}
-        <View style={styles.section}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="shield-checkmark" size={32} color={MainSecondaryBlueColor} />
-          </View>
-          <Text style={styles.sectionText}>{t('videoDisclaimer.accuracy')}</Text>
-        </View>
-
-        {/* Review Process Section */}
-        <View style={styles.section}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="document-text" size={32} color={MainSecondaryBlueColor} />
-          </View>
-          <Text style={styles.sectionText}>{t('videoDisclaimer.reviewProcess')}</Text>
-        </View>
-
-        {/* Proof Requirements Section */}
-        <View style={styles.section}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="lock-closed" size={32} color={MainSecondaryBlueColor} />
-          </View>
-          <Text style={styles.sectionText}>{t('videoDisclaimer.proofRequirements')}</Text>
-        </View>
-
-        {/* Publication Rights Section */}
-        <View style={styles.section}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="globe" size={32} color={MainSecondaryBlueColor} />
-          </View>
-          <Text style={styles.sectionText}>{t('videoDisclaimer.publicationRights')}</Text>
-        </View>
-      </View>
-
-      {/* Agreement Row */}
-      <View style={styles.agreeRow}>
-        <TouchableOpacity
-          onPress={() => setAgreed(!agreed)}
-          style={styles.checkboxContainer}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-          activeOpacity={generalActiveOpacity}
-        >
-          <Ionicons
-            name={agreed ? "checkbox" : "square-outline"}
-            size={24}
-            color={agreed ? MainBrownSecondaryColor : MainBrownSecondaryColor}
-          />
-        </TouchableOpacity>
-        <Text style={styles.agreeText}>
-          {t('videoDisclaimer.agreeTerms')}
-        </Text>
-      </View>
-
-      {/* Continue Button */}
-      <TouchableOpacity 
-        style={[
-          styles.continueButton, 
-          main_Style.genButtonElevation,
-          { opacity: agreed ? 1 : 0.5 }
-        ]}
-        activeOpacity={generalActiveOpacity}
-        onPress={handleContinue}
-        disabled={!agreed}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.continueButtonText}>{t('videoDisclaimer.continue')}</Text>
-      </TouchableOpacity>
+        <View style={styles.heroCard}>
+          <Image
+            source={require('../../../assets/functionalImages/Sikiya_new_video.png')}
+            style={styles.heroImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.heroTitle}>{t('videoDisclaimer.beforeYouPublish')}</Text>
+        </View>
+
+        <View style={styles.bulletList}>
+          {BULLET_KEYS.map((key, i) => (
+            <View key={key} style={styles.bulletRow}>
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={SUBMISSION_BULLET_COLORS[i % SUBMISSION_BULLET_COLORS.length]}
+                style={styles.bulletIcon}
+              />
+              <Text style={styles.bulletText}>{t(`videoDisclaimer.${key}`)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.agreeRow}>
+          <Pressable onPress={() => setAgreed(!agreed)} hitSlop={12} style={styles.checkHit}>
+            <Ionicons
+              name={agreed ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={MainBrownSecondaryColor}
+            />
+          </Pressable>
+          <Text style={styles.agreeCopy}>
+            {t('videoDisclaimer.agreeTermsPrefix')}
+            <Text onPress={openTerms} style={styles.agreeLink}>
+              {t('videoDisclaimer.agreeTermsLink')}
+            </Text>
+          </Text>
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <Animated.View style={{ transform: [{ scale: ctaScale }], alignSelf: 'stretch' }}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.continueBtn,
+              !agreed && styles.continueBtnDisabled,
+              pressed && agreed && styles.continueBtnPressed,
+            ]}
+            onPress={handleContinue}
+            disabled={!agreed}
+            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+          >
+            <Text style={styles.continueBtnText}>{t('videoDisclaimer.continue')}</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
+    backgroundColor: homeFeedBackgroundColor,
   },
-  headerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    backgroundColor: cardBackgroundColor,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    marginTop: 12,
-    //borderWidth: 0.5,
-    //borderColor: MainBrownSecondaryColor,
-  },
-  headerLogo: {
-    marginTop: 12,
-    width: 100,
-    height: 100,
-  },
-  placeholder: {
-    width: 40,
-  },
-  titleSection: {
+  backRow: {
     paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingTop: 4,
+    paddingBottom: 0,
   },
-  screenTitle: {
-    fontSize: largeTextSize,
-    fontWeight: generalTitleFontWeight,
-    fontFamily: generalTitleFont,
-    color: MainBrownSecondaryColor,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  disclaimerContainer: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    //backgroundColor: lightBannerBackgroundColor,
-    padding: 16,
-    justifyContent: 'space-around',
-  },
-  section: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    //backgroundColor: cardBackgroundColor,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  sectionText: {
+  scroll: {
     flex: 1,
-    fontSize: commentTextSize,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  heroCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    marginBottom: 22,
+    borderLeftWidth: 4,
+    borderLeftColor: SUBMISSION_SEGMENT_COLORS[0],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(44, 36, 22, 0.08)',
+    shadowColor: '#2C2416',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  heroImage: {
+    width: 88,
+    height: 88,
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: PrimBtnColor,
+    textAlign: 'center',
+  },
+  bulletList: {
+    marginBottom: 20,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  bulletIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 15,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   agreeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: lightBannerBackgroundColor,
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1.2,
-    borderColor: MainBrownSecondaryColor,
+    alignItems: 'flex-start',
+    paddingVertical: 4,
   },
-  checkboxContainer: {
-    marginRight: 12,
+  checkHit: {
+    marginRight: 10,
+    marginTop: 2,
+    padding: 2,
   },
-  agreeText: {
-    fontSize: commentTextSize,
+  agreeCopy: {
+    flex: 1,
+    fontSize: 15,
     fontFamily: generalTextFont,
     color: generalTextColor,
-    flex: 1,
-    flexWrap: 'wrap',
-    lineHeight: 18,
+    lineHeight: 22,
   },
-  continueButton: {
+  agreeLink: {
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: MainBrownSecondaryColor,
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(44, 36, 22, 0.08)',
+    backgroundColor: homeFeedBackgroundColor,
+  },
+  continueBtn: {
     backgroundColor: MainBrownSecondaryColor,
     paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButtonText: {
+  continueBtnDisabled: {
+    opacity: 0.38,
+  },
+  continueBtnPressed: {
+    opacity: 0.9,
+  },
+  continueBtnText: {
     fontSize: generalTextSize,
     fontWeight: generalTitleFontWeight,
     fontFamily: generalTitleFont,
@@ -247,4 +237,3 @@ const styles = StyleSheet.create({
 });
 
 export default NewVideoDisclaimerScreen;
-

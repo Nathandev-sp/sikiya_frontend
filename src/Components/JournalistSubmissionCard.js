@@ -1,51 +1,47 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
-import AppScreenBackgroundColor, { 
-    articleTextSize,
-    articleTitleColor, 
-    articleTitleFont, 
-    cardBackgroundColor, 
-    commentTextSize, 
+import React, { useMemo, useCallback } from "react";
+import { View, Text, StyleSheet, Image, Pressable, Alert } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import {
+    articleTitleColor,
+    articleTitleFont,
     generalSmallTextSize,
-    generalTextColor, 
-    generalTextFont, 
-    generalTextSize, 
+    generalTextFont,
     generalTitleFont,
-    generalTitleFontWeight, 
     lightBannerBackgroundColor,
-    main_Style, 
-    mainBrownColor, 
-    withdrawnTitleColor, 
-    withdrawnTitleSize 
+    MainBrownSecondaryColor,
+    withdrawnTitleColor,
+    withdrawnTitleSize,
+    homeCardBorderRadius,
 } from "../styles/GeneralAppStyle";
 import { Ionicons } from '@expo/vector-icons';
 import { getImageUrl } from "../utils/imageUrl";
-import DateConverter from "../Helpers/DateConverter";
 import { useLanguage } from "../Context/LanguageContext";
 
-const JournalistSubmissionCard = ({ submission }) => {
-    const { width } = useWindowDimensions();
+const STATUS_TOKENS = {
+    approved: { bg: '#DCFCE7', text: '#166534', border: 'rgba(22, 101, 52, 0.25)' },
+    rejected: { bg: '#FEE2E2', text: '#991B1B', border: 'rgba(153, 27, 27, 0.22)' },
+    pending: { bg: '#FEF9C3', text: '#A16207', border: 'rgba(161, 98, 7, 0.28)' },
+    default: { bg: '#F4F4F5', text: '#57534E', border: 'rgba(0,0,0,0.06)' },
+};
+
+function formatShortMetaDate(dateString) {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '';
+    const opts = { month: 'short', day: 'numeric' };
+    if (d.getFullYear() !== new Date().getFullYear()) {
+        opts.year = 'numeric';
+    }
+    return d.toLocaleDateString(undefined, opts);
+}
+
+const JournalistSubmissionCard = ({ submission, navigation }) => {
     const { t } = useLanguage();
     const isArticle = submission?.type === 'article';
     const isVideo = submission?.type === 'video';
 
-    // Get status color
-    const getStatusColor = (status) => {
-        switch(status) {
-            case 'approved':
-                return '#10B981'; // green
-            case 'rejected':
-                return '#EF4444'; // red
-            case 'pending':
-                return '#F59E0B'; // orange/yellow
-            default:
-                return withdrawnTitleColor;
-        }
-    };
-
-    // Get status text with translation
     const getStatusText = (status) => {
-        switch(status) {
+        switch (status) {
             case 'approved':
                 return t('submissions.approved');
             case 'rejected':
@@ -57,7 +53,12 @@ const JournalistSubmissionCard = ({ submission }) => {
         }
     };
 
-    // Get image source (memoized to avoid new object refs every render)
+    const hasRealThumbnail = useMemo(() => {
+        if (isArticle && submission?.article_front_image) return true;
+        if (isVideo && submission?.video_front_image) return true;
+        return false;
+    }, [isArticle, isVideo, submission?.article_front_image, submission?.video_front_image]);
+
     const imageSource = useMemo(() => {
         if (isArticle && submission?.article_front_image) {
             return { uri: getImageUrl(submission.article_front_image) };
@@ -72,262 +73,265 @@ const JournalistSubmissionCard = ({ submission }) => {
     }, [isArticle, isVideo, submission?.article_front_image, submission?.video_front_image]);
 
     const title = (isArticle ? submission?.article_title : submission?.video_title) || t('submissions.untitled', { defaultValue: 'Untitled' });
+    const statusKey = submission?.approval_status === 'approved' || submission?.approval_status === 'rejected' || submission?.approval_status === 'pending'
+        ? submission.approval_status
+        : 'default';
+    const statusStyle = STATUS_TOKENS[statusKey] || STATUS_TOKENS.default;
+
+    const metaLine = `${isArticle ? t('submissions.article') : t('submissions.video')} • ${submission?.created_on ? formatShortMetaDate(submission.created_on) : t('submissions.notAvailable')}`;
+
+    const handleView = useCallback(() => {
+        if (submission?.approval_status !== 'approved' || !navigation) return;
+        if (isArticle) {
+            navigation.navigate('NewsHome', { articleId: String(submission._id) });
+        } else {
+            navigation.navigate('LiveNews', { videoId: String(submission._id) });
+        }
+    }, [navigation, submission?._id, submission?.approval_status, isArticle]);
+
+    const showSoon = useCallback(() => {
+        Alert.alert(t('submissions.actionSoonTitle'), t('submissions.actionSoonMessage'));
+    }, [t]);
+
+    const decisionLine = useMemo(() => {
+        const d = submission?.published_on || submission?.approval_date;
+        if (!d) return null;
+        return `${t('submissions.decisionShort')} ${formatShortMetaDate(d)}`;
+    }, [submission?.published_on, submission?.approval_date, t]);
 
     return (
-        <View
-            style={[styles.container, main_Style.genButtonElevation, { width: width * 0.94 }]}
+        <Pressable
+            style={({ pressed }) => [styles.outer, pressed && styles.outerPressed]}
             accessibilityRole="summary"
-            accessibilityLabel={`${isArticle ? t('submissions.article') : t('submissions.video')}: ${title}. ${t('submissions.approvalStatus')}: ${getStatusText(submission?.approval_status)}`}
+            accessibilityLabel={`${isArticle ? t('submissions.article') : t('submissions.video')}: ${title}. ${getStatusText(submission?.approval_status)}`}
+            android_ripple={null}
         >
-            {/* Upper section with red background */}
-            <View style={styles.upperSection}>
-                <View style={styles.introContainer}>
-                    {/* Image on the left */}
-                    <View style={styles.imageContainer}>
+            <View style={styles.card}>
+                <View style={styles.topRow}>
+                    <View style={styles.thumbWrap}>
                         <Image
                             style={styles.frontImage}
                             defaultSource={isVideo ? require('../../assets/functionalImages/video-camera.png') : require('../../assets/functionalImages/FrontImagePlaceholder.png')}
                             source={imageSource}
                             resizeMode="cover"
                         />
+                        {!hasRealThumbnail && (
+                            <>
+                                <LinearGradient
+                                    colors={['rgba(62,42,24,0.05)', 'rgba(62,42,24,0.38)']}
+                                    style={StyleSheet.absoluteFill}
+                                />
+                                <View style={styles.thumbIconCenter}>
+                                    <Ionicons
+                                        name={isVideo ? 'videocam' : 'image-outline'}
+                                        size={26}
+                                        color="rgba(255,255,255,0.92)"
+                                    />
+                                </View>
+                            </>
+                        )}
                     </View>
-                    
-                    {/* Content on the right */}
-                    <View style={styles.contentContainer}>
-                        {/* Title */}
-                        <View style={styles.titleContainer}>
-                            <Text
-                                style={styles.cardTitle}
-                                numberOfLines={2}
-                                ellipsizeMode="tail"
-                            >
-                                {title}
-                            </Text>
-                        </View>
-                        
-                        {/* Type indicator (Article or Video) */}
-                        <View style={styles.typeContainer}>
-                            <Ionicons 
-                                name={isArticle ? "document-text" : "videocam"} 
-                                size={16} 
-                                color={withdrawnTitleColor} 
-                                style={styles.typeIcon}
-                            />
-                            <Text style={styles.typeText}>
-                                {isArticle ? t('submissions.article') : t('submissions.video')}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-            </View>
-            
-            {/* Approval Status Section */}
-            <View style={styles.approvalSection}>
-                <View style={styles.statusRow}>
-                    <Text style={styles.statusLabel}>{t('submissions.approvalStatus')}:</Text>
-                    <View style={[styles.statusBadge]}>
-                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(submission?.approval_status) }]} />
-                        <Text style={[styles.statusText, { color: getStatusColor(submission?.approval_status) }]}>
-                            {getStatusText(submission?.approval_status)}
-                        </Text>
-                    </View>
-                </View>
-                
-                {/* Date Information */}
-                <View style={styles.dateRow}>
-                    <View style={styles.dateItem}>
-                        <Ionicons name="calendar" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
-                        <Text style={styles.dateLabel}>{t('submissions.created')}: </Text>
-                        <Text style={styles.dateValue}>
-                            {submission?.created_on ? DateConverter(submission.created_on) : t('submissions.notAvailable')}
-                        </Text>
-                    </View>
-                </View>
-                
-                {/* Decision Date - show if there's a decision (published_on or approval_date) */}
-                {(submission?.published_on || submission?.approval_date) && (
-                    <View style={styles.dateRow}>
-                        <View style={styles.dateItem}>
-                            <Ionicons name="checkmark-circle" size={14} color={withdrawnTitleColor} style={styles.dateIcon} />
-                            <Text style={styles.dateLabel}>{t('submissions.decisionDate')}: </Text>
-                            <Text style={styles.dateValue}>
-                                {DateConverter(submission.published_on || submission.approval_date)}
-                            </Text>
-                        </View>
-                    </View>
-                )}
 
-                {/* Approval Message - only show if not pending */}
-                {submission?.approval_status !== 'pending' && submission?.approval_reason && (
-                    <View style={styles.messageContainer}>
-                        <Text style={styles.messageLabel}>{t('submissions.decisionMessage')}:</Text>
+                    <View style={styles.copyCol}>
+                        <Text style={styles.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+                            {title}
+                        </Text>
+                        <Text style={styles.metaMuted} numberOfLines={1}>
+                            {metaLine}
+                        </Text>
+                        <View style={[styles.statusPill, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
+                            <Text style={[styles.statusPillText, { color: statusStyle.text }]}>
+                                {getStatusText(submission?.approval_status)}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {decisionLine ? (
+                    <Text style={styles.decisionMuted} numberOfLines={1}>{decisionLine}</Text>
+                ) : null}
+
+                {submission?.approval_status !== 'pending' && submission?.approval_reason ? (
+                    <View style={styles.messageBox}>
                         <Text style={styles.messageText}>{submission.approval_reason}</Text>
                     </View>
-                )}
+                ) : null}
+
+                <View style={styles.divider} />
+
+                <View style={styles.actionsRow}>
+                    <Pressable
+                        onPress={handleView}
+                        disabled={submission?.approval_status !== 'approved'}
+                        style={({ pressed }) => [
+                            styles.actionHit,
+                            submission?.approval_status !== 'approved' && styles.actionDisabled,
+                            pressed && submission?.approval_status === 'approved' && styles.actionPressed,
+                        ]}
+                    >
+                        <Text style={[
+                            styles.actionText,
+                            submission?.approval_status !== 'approved' && styles.actionTextDisabled,
+                        ]}>
+                            {t('submissions.view')}
+                        </Text>
+                    </Pressable>
+                    <Text style={styles.actionSep}>|</Text>
+                    <Pressable
+                        onPress={showSoon}
+                        style={({ pressed }) => [styles.actionHit, pressed && styles.actionPressed]}
+                    >
+                        <Text style={styles.actionTextMuted}>{t('submissions.edit')}</Text>
+                    </Pressable>
+                    <Text style={styles.actionSep}>|</Text>
+                    <Pressable
+                        onPress={showSoon}
+                        style={({ pressed }) => [styles.actionHit, pressed && styles.actionPressed]}
+                    >
+                        <Text style={styles.actionTextMuted}>{t('submissions.delete')}</Text>
+                    </Pressable>
+                </View>
             </View>
-        </View>
+        </Pressable>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    outer: {
+        marginVertical: 7,
+        alignSelf: 'stretch',
+    },
+    outerPressed: {
+        transform: [{ scale: 0.985 }],
+        opacity: 0.98,
+    },
+    card: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginVertical: 8,
-        alignSelf: 'center',
-        overflow: 'hidden',
-        borderWidth: 1.2,
-        borderColor: 'rgba(0,0,0,0.1)',
+        borderRadius: homeCardBorderRadius,
+        padding: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(44, 36, 22, 0.1)',
+        shadowColor: '#2C2416',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    upperSection: {
-        backgroundColor: cardBackgroundColor,
-        padding: 8,
-    },
-    introContainer: {
-        width: '100%',
+    topRow: {
         flexDirection: 'row',
-        minHeight: 40,
-        marginBottom: 0,
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
-    imageContainer: {
-        width: '25%',
-        height: 70,
-        borderRadius: 8,
-        backgroundColor: '#F5F5F5',
+    thumbWrap: {
+        width: 88,
+        height: 88,
+        borderRadius: 10,
         overflow: 'hidden',
-        marginRight: 12,
-        position: 'relative',
+        backgroundColor: lightBannerBackgroundColor,
+        marginRight: 14,
     },
     frontImage: {
         width: '100%',
-        height: 70,
-        borderRadius: 8,
+        height: '100%',
     },
-    contentContainer: {
-        flex: 1,
-        justifyContent: 'space-between',
-        paddingRight: 4,
-        paddingVertical: 2,
+    thumbIconCenter: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    titleContainer: {
+    copyCol: {
         flex: 1,
+        minHeight: 88,
         justifyContent: 'flex-start',
-        marginBottom: 6,
     },
     cardTitle: {
-        fontSize: generalTextSize,
-        fontWeight: '600',
-        color: generalTextColor,
-        fontFamily: generalTitleFont,
-        lineHeight: 20,
-        //letterSpacing: 0.1,
-    },
-    typeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-        backgroundColor: mainBrownColor,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    typeIcon: {
-        marginRight: 5,
-    },
-    typeText: {
-        fontSize: withdrawnTitleSize-1,
-        color:generalTextColor,
-        fontFamily: generalTitleFont,
+        fontSize: 16,
         fontWeight: '700',
-        letterSpacing: 0.8,
+        color: articleTitleColor,
+        fontFamily: articleTitleFont,
+        lineHeight: 21,
+        marginBottom: 6,
     },
-    approvalSection: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 8,
-        paddingVertical: 12,
-        marginTop: 0,
-    },
-    statusRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-    },
-    statusLabel: {
-        fontSize: withdrawnTitleSize - 1,
-        color: generalTextColor,
-        fontFamily: generalTitleFont,
-        fontWeight: '600',
-        letterSpacing: 0.2,
-    },
-    statusBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 6,
-        backgroundColor: 'rgba(0,0,0,0.04)',
-    },
-    statusDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginRight: 6,
-    },
-    statusText: {
-        fontSize: withdrawnTitleSize - 1,
-        fontFamily: generalTextFont,
-        fontWeight: '600',
-        letterSpacing: 0.2,
-    },
-    dateRow: {
-        marginTop: 6,
-        marginBottom: 3,
-    },
-    dateItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    dateIcon: {
-        marginRight: 2,
-    },
-    dateLabel: {
-        fontSize: withdrawnTitleSize - 1,
+    metaMuted: {
+        fontSize: 13,
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        fontWeight: '500',
+        marginBottom: 10,
     },
-    dateValue: {
-        fontSize: withdrawnTitleSize - 1,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
-        fontWeight: '600',
-    },
-    messageContainer: {
-        marginTop: 8,
-        padding: 10,
-        backgroundColor: 'rgba(0,0,0,0.02)',
-        borderRadius: 8,
+    statusPill: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)',
     },
-    messageLabel: {
-        fontSize: withdrawnTitleSize - 1,
-        color: generalTextColor,
+    statusPillText: {
+        fontSize: 12,
         fontFamily: generalTitleFont,
-        fontWeight: '600',
-        marginBottom: 4,
+        fontWeight: '700',
         letterSpacing: 0.2,
     },
-    messageText: {
-        fontSize: withdrawnTitleSize - 1,
-        color: generalTextColor,
+    decisionMuted: {
+        marginTop: 10,
+        fontSize: withdrawnTitleSize,
+        color: withdrawnTitleColor,
         fontFamily: generalTextFont,
-        lineHeight: 18,
+    },
+    messageBox: {
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: lightBannerBackgroundColor,
+        borderRadius: 8,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(44, 36, 22, 0.08)',
+    },
+    messageText: {
+        fontSize: generalSmallTextSize,
+        color: '#4A4540',
+        fontFamily: generalTextFont,
+        lineHeight: 19,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(62, 42, 24, 0.22)',
+        marginTop: 16,
+        marginBottom: 12,
+        alignSelf: 'stretch',
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 4,
+    },
+    actionHit: {
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+    },
+    actionPressed: {
+        opacity: 0.7,
+    },
+    actionDisabled: {
+        opacity: 1,
+    },
+    actionText: {
+        fontSize: 13,
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        color: MainBrownSecondaryColor,
+    },
+    actionTextDisabled: {
+        color: '#C4BFB8',
+    },
+    actionTextMuted: {
+        fontSize: 13,
+        fontFamily: generalTextFont,
+        color: '#8A847C',
+    },
+    actionSep: {
+        fontSize: 12,
+        color: 'rgba(44, 36, 22, 0.2)',
+        marginHorizontal: 2,
     },
 });
 
 export default React.memo(JournalistSubmissionCard);
-

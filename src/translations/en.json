@@ -686,9 +686,19 @@
     "decisionDate": "Decision Date",
     "decisionMessage": "Decision Message",
     "notAvailable": "N/A",
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "decisionShort": "Updated",
+    "actionSoonTitle": "Coming soon",
+    "actionSoonMessage": "Editing and removing submissions from the app will be available in a future update."
   },
   "journalistPanel": {
+    "thisMonth": "This month",
+    "statArticles": "Articles",
+    "statVideos": "Videos",
+    "submissionsSubtitle": "Drafts and published work in one place.",
     "totalArticles": "Total Articles",
     "monthlyArticles": "Monthly Articles",
     "monthlyReaders": "Monthly Readers",
@@ -703,7 +713,33 @@
     "noSubmissionsYet": "Your submitted articles and videos will appear here",
     "loadingMore": "Loading more..."
   },
+  "submissionFlow": {
+    "stepPrefix": "Step {{current}} of {{total}}"
+  },
+  "articleFlow": {
+    "stepOf": "Step {{current}} of {{total}}",
+    "stepLabel1": "Guidelines",
+    "stepLabel2": "Details",
+    "stepLabel3": "Media & proof",
+    "writeSubtitle": "Title, highlight, and your story",
+    "mediaSubtitle": "Cover image, extras, and verification"
+  },
+  "videoFlow": {
+    "stepLabel1": "Guidelines",
+    "stepLabel2": "Details",
+    "stepLabel3": "Upload & proof",
+    "detailsSubtitle": "Title, location, and category",
+    "mediaSubtitle": "Your clip and verification"
+  },
   "articleDisclaimer": {
+    "beforeYouPublish": "Before you publish",
+    "bullet1": "Use clear, high-quality images",
+    "bullet2": "Ensure your information is accurate",
+    "bullet3": "Articles are reviewed before publishing",
+    "bullet4": "Provide proof (images or sources)",
+    "bullet5": "You allow Sikiya to publish and distribute your article",
+    "agreeTermsPrefix": "I agree to the ",
+    "agreeTermsLink": "Terms & Guidelines",
     "title": "Article Disclaimer",
     "imageQuality": "Upload good images with good quality",
     "accuracy": "Upload the most accurate information to the best of your knowledge",
@@ -767,6 +803,17 @@
     "proofPhoto": "proof photo",
     "proofText": "proof text",
     "failedToUpdate": "Failed to update article. Please try again.",
+    "heroSectionTitle": "Main cover photo",
+    "heroSectionHint": "This image appears at the top of your article.",
+    "addMainPhoto": "Add main photo",
+    "replacePhoto": "Replace",
+    "removePhoto": "Remove",
+    "additionalSectionTitle": "More photos",
+    "additionalSectionHint": "Optional — up to three extra images.",
+    "addPhotoAction": "Add photo",
+    "proofRequiredTitle": "Proof (required)",
+    "proofWhyMatters": "Helps verify your article and improve your trust score.",
+    "proofTextHelper": "List sources, dates, locations, or how you obtained the information.",
     "photos": "Photos",
     "photosDescription": "Upload a main photo and up to 3 additional photos to accompany your article",
     "uploading": "Uploading...",
@@ -784,6 +831,14 @@
     "submitArticle": "Submit Article"
   },
   "videoDisclaimer": {
+    "beforeYouPublish": "Before you publish",
+    "bullet1": "Use clear, stable video (good lighting and sound)",
+    "bullet2": "Ensure titles and context are accurate",
+    "bullet3": "Videos are reviewed before publishing",
+    "bullet4": "Provide proof (photo or notes from the field)",
+    "bullet5": "You allow Sikiya to publish and distribute your video",
+    "agreeTermsPrefix": "I agree to the ",
+    "agreeTermsLink": "Terms & Guidelines",
     "title": "Video Disclaimer",
     "videoQuality": "Upload good quality videos",
     "accuracy": "Upload the most accurate information to the best of your knowledge",
@@ -815,6 +870,14 @@
     "failedToCreate": "Failed to create video. Please try again."
   },
   "videoUpload": {
+    "videoSectionTitle": "Your video",
+    "videoSectionHint": "Up to 1 minute. Landscape or vertical both work.",
+    "addVideo": "Add video",
+    "replaceVideo": "Replace",
+    "removeVideo": "Remove",
+    "proofRequiredTitle": "Proof (required)",
+    "proofWhyMatters": "Helps verify your video and improve your trust score.",
+    "proofTextHelper": "List sources, dates, locations, or how you obtained the footage.",
     "title": "New Video",
     "submittingVideo": "Submitting video...",
     "error": "Error",

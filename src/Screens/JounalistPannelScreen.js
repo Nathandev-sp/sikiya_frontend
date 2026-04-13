@@ -1,28 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import JournalistSubmissionCard from '../Components/JournalistSubmissionCard';
-import AppScreenBackgroundColor, { 
-  generalTitleColor, 
-  generalTitleFont, 
-  main_Style, 
-  MainBrownSecondaryColor, 
-  generalTextFont, 
-  secCardBackgroundColor, 
-  cardBackgroundColor, 
-  withdrawnTitleColor, 
-  generalTextColor,
-  generalSmallTextSize,
-  xlargeTextSize,
+import {
+  generalTitleFont,
+  MainBrownSecondaryColor,
+  generalTextFont,
+  withdrawnTitleColor,
   generalTitleFontWeight,
-  commentTextSize,
   generalTitleSize,
   generalTextSize,
   articleTitleFont,
-  articleTitleSize
+  articleTitleSize,
+  homeScreenPadding,
+  homeFeedBackgroundColor,
+  lightBannerBackgroundColor,
+  PrimBtnColor,
 } from '../styles/GeneralAppStyle';
 import { StatusBar } from 'expo-status-bar';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
@@ -36,19 +31,18 @@ const JounalistPannelScreen = ({ navigation }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  
-  // Stats state
+
   const [stats, setStats] = useState({
     user_impact: 'Tier 3',
     engagement_score: 0,
     monthly_readers: 0,
     total_articles_published: 0,
     monthly_articles: 0,
-    monthly_videos: 0
+    monthly_videos: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch journalist stats
   useEffect(() => {
     const fetchStats = async () => {
       setLoadingStats(true);
@@ -57,7 +51,6 @@ const JounalistPannelScreen = ({ navigation }) => {
         setStats(response.data);
       } catch (err) {
         console.error('Error fetching stats:', err);
-        // Keep default values on error
       } finally {
         setLoadingStats(false);
       }
@@ -66,11 +59,10 @@ const JounalistPannelScreen = ({ navigation }) => {
     fetchStats();
   }, []);
 
-  // Fetch journalist submissions
-  const fetchSubmissions = async (page = 1, append = false) => {
-    if (!append) {
+  const fetchSubmissions = useCallback(async (page = 1, append = false, { skipListLoader = false } = {}) => {
+    if (!append && !skipListLoader) {
       setLoadingSubmissions(true);
-    } else {
+    } else if (append) {
       setLoadingMore(true);
     }
     setSubmissionsError(null);
@@ -78,19 +70,17 @@ const JounalistPannelScreen = ({ navigation }) => {
       const response = await SikiyaAPI.get(`/journalist/submissions?page=${page}&limit=10`);
       const data = response.data;
       const newSubmissions = data.submissions || data || [];
-      
+
       if (append) {
-        // Filter out duplicates based on _id before appending
-        setSubmissions(prev => {
-          const existingIds = new Set(prev.map(s => s._id));
-          const uniqueSubmissions = newSubmissions.filter(s => s._id && !existingIds.has(s._id));
+        setSubmissions((prev) => {
+          const existingIds = new Set(prev.map((s) => s._id));
+          const uniqueSubmissions = newSubmissions.filter((s) => s._id && !existingIds.has(s._id));
           return [...prev, ...uniqueSubmissions];
         });
       } else {
         setSubmissions(newSubmissions);
       }
-      
-      // Update pagination state
+
       if (data.pagination) {
         setCurrentPage(data.pagination.currentPage);
         setHasMore(data.pagination.currentPage < data.pagination.totalPages);
@@ -104,31 +94,24 @@ const JounalistPannelScreen = ({ navigation }) => {
       setLoadingSubmissions(false);
       setLoadingMore(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchSubmissions(1, false);
-  }, []);
+  }, [fetchSubmissions]);
 
-  // Refresh submissions when screen comes into focus (e.g., returning from submission screens)
-  useFocusEffect(
-    useCallback(() => {
-      // Refresh submissions when screen is focused
-      fetchSubmissions(1, false);
-      // Also refresh stats
-      const refreshStats = async () => {
-        try {
-          const response = await SikiyaAPI.get('/journalist/stats');
-          setStats(response.data);
-        } catch (err) {
-          console.error('Error fetching stats:', err);
-        }
-      };
-      refreshStats();
-    }, [])
-  );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const statsPromise = SikiyaAPI.get('/journalist/stats')
+        .then((response) => setStats(response.data))
+        .catch((err) => console.error('Error fetching stats:', err));
+      await Promise.all([fetchSubmissions(1, false, { skipListLoader: true }), statsPromise]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchSubmissions]);
 
-  // Load more submissions
   const loadMoreSubmissions = () => {
     if (!loadingMore && hasMore && !loadingSubmissions) {
       const nextPage = currentPage + 1;
@@ -136,26 +119,31 @@ const JounalistPannelScreen = ({ navigation }) => {
     }
   };
 
-  // Handle button presses
   const handleAddArticle = () => {
-    if (navigation) {
-      navigation.navigate('NewArticleDisclaimer');
-    }
+    navigation?.navigate('NewArticleDisclaimer');
   };
 
   const handleUploadVideo = () => {
-    if (navigation) {
-      navigation.navigate('NewVideoDisclaimer');
-    }
+    navigation?.navigate('NewVideoDisclaimer');
   };
 
+  const statVal = (v) => (loadingStats ? '—' : v);
+
   return (
-    <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <StatusBar style="dark-content" />
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={MainBrownSecondaryColor}
+            colors={[MainBrownSecondaryColor]}
+          />
+        }
         onScroll={({ nativeEvent }) => {
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const paddingToBottom = 20;
@@ -165,10 +153,9 @@ const JounalistPannelScreen = ({ navigation }) => {
         }}
         scrollEventThrottle={400}
       >
-        {/* Header Section with Sikiya Logo */}
         <View style={styles.headerSection}>
           <View style={styles.logoContainer}>
-            <Image 
+            <Image
               source={require('../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
               style={styles.logo}
               resizeMode="contain"
@@ -176,78 +163,52 @@ const JounalistPannelScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Stats Section - Card Style Layout */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            {/* Monthly Articles */}
-            <View style={styles.statCardPurple}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyArticles')}</Text>
-              <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : stats.monthly_articles}
-              </Text>
-            </View>
-            
-            {/* Monthly Videos */}
-            <View style={styles.statCardBlue}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.monthlyVideos')}</Text>
-              <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : stats.monthly_videos}
-              </Text>
-            </View>
+        <View style={styles.statsCard}>
+          <Text style={styles.statsSectionLabel}>{t('journalistPanel.thisMonth')}</Text>
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>{t('journalistPanel.statArticles')}</Text>
+            <Text style={styles.statValue}>{statVal(stats.monthly_articles)}</Text>
           </View>
-          
-          <View style={styles.statsRow}>
-            {/* Engagement Score */}
-            <View style={styles.statCardGreen}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.engagement')}</Text>
-              <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : `${stats.engagement_score}%`}
-              </Text>
-            </View>
-            
-            {/* User Impact */}
-            <View style={styles.statCardOrange}>
-              <Text style={styles.statCardTitle}>{t('journalistPanel.impactTier')}</Text>
-              <Text style={styles.statCardValue}>
-                {loadingStats ? '...' : stats.user_impact}
-              </Text>
-            </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>{t('journalistPanel.statVideos')}</Text>
+            <Text style={styles.statValue}>{statVal(stats.monthly_videos)}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>{t('journalistPanel.engagement')}</Text>
+            <Text style={styles.statValue}>{statVal(`${stats.engagement_score}%`)}</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>{t('journalistPanel.impactTier')}</Text>
+            <Text style={styles.statValue}>{statVal(stats.user_impact)}</Text>
           </View>
         </View>
-        
-        {/* Action Buttons Row */}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity 
-            style={[styles.actionButton, main_Style.genButtonElevation]} 
+
+        <View style={styles.ctaRow}>
+          <Pressable
+            style={({ pressed }) => [styles.ctaPrimary, pressed && styles.ctaPressed]}
             onPress={handleAddArticle}
-            activeOpacity={0.7}
+            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
           >
-            <Image
-             style={styles.buttonIcon} 
-             source={require('../../assets/functionalImages/Sikiya_new_article.png')}
-             />
-            <Text style={styles.buttonText}>{t('journalistPanel.newArticle')}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.videoButton, main_Style.genButtonElevation]} 
+            <Ionicons name="add" size={22} color="#FFFFFF" style={styles.ctaIcon} />
+            <Text style={styles.ctaPrimaryText}>{t('journalistPanel.newArticle')}</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.ctaSecondary, pressed && styles.ctaPressed]}
             onPress={handleUploadVideo}
-            activeOpacity={0.7}
+            android_ripple={{ color: 'rgba(129, 88, 55, 0.12)' }}
           >
-            <Image
-             style={styles.buttonIcon} 
-             source={require('../../assets/functionalImages/Sikiya_new_video.png')}
-             />
-            <Text style={styles.buttonText}>{t('journalistPanel.newVideo')}</Text>
-          </TouchableOpacity>
+            <Ionicons name="videocam-outline" size={20} color={MainBrownSecondaryColor} style={styles.ctaIcon} />
+            <Text style={styles.ctaSecondaryText}>{t('journalistPanel.newVideo')}</Text>
+          </Pressable>
         </View>
-        
-        {/* Articles Section */}
+
         <View style={styles.contentContainer}>
-          <View style={styles.sectionTitleContainer}>
-            <Text style={styles.sectionTitle}>{t('journalistPanel.yourArticles')}</Text>
-          </View>
-          
+          <Text style={styles.sectionTitle}>{t('journalistPanel.yourArticles')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('journalistPanel.submissionsSubtitle')}</Text>
+
           {loadingSubmissions ? (
             <View style={styles.loadingContainer}>
               <MediumLoadingState />
@@ -262,10 +223,7 @@ const JounalistPannelScreen = ({ navigation }) => {
             <>
               <View style={styles.submissionsList}>
                 {submissions.map((submission) => (
-                  <JournalistSubmissionCard 
-                    key={submission._id} 
-                    submission={submission} 
-                  />
+                  <JournalistSubmissionCard key={submission._id} submission={submission} navigation={navigation} />
                 ))}
               </View>
               {loadingMore && (
@@ -288,203 +246,179 @@ const JounalistPannelScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: homeFeedBackgroundColor,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
   headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: homeScreenPadding,
+    paddingTop: 4,
+    paddingBottom: 14,
     alignItems: 'center',
-    //backgroundColor: 'red',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(44, 36, 22, 0.08)',
+    backgroundColor: homeFeedBackgroundColor,
   },
   logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   logo: {
-    width: 120,
-    height: 40,
+    width: 168,
+    height: 54,
   },
-  statsContainer: {
-    paddingHorizontal: 6,
-    paddingVertical: 0,
-    marginBottom: 0,
-    //backgroundColor: 'blue',
+  statsCard: {
+    marginHorizontal: homeScreenPadding,
+    marginTop: 18,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(44, 36, 22, 0.08)',
+    shadowColor: '#2C2416',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  statsRow: {
-    flexDirection: 'row',
+  statsSectionLabel: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: generalTitleFont,
+    fontWeight: '700',
+    color: withdrawnTitleColor,
     marginBottom: 12,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    minHeight: 100,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statCardPurple: {
-    flex: 1,
-    backgroundColor: '#7C3AED',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    minHeight: 100,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statCardBlue: {
-    flex: 1,
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    minHeight: 100,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statCardGreen: {
-    flex: 1,
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    minHeight: 100,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statCardOrange: {
-    flex: 1,
-    backgroundColor: '#F59E0B',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 8,
-    minHeight: 100,
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statCardTitle: {
-    fontSize: generalSmallTextSize,
-    color: '#fff',
-    fontFamily: generalTitleFont,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  statCardValue: {
-    fontSize: xlargeTextSize,
-    fontWeight: generalTitleFontWeight,
-    color: '#fff',
-    fontFamily: generalTitleFont,
-  },
-  buttonsContainer: {
+  statRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  actionButton: {
-    backgroundColor: secCardBackgroundColor,
-    //flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 8,
-    marginVertical: 16,
+    justifyContent: 'space-between',
+    paddingVertical: 11,
   },
-  videoButton: {
-    marginLeft: 6,
+  statDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(44, 36, 22, 0.09)',
   },
-  buttonIcon: {
-    marginRight: 8,
-    height: 60,
-    width: 60,
+  statLabel: {
+    fontSize: generalTextSize,
+    fontFamily: generalTextFont,
+    color: '#5C564E',
+  },
+  statValue: {
+    fontSize: generalTitleSize,
+    fontFamily: generalTitleFont,
+    fontWeight: generalTitleFontWeight,
+    color: PrimBtnColor,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: homeScreenPadding,
+    marginTop: 20,
     marginBottom: 8,
   },
-  buttonText: {
-    color: generalTextColor,
-    fontFamily: generalTitleFont,
-    fontSize: generalTextSize,
-    fontWeight: generalTitleFontWeight,
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  sectionTitleContainer: {
+  ctaPrimary: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'center',
+    backgroundColor: MainBrownSecondaryColor,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    minHeight: 48,
   },
-  sectionTitleIcon: {
-    marginRight: 8,
+  ctaSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: MainBrownSecondaryColor,
+    minHeight: 48,
+  },
+  ctaPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
+  },
+  ctaIcon: {
+    marginRight: 6,
+  },
+  ctaPrimaryText: {
+    color: '#FFFFFF',
+    fontFamily: generalTitleFont,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  ctaSecondaryText: {
+    color: MainBrownSecondaryColor,
+    fontFamily: generalTitleFont,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  contentContainer: {
+    paddingHorizontal: homeScreenPadding,
+    paddingTop: 22,
   },
   sectionTitle: {
-    fontSize: articleTitleSize+1,
-    fontWeight: generalTitleFontWeight,
-    color: MainBrownSecondaryColor,
+    fontSize: articleTitleSize + 2,
+    fontWeight: '700',
+    color: PrimBtnColor,
     fontFamily: articleTitleFont,
+    letterSpacing: 0.2,
+  },
+  sectionSubtitle: {
+    marginTop: 6,
+    marginBottom: 14,
+    fontSize: 13,
+    fontFamily: generalTextFont,
+    color: withdrawnTitleColor,
+    lineHeight: 18,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 32,
-    paddingHorizontal: 32,
-    //backgroundColor: 'red',
+    paddingHorizontal: 24,
+    backgroundColor: lightBannerBackgroundColor,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(44, 36, 22, 0.06)',
   },
   placeholderText: {
-    fontSize: generalSmallTextSize,
+    fontSize: 14,
     color: withdrawnTitleColor,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 14,
     fontFamily: generalTextFont,
+    lineHeight: 20,
   },
   loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 32,
+    paddingVertical: 36,
   },
   loadingText: {
-    fontSize: generalSmallTextSize,
+    fontSize: 13,
     color: withdrawnTitleColor,
     marginTop: 12,
     fontFamily: generalTextFont,
   },
   submissionsList: {
-    paddingTop: 8,
+    paddingTop: 4,
   },
   loadingMoreContainer: {
     paddingVertical: 20,
@@ -493,7 +427,7 @@ const styles = StyleSheet.create({
   },
   loadingMoreText: {
     marginTop: 8,
-    fontSize: generalSmallTextSize,
+    fontSize: 13,
     color: withdrawnTitleColor,
     fontFamily: generalTextFont,
   },
