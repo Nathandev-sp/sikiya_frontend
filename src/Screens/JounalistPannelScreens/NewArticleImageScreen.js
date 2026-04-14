@@ -29,13 +29,13 @@ import AppScreenBackgroundColor, {
   homeFeedBackgroundColor,
   PrimBtnColor,
 } from '../../styles/GeneralAppStyle';
-import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import { useLanguage } from '../../Context/LanguageContext';
 import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
 import { SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
+import SubmissionFlowTopBar from '../../Components/SubmissionFlowTopBar';
 
 const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
 
@@ -285,9 +285,7 @@ const NewArticleImageScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-        <View style={styles.backRow}>
-          <GoBackButton buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }} />
-        </View>
+        <SubmissionFlowTopBar />
         <ArticleSubmissionStepHeader step={3} variant="compact" flow="article" />
 
         <ScrollView
@@ -482,10 +480,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: homeFeedBackgroundColor,
   },
-  backRow: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-  },
   scrollView: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 20,
@@ -495,18 +489,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   screenTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: generalTitleFont,
     fontWeight: '700',
-    color: PrimBtnColor,
-    lineHeight: 26,
+    color: MainBrownSecondaryColor,
+    lineHeight: 21,
   },
   screenSubtitle: {
     marginTop: 6,
-    fontSize: generalSmallTextSize,
+    fontSize: 12,
     fontFamily: generalTextFont,
-    color: withdrawnTitleColor,
-    lineHeight: 18,
+    color: '#6B7280',
+    lineHeight: 16,
   },
   blockTitleRow: {
     flexDirection: 'row',

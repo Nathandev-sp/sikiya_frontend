@@ -30,12 +30,12 @@ import AppScreenBackgroundColor, {
   PrimBtnColor,
 } from '../../styles/GeneralAppStyle';
 import { SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
-import GoBackButton from '../../../NavComponents/GoBackButton';
 import BigLoaderAnim from '../../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../../Components/LoadingComps/MediumLoadingState';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import { useLanguage } from '../../Context/LanguageContext';
 import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
+import SubmissionFlowTopBar from '../../Components/SubmissionFlowTopBar';
 
 const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
 const VIDEO_PREVIEW_BG = '#3D5A66';
@@ -285,9 +285,7 @@ const NewShortVideoScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-        <View style={styles.backRow}>
-          <GoBackButton buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }} />
-        </View>
+        <SubmissionFlowTopBar />
         <ArticleSubmissionStepHeader step={3} variant="compact" flow="video" />
 
         <ScrollView
@@ -463,18 +461,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   screenTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: generalTitleFont,
     fontWeight: '700',
-    color: PrimBtnColor,
-    lineHeight: 26,
+    color: MainBrownSecondaryColor,
+    lineHeight: 21,
   },
   screenSubtitle: {
     marginTop: 6,
-    fontSize: generalSmallTextSize,
+    fontSize: 12,
     fontFamily: generalTextFont,
-    color: withdrawnTitleColor,
-    lineHeight: 18,
+    color: '#6B7280',
+    lineHeight: 16,
   },
   blockTitleRow: {
     flexDirection: 'row',
@@ -675,7 +673,7 @@ const styles = StyleSheet.create({
   proofTextHelper: {
     fontSize: 13,
     fontFamily: generalTextFont,
-    color: withdrawnTitleColor,
+    color: '#6B7280',
     lineHeight: 19,
     marginBottom: 10,
     marginTop: 4,

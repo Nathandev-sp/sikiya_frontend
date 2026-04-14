@@ -139,9 +139,15 @@ const CommentElement = ({
         const authorId = comment?.comment_author_id?._id;
         if (authorId) {
             onBeforeNavigate?.();
-            navigation.navigate('AuthorProfile', { userId: authorId });
+            const displayName =
+                comment?.comment_author_id?.displayName &&
+                String(comment.comment_author_id.displayName).trim();
+            navigation.navigate('AuthorProfile', {
+                userId: authorId,
+                ...(displayName ? { displayName } : {}),
+            });
         }
-    }, [comment?.comment_author_id?._id, navigation, onBeforeNavigate]);
+    }, [comment?.comment_author_id, navigation, onBeforeNavigate]);
 
     // Safely get comment data with fallbacks
     const authorName = comment?.comment_author_id?.displayName || 'Unknown User';

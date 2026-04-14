@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLanguage } from '../Context/LanguageContext';
 import {
-  MainBrownSecondaryColor,
   generalTitleFont,
-  homeFeedBackgroundColor,
+  AppScreenBackgroundColor,
+  MainSecondaryBlueColor,
 } from '../styles/GeneralAppStyle';
 import { SUBMISSION_SEGMENT_COLORS } from '../styles/submissionFlowAccents';
 
@@ -27,7 +27,7 @@ export default function ArticleSubmissionStepHeader({ step, variant = 'full', fl
   const { t } = useLanguage();
   const compact = variant === 'compact';
   const labelKeys = flow === 'video' ? VIDEO_LABEL_KEYS : ARTICLE_LABEL_KEYS;
-  const accent = SUBMISSION_SEGMENT_COLORS[Math.min(step, 3) - 1] || MainBrownSecondaryColor;
+  const accent = SUBMISSION_SEGMENT_COLORS[Math.min(step, 3) - 1] || MainSecondaryBlueColor;
 
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact]}>
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 14,
-    backgroundColor: homeFeedBackgroundColor,
+    backgroundColor: AppScreenBackgroundColor,
   },
   wrapCompact: {
     paddingTop: 4,

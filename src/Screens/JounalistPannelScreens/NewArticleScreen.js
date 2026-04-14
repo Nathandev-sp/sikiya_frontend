@@ -19,6 +19,7 @@ import AppScreenBackgroundColor, {
   generalTitleFont,
   main_Style,
   MainBrownSecondaryColor,
+  MainSecondaryBlueColor,
   generalTextFont,
   withdrawnTitleColor,
   generalTextColor,
@@ -39,6 +40,7 @@ import SikiyaAPI from '../../../API/SikiyaAPI';
 import { useLanguage } from '../../Context/LanguageContext';
 import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
 import { SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
+import SubmissionFlowTopBar from '../../Components/SubmissionFlowTopBar';
 
 const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
 
@@ -171,11 +173,7 @@ const NewArticleScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.backRow}>
-          <GoBackButton
-            buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }}
-          />
-        </View>
+        <SubmissionFlowTopBar />
         <ArticleSubmissionStepHeader step={2} variant="compact" flow="article" />
 
         <ScrollView
@@ -404,8 +402,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inputShellFocused: {
-    borderColor: MainBrownSecondaryColor,
-    shadowColor: MainBrownSecondaryColor,
+    borderColor: MainSecondaryBlueColor,
+    shadowColor: MainSecondaryBlueColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

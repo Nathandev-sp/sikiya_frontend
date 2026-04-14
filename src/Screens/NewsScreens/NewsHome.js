@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
+import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import DateConverter from '../../Helpers/DateConverter';
 import StarRating from '../../Components/StarRating';
@@ -22,6 +23,7 @@ import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 import { useLanguage } from '../../Context/LanguageContext';
 import DiscussionLaneCard from '../../Components/DiscussionLanes/DiscussionLaneCard';
 import { getDiscussionLanePalette } from '../../theme/discussionLanePalette';
+import { getHomeCategoryChipColor } from '../../theme/homeCategoryColors';
 
 let articlesReadCount = 0;
 
@@ -109,10 +111,25 @@ const createStyles = (height) => StyleSheet.create({
         overflow: 'hidden',
         zIndex: 4,
         backgroundColor: '#1a1510',
+        // Hairline inside the clip so no sharp carousel peeks through at the seam
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.12)',
     },
-    headerTopBlurTint: {
+    headerTopBlurImageClip: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+    },
+    headerTopBlurBottomMask: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 2,
+        backgroundColor: 'rgba(245,245,245,0.35)',
+    },
+    headerTopGlassVeil: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.07)',
     },
     headerCarouselWrap: {
         width: '100%',
@@ -143,29 +160,40 @@ const createStyles = (height) => StyleSheet.create({
         overflow: 'hidden',
     },
     topBarButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.58)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.22)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        // Darker glass reads on bright/white hero frames; white icons stay legible
+        backgroundColor: 'rgba(0,0,0,0.34)',
+        borderWidth: 0.8,
+        borderColor: 'rgba(255,255,255,0.32)',
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5,
     },
     topBarRight: {
         flexDirection: 'row',
         gap: 8,
     },
     bookmarkButtonWrapper: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.58)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.22)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0,0,0,0.34)',
+        borderWidth: 0.8,
+        borderColor: 'rgba(255,255,255,0.32)',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5,
     },
     sliderDotsContainer: {
         flexDirection: 'row',
@@ -704,10 +732,14 @@ const NewsHome = ({ route }) => {
     const { width, height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
     const styles = createStyles(height);
-    const topBlurBandHeight = Math.max(insets.top +4, 40);
+    // Extend the frosted band so the top actions sit "inside" the blur.
+    const topActionRowHeight = 30;
+    const topActionRowExtra = 10; // breathing room under buttons
+    const topBarTopInset = 2; // move buttons slightly higher into the blur band
+    const topBlurBandHeight = Math.max(insets.top + topBarTopInset + topActionRowHeight + topActionRowExtra, 84);
     const mainHeroHeight = height * 0.46;
     const headerTotalHeight = topBlurBandHeight + mainHeroHeight;
-    const topBarPaddingTop = insets.top + 6;
+    const topBarPaddingTop = insets.top + topBarTopInset;
     const navigation = useNavigation();
     const { state: authState } = useContext(AuthContext);
     const userRole = authState?.role || '';
@@ -811,9 +843,12 @@ const NewsHome = ({ route }) => {
         setDiscussionModalVisible(true);
     }, []);
 
+    /** Same resolution as category chip so lane UI matches when one of group/category is missing on payload */
+    const articleGroupForTheming = article?.article_group || article?.category;
+
     const discussionPalette = React.useMemo(
-        () => getDiscussionLanePalette(article?.article_group),
-        [article?.article_group]
+        () => getDiscussionLanePalette(articleGroupForTheming),
+        [articleGroupForTheming]
     );
 
     const handleBinaryLaneVote = useCallback(
@@ -1123,6 +1158,18 @@ const NewsHome = ({ route }) => {
             ? getImageUrl(images[Math.min(currentImageIndex, images.length - 1)])
             : null;
 
+    const getJournalistDisplayNameForNav = () => {
+        const j = article?.journalist;
+        if (!j) return undefined;
+        const nested = j.journalist;
+        const dn = (j.displayName || nested?.displayName || '').trim();
+        if (dn) return dn;
+        const fn = j.firstname || nested?.firstname;
+        const ln = j.lastname || nested?.lastname;
+        const combined = [fn, ln].filter(Boolean).join(' ').trim();
+        return combined || undefined;
+    };
+
     const goToAuthorProfile = () => {
         // Try different possible structures for journalist ID
         let journalistId = null;
@@ -1143,7 +1190,11 @@ const NewsHome = ({ route }) => {
         }
         
         if (journalistId) {
-            navigation.navigate('AuthorProfile', {userId: journalistId});
+            const displayName = getJournalistDisplayNameForNav();
+            navigation.navigate('AuthorProfile', {
+                userId: journalistId,
+                ...(displayName ? { displayName } : {}),
+            });
             console.log('Navigating to author profile:', journalistId);
         } else {
             console.warn('Could not find journalist ID for navigation');
@@ -1234,26 +1285,72 @@ const NewsHome = ({ route }) => {
         );
     }
 
-    const categoryColors = {
-        'Sports': '#2563EB',
-        'Politics': '#FE5F55',
-        'Economy': '#7FB069',
-        'Social': '#7C3AED',
-        'Tech': '#2563EB',
-        'Business': '#562C2C',
-        'Culture': '#F4D35E',
-        'World': '#28AFB0',
-        'Africa': '#C17F59',
-        'Entertainment': '#9333EA',
-        'Explore': MainSecondaryBlueColor,
-    };
-
     const articleCategory = article.article_group || article.category;
-    const categoryColor = categoryColors[articleCategory] || MainSecondaryBlueColor;
+    const categoryColor = getHomeCategoryChipColor(articleCategory);
 
     return (
         <SafeAreaView style={styles.container} edges={['left', 'right']}>
             <StatusBar barStyle="dark-content" />
+
+            {/* Persistent frosted safe-area strip (stays while scrolling) */}
+            <View style={[styles.headerTopBlurStrip, { height: topBlurBandHeight, width }]} pointerEvents="none">
+                {/* Clip image strictly to strip bounds (avoids subpixel “leak” under blur) */}
+                <View style={styles.headerTopBlurImageClip} pointerEvents="none">
+                    {activeHeaderImageUri ? (
+                        <Image
+                            defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
+                            source={{ uri: activeHeaderImageUri }}
+                            resizeMode="cover"
+                            style={StyleSheet.absoluteFillObject}
+                        />
+                    ) : (
+                        <View
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                { backgroundColor: '#2a2420' },
+                            ]}
+                        />
+                    )}
+                </View>
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 52 : 48}
+                    tint="light"
+                    style={StyleSheet.absoluteFillObject}
+                    experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+                />
+                <View style={styles.headerTopGlassVeil} pointerEvents="none" />
+                <View style={styles.headerTopBlurBottomMask} pointerEvents="none" />
+            </View>
+
+            {/* Persistent top bar */}
+            <View style={[styles.topBar, { paddingTop: topBarPaddingTop }]} pointerEvents="box-none">
+                <TouchableOpacity
+                    onPress={handleGoBack}
+                    style={[styles.topBarButton, main_Style.genButtonElevation]}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={generalActiveOpacity}
+                >
+                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                </TouchableOpacity>
+                <View style={styles.topBarRight} pointerEvents="auto">
+                    <View style={styles.bookmarkButtonWrapper}>
+                        <BookmarkIcon
+                            articleId={article._id}
+                            savedStatus={article.saved}
+                            size={22}
+                            centered
+                            heroHeader
+                        />
+                    </View>
+                    <TouchableOpacity
+                        style={styles.topBarButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        activeOpacity={generalActiveOpacity}
+                    >
+                        <Ionicons name="share-outline" size={22} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+            </View>
             
             <ScrollView
                 style={styles.scrollViewContainer}
@@ -1262,32 +1359,6 @@ const NewsHome = ({ route }) => {
             >
                 {/* Immersive Header Section */}
                 <View style={[styles.headerContainer, { minHeight: headerTotalHeight }]}>
-                    <View style={[styles.headerTopBlurStrip, { height: topBlurBandHeight, width }]}>
-                        {activeHeaderImageUri ? (
-                            <Image
-                                defaultSource={require('../../../assets/functionalImages/FrontImagePlaceholder.png')}
-                                source={{ uri: activeHeaderImageUri }}
-                                resizeMode="cover"
-                                blurRadius={Platform.OS === 'ios' ? 32 : 12}
-                                style={{
-                                    position: 'absolute',
-                                    top: -topBlurBandHeight * 0.35,
-                                    left: 0,
-                                    width,
-                                    height: topBlurBandHeight * 2.4,
-                                }}
-                            />
-                        ) : (
-                            <View
-                                style={[
-                                    StyleSheet.absoluteFillObject,
-                                    { backgroundColor: '#2a2420' },
-                                ]}
-                            />
-                        )}
-                        <View style={styles.headerTopBlurTint} pointerEvents="none" />
-                    </View>
-
                     <View style={[styles.headerCarouselWrap, { paddingTop: topBlurBandHeight }]}>
                         <FlatList
                             ref={flatListRef}
@@ -1328,36 +1399,6 @@ const NewsHome = ({ route }) => {
                         ]}
                         pointerEvents="none"
                     />
-
-                    {/* Top Bar with Back, Bookmark, Menu */}
-                    <View style={[styles.topBar, { paddingTop: topBarPaddingTop }]}>
-                        <TouchableOpacity
-                            onPress={handleGoBack}
-                            style={[styles.topBarButton, main_Style.genButtonElevation]}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            activeOpacity={generalActiveOpacity}
-                        >
-                            <Ionicons name="arrow-back" size={24} color="#fff" />
-                        </TouchableOpacity>
-                        <View style={styles.topBarRight}>
-                            <View style={styles.bookmarkButtonWrapper}>
-                                <BookmarkIcon
-                                    articleId={article._id}
-                                    savedStatus={article.saved}
-                                    size={24}
-                                    centered
-                                    heroHeader
-                                />
-                            </View>
-                            <TouchableOpacity
-                                style={styles.topBarButton}
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                activeOpacity={generalActiveOpacity}
-                            >
-                                <Ionicons name="share-outline" size={24} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
 
                     {/* Category Tag */}
                     {articleCategory && (
@@ -1477,8 +1518,16 @@ const NewsHome = ({ route }) => {
                     {/* Article Highlight (Summary/Major Idea) */}
                     <BannerAdComponent position="bottom" />
                     
-                    <View style={[styles.highlightSection, main_Style.genButtonElevation]}>
-                        <Text style={styles.highlightLabel}>{i18n.t('article.highlights')}</Text>
+                    <View
+                        style={[
+                            styles.highlightSection,
+                            main_Style.genButtonElevation,
+                            { borderLeftColor: discussionPalette.accent },
+                        ]}
+                    >
+                        <Text style={[styles.highlightLabel, { color: discussionPalette.accent }]}>
+                            {i18n.t('article.highlights')}
+                        </Text>
                         <Text style={styles.highlightText}>{article.article_highlight}</Text>
                     </View>
 

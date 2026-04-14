@@ -210,7 +210,12 @@ const NotificationCenterScreen = () => {
                 else if (data.videoId) navigation.navigate('VideoHomeScreen', { videoId: data.videoId });
                 break;
             case 'new_follower':
-                if (data.followerId) navigation.navigate('AuthorProfile', { authorId: data.followerId });
+                if (data.followerId) {
+                    navigation.navigate('AuthorProfile', {
+                        userId: data.followerId,
+                        ...(data.followerName ? { displayName: String(data.followerName).trim() } : {}),
+                    });
+                }
                 break;
             case 'article_first_like':
             case 'article_milestone_likes':

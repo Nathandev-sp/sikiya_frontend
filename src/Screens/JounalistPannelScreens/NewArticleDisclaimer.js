@@ -16,6 +16,7 @@ import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useLanguage } from '../../Context/LanguageContext';
 import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
 import { SUBMISSION_BULLET_COLORS, SUBMISSION_SEGMENT_COLORS } from '../../styles/submissionFlowAccents';
+import SubmissionFlowTopBar from '../../Components/SubmissionFlowTopBar';
 
 const BULLET_KEYS = ['bullet1', 'bullet2', 'bullet3', 'bullet4', 'bullet5'];
 
@@ -46,11 +47,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.backRow}>
-        <GoBackButton
-          buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }}
-        />
-      </View>
+      <SubmissionFlowTopBar />
 
       <ArticleSubmissionStepHeader step={1} variant="full" flow="article" />
 
@@ -75,7 +72,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
               <Ionicons
                 name="checkmark-circle"
                 size={20}
-                color={SUBMISSION_BULLET_COLORS[i % SUBMISSION_BULLET_COLORS.length]}
+                color="rgba(107,114,128,0.9)"
                 style={styles.bulletIcon}
               />
               <Text style={styles.bulletText}>{t(`articleDisclaimer.${key}`)}</Text>
@@ -123,6 +120,7 @@ const NewArticleDisclaimerScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+    // Keep the entire screen consistent; avoids a bottom safe-area strip under the CTA.
     backgroundColor: homeFeedBackgroundColor,
   },
   backRow: {
@@ -132,10 +130,13 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+    backgroundColor: homeFeedBackgroundColor,
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 14,
     paddingBottom: 24,
+    backgroundColor: homeFeedBackgroundColor,
   },
   heroCard: {
     alignItems: 'center',
@@ -182,24 +183,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: generalTextFont,
-    color: generalTextColor,
+    color: '#6B7280',
     lineHeight: 22,
   },
   agreeRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 4,
+    alignItems: 'center',
+    paddingVertical: 6,
   },
   checkHit: {
     marginRight: 10,
-    marginTop: 2,
     padding: 2,
   },
   agreeCopy: {
     flex: 1,
     fontSize: 15,
     fontFamily: generalTextFont,
-    color: generalTextColor,
+    color: '#6B7280',
     lineHeight: 22,
   },
   agreeLink: {

@@ -7,7 +7,6 @@ import VerticalSpacer from '../Components/UI/VerticalSpacer';
 import SecondaryNewsCart from '../Components/SecondaryNewscart';
 import TrustScoreRing from '../Components/TrustScoreRing';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import GoBackButton from '../../NavComponents/GoBackButton';
 import SikiyaAPI from '../../API/SikiyaAPI';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import MediumLoadingState from '../Components/LoadingComps/MediumLoadingState';
@@ -169,33 +168,34 @@ const UserProfileScreen = ({route}) => {
             <BannerAd />
             {/* Remove this line: */}
             {/* {refreshing && (<MediumLoadingState />)} */}
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                onScroll={handleScroll}
-            >
-                {/* Header with Logo and Settings */}
-                <View style={styles.headerContainer}>
-                    <View style={styles.logoContainer}>
-                        <Image 
-                            source={require('../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        />
-                    </View>
-                    <View style={styles.headerButtonsContainer}>
-                        <TouchableOpacity 
-                            style={[styles.settingsButton, main_Style.genButtonElevation]}
-                            onPress={handleSettingsPress}
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Ionicons name="settings-outline" size={24} color={generalTitleColor} />
-                        </TouchableOpacity>
+            <View style={styles.profileScreenBody}>
+                <View style={styles.profileStickyHeader}>
+                    <View style={styles.headerContainer}>
+                        <View style={styles.logoContainer}>
+                            <Image
+                                source={require('../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+                        </View>
+                        <View style={styles.headerButtonsContainer}>
+                            <TouchableOpacity
+                                style={[styles.settingsButton, main_Style.genButtonElevation]}
+                                onPress={handleSettingsPress}
+                                activeOpacity={0.7}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="settings-outline" size={24} color={generalTitleColor} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    onScroll={handleScroll}
+                >
                 {/* My profile surface — warm paper + left accent (distinct from author-profile hero, still editorial) */}
                 <View style={[styles.selfSurface, main_Style.genButtonElevation]}>
                     <View style={styles.selfTopRow}>
@@ -345,7 +345,8 @@ const UserProfileScreen = ({route}) => {
                 </View>
                 
                 <VerticalSpacer height={20} />
-            </ScrollView>
+                </ScrollView>
+            </View>
         </SafeAreaView>
     );
 };
@@ -361,13 +362,23 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 20,
     },
+    profileScreenBody: {
+        flex: 1,
+    },
+    profileStickyHeader: {
+        backgroundColor: AppScreenBackgroundColor,
+        zIndex: 2,
+        elevation: 3,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(102, 70, 44, 0.1)',
+    },
     headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 10,
+        paddingTop: 8,
         paddingHorizontal: homeScreenPadding,
-        paddingBottom: 18,
+        paddingBottom: 12,
         width: '100%',
     },
     logoContainer: {
@@ -404,6 +415,7 @@ const styles = StyleSheet.create({
     },
     selfSurface: {
         marginHorizontal: homeScreenPadding,
+        marginTop: 14,
         marginBottom: 16,
         paddingTop: 14,
         paddingBottom: 2,

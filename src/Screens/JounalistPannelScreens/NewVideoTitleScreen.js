@@ -19,6 +19,7 @@ import AppScreenBackgroundColor, {
   generalTitleFont,
   main_Style,
   MainBrownSecondaryColor,
+  MainSecondaryBlueColor,
   generalTextFont,
   withdrawnTitleColor,
   generalTextColor,
@@ -39,6 +40,7 @@ import AfricanCountries from '../../../assets/Data/AfricanCountries.json';
 import SikiyaAPI from '../../../API/SikiyaAPI';
 import { useLanguage } from '../../Context/LanguageContext';
 import ArticleSubmissionStepHeader from '../../Components/ArticleSubmissionStepHeader';
+import SubmissionFlowTopBar from '../../Components/SubmissionFlowTopBar';
 
 const BORDER_IDLE = 'rgba(44, 36, 22, 0.14)';
 
@@ -159,11 +161,7 @@ const NewVideoTitleScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.backRow}>
-          <GoBackButton
-            buttonStyle={{ position: 'relative', left: 0, top: 0, alignSelf: 'flex-start' }}
-          />
-        </View>
+        <SubmissionFlowTopBar />
         <ArticleSubmissionStepHeader step={2} variant="compact" flow="video" />
 
         <ScrollView
@@ -289,17 +287,17 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   screenTitle: {
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: generalTitleFont,
     fontWeight: '700',
-    color: PrimBtnColor,
+    color: MainBrownSecondaryColor,
     marginBottom: 6,
   },
   screenSubtitle: {
-    fontSize: generalSmallTextSize,
+    fontSize: 12,
     fontFamily: generalTextFont,
-    color: withdrawnTitleColor,
-    lineHeight: 18,
+    color: '#6B7280',
+    lineHeight: 16,
   },
   section: {
     marginBottom: 26,
@@ -322,8 +320,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inputShellFocused: {
-    borderColor: MainBrownSecondaryColor,
-    shadowColor: MainBrownSecondaryColor,
+    borderColor: MainSecondaryBlueColor,
+    shadowColor: MainSecondaryBlueColor,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

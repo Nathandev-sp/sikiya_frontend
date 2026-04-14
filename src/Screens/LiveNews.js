@@ -689,8 +689,16 @@ const LiveNews = ({ preloadedVideos, route }) => {
     }, [isScreenFocused]);
 
     const handleProfile = () => {
-        if (currentVideo?.journalist_id?._id) {
-            navigation.navigate('AuthorProfile', { userId: currentVideo.journalist_id._id });
+        const j = currentVideo?.journalist_id;
+        if (j?._id) {
+            const displayName =
+                (j.displayName && String(j.displayName).trim()) ||
+                [j.firstname, j.lastname].filter(Boolean).join(' ').trim() ||
+                undefined;
+            navigation.navigate('AuthorProfile', {
+                userId: j._id,
+                ...(displayName ? { displayName } : {}),
+            });
         }
     };
 

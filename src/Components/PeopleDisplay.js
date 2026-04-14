@@ -65,7 +65,9 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
     };
 
     const goToAuthorProfile = () => {
-        navigation.navigate('AuthorProfile', { userId: journalist._id });
+        const displayName =
+            (journalist.displayName && String(journalist.displayName).trim()) || fullName;
+        navigation.navigate('AuthorProfile', { userId: journalist._id, displayName });
     };
 
     const handleFollowToggle = (wasFollowing) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Pressable, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
@@ -11,6 +11,7 @@ import GoBackButton from "../../../NavComponents/GoBackButton";
 import BigLoaderAnim from "../../Components/LoadingComps/BigLoaderAnim";
 import { getImageUrl } from "../../utils/imageUrl";
 import i18n from "../../utils/i18n";
+import { useNavigation } from "@react-navigation/native";
 
 const TRUST_RING_SIZE = 78;
 const TRUST_RING_STROKE = 6;
@@ -61,7 +62,9 @@ function TrustScoreRing({ percent, label }) {
 }
 
 const AuthorProfileScreen = ({ route }) => {
-    const { userId } = route.params;
+    const navigation = useNavigation();
+    const userId = route.params?.userId ?? route.params?.authorId;
+    const displayNameParam = typeof route.params?.displayName === 'string' ? route.params.displayName.trim() : '';
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isNotPremiumUser, setIsNotPremiumUser] = useState(false);
@@ -147,6 +150,13 @@ const AuthorProfileScreen = ({ route }) => {
     }
 
     if (isNotPremiumUser) {
+        const goUpgrade = () => {
+            navigation.navigate('UserProfileGroup', {
+                screen: 'SubscriptionSettings',
+                params: { screen: 'MembershipSettings' },
+            });
+        };
+
         return (
             <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
                 <StatusBar barStyle="dark-content" />
@@ -163,15 +173,55 @@ const AuthorProfileScreen = ({ route }) => {
                         </View>
                     </View>
 
-                    {/* Not Premium User Card */}
-                    <View style={styles.notPremiumCard}>
-                        <View style={styles.notPremiumIconCircle}>
-                            <Ionicons name="person-outline" size={56} color={withdrawnTitleColor} />
+                    <ScrollView
+                        style={styles.notPremiumScroll}
+                        contentContainerStyle={styles.notPremiumScrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.notPremiumCard}>
+                            <View style={styles.notPremiumIconCircle}>
+                                <Ionicons name="lock-closed-outline" size={34} color={withdrawnTitleColor} />
+                            </View>
+                            <Text style={styles.notPremiumHeadline} numberOfLines={3}>
+                                {displayNameParam || i18n.t('profile.notPremiumHeadline')}
+                            </Text>
+                            <Text style={styles.notPremiumExplanation}>{i18n.t('profile.notPremiumExplanation')}</Text>
+                            <Text style={[styles.notPremiumBenefitPrimaryText, styles.notPremiumIntroLead]}>
+                                {i18n.t('profile.notPremiumIntroCombined')}
+                            </Text>
+
+                            <View style={styles.notPremiumBenefitsGroup}>
+                                <View style={styles.notPremiumBenefitSecondaryRow}>
+                                    <Text style={styles.notPremiumBulletMark}>•</Text>
+                                    <Text style={styles.notPremiumBenefitSecondaryText}>
+                                        {i18n.t('profile.notPremiumBenefitCommentUnlimited')}
+                                    </Text>
+                                </View>
+                                <View style={styles.notPremiumBenefitSecondaryRow}>
+                                    <Text style={styles.notPremiumBulletMark}>•</Text>
+                                    <Text style={styles.notPremiumBenefitSecondaryText}>
+                                        {i18n.t('profile.notPremiumBenefitJoinDiscussions')}
+                                    </Text>
+                                </View>
+                                <View style={styles.notPremiumBenefitSecondaryRow}>
+                                    <Text style={styles.notPremiumBulletMark}>•</Text>
+                                    <Text style={styles.notPremiumBenefitSecondaryText}>
+                                        {i18n.t('profile.notPremiumBenefitShareProfile')}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.notPremiumContrast}>{i18n.t('profile.notPremiumFreeContrast')}</Text>
+
+                            <Pressable
+                                style={({ pressed }) => [styles.notPremiumCta, pressed && styles.notPremiumCtaPressed]}
+                                onPress={goUpgrade}
+                                android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+                            >
+                                <Text style={styles.notPremiumCtaText}>{i18n.t('profile.notPremiumUpgradeCta')}</Text>
+                            </Pressable>
                         </View>
-                        <Text style={styles.notPremiumText}>
-                            {i18n.t('profile.notPremiumUser')}
-                        </Text>
-                    </View>
+                    </ScrollView>
                 </View>
             </SafeAreaView>
         );
@@ -239,30 +289,32 @@ const AuthorProfileScreen = ({ route }) => {
     return (
         <SafeAreaView style={main_Style.safeArea} edges={['top', 'left', 'right']}>
             <StatusBar barStyle="dark-content" />
-            <ScrollView
-                style={styles.scrollViewContainer}
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: homeScreenPadding + 8 }}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.headerContainer}>
-                    <GoBackButton buttonStyle={styles.backButtonOverride} />
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('../../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        />
+            <View style={styles.profileScreenBody}>
+                <View style={styles.profileStickyHeader}>
+                    <View style={styles.headerContainer}>
+                        <GoBackButton buttonStyle={styles.backButtonOverride} />
+                        <View style={styles.logoContainer}>
+                            <Image
+                                source={require('../../../assets/SikiyaLogoV2/Sikiya_Logo_banner.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.headerShareButton}
+                            activeOpacity={generalActiveOpacity}
+                            accessibilityRole="button"
+                            accessibilityLabel={i18n.t('common.share')}
+                        >
+                            <Ionicons name="share-outline" size={22} color={MainBrownSecondaryColor} />
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                        style={styles.headerShareButton}
-                        activeOpacity={generalActiveOpacity}
-                        accessibilityRole="button"
-                        accessibilityLabel={i18n.t('common.share')}
-                    >
-                        <Ionicons name="share-outline" size={22} color={MainBrownSecondaryColor} />
-                    </TouchableOpacity>
                 </View>
-
+                <ScrollView
+                    style={styles.scrollViewContainer}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: homeScreenPadding + 8 }}
+                    showsVerticalScrollIndicator={false}
+                >
                 {/* Profile hero — open layout, no heavy card */}
                 <View style={styles.heroSection}>
                     <View style={styles.heroAvatarShell}>
@@ -360,7 +412,8 @@ const AuthorProfileScreen = ({ route }) => {
                         ))}
                     </View>
                 )}
-            </ScrollView>
+                </ScrollView>
+            </View>
         </SafeAreaView>
     );
 };
@@ -403,6 +456,16 @@ const styles = StyleSheet.create({
     },
     scrollViewContainer: {
         flex: 1,
+    },
+    profileScreenBody: {
+        flex: 1,
+    },
+    profileStickyHeader: {
+        backgroundColor: AppScreenBackgroundColor,
+        zIndex: 2,
+        elevation: 3,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(102, 70, 44, 0.1)',
     },
     headerContainer: {
         flexDirection: 'row',
@@ -559,6 +622,8 @@ const styles = StyleSheet.create({
         marginHorizontal: homeScreenPadding,
         marginBottom: 8,
         paddingTop: 4,
+        paddingLeft: 6,
+        paddingRight: 6,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: 'rgba(102, 70, 44, 0.12)',
     },
@@ -692,39 +757,115 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: AppScreenBackgroundColor,
     },
+    notPremiumScroll: {
+        flex: 1,
+    },
+    notPremiumScrollContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 28,
+    },
     notPremiumCard: {
-        backgroundColor: genBtnBackgroundColor,
-        marginHorizontal: 12,
-        marginTop: 40,
-        padding: 32,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 0.1,
-        borderColor: MainBrownSecondaryColor,
+        backgroundColor: homeFeedBackgroundColor,
+        marginHorizontal: 0,
+        marginTop: 16,
+        padding: 20,
+        borderRadius: 16,
+        alignItems: 'stretch',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(44, 36, 22, 0.1)',
         ...main_Style.genButtonElevation,
     },
     notPremiumIconContainer: {
-        marginBottom: 24,
+        marginBottom: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
     notPremiumIconCircle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         backgroundColor: lightBannerBackgroundColor,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 16,
+        alignSelf: 'center',
     },
-    notPremiumText: {
-        fontSize: generalTextSize,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
+    notPremiumHeadline: {
+        fontFamily: articleTitleFont,
+        fontSize: 20,
+        color: PrimBtnColor,
         textAlign: 'center',
-        lineHeight: generalLineHeight,
-        paddingHorizontal: 16,
+        marginBottom: 10,
+        lineHeight: 26,
+    },
+    notPremiumExplanation: {
+        fontSize: generalTextSize,
+        color: '#5C6470',
+        fontFamily: generalTextFont,
+        fontWeight: '400',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 14,
+    },
+    notPremiumIntroLead: {
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    notPremiumBenefitsGroup: {
+        marginBottom: 4,
+    },
+    notPremiumBenefitPrimaryText: {
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        fontSize: 17,
+        color: PrimBtnColor,
+        lineHeight: 24,
+    },
+    notPremiumBenefitSecondaryRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 6,
+        paddingLeft: 2,
+    },
+    notPremiumBulletMark: {
+        fontSize: 15,
+        color: '#9CA3AF',
+        marginRight: 8,
+        lineHeight: 22,
+        width: 14,
+    },
+    notPremiumBenefitSecondaryText: {
+        flex: 1,
+        fontSize: 14,
+        color: '#5C6470',
+        fontFamily: generalTextFont,
+        fontWeight: '400',
+        lineHeight: 21,
+    },
+    notPremiumContrast: {
+        marginTop: 14,
+        marginBottom: 28,
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: '400',
+        color: withdrawnTitleColor,
+        lineHeight: 19,
+    },
+    notPremiumCta: {
+        backgroundColor: MainBrownSecondaryColor,
+        paddingVertical: 14,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    notPremiumCtaPressed: {
+        opacity: 0.92,
+    },
+    notPremiumCtaText: {
+        fontFamily: generalTitleFont,
+        fontWeight: '700',
+        fontSize: generalTextSize,
+        color: AppScreenBackgroundColor,
     },
 });
 
