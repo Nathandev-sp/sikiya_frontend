@@ -20,7 +20,8 @@ import SikiyaAPI from '../../API/SikiyaAPI';
 // Product IDs - Load from environment variables
 // Format: 'com.yourcompany.app.productname'
 export const PRODUCT_IDS = {
-    CONTRIBUTOR_MONTHLY: process.env.EXPO_PUBLIC_APPLE_PRODUCT_ID || 'com.sikiya.contributor.monthly',
+    CONTRIBUTOR_MONTHLY: process.env.EXPO_PUBLIC_APPLE_PRODUCT_ID || 'com.nathan.sikiya.premium.monthly',
+    THOUGHTLEADER_MONTHLY: process.env.EXPO_PUBLIC_APPLE_THOUGHTLEADER_PRODUCT_ID || 'com.nathan.sikiya.thoughtleader.monthly',
 };
 
 let isInitialized = false;
@@ -44,22 +45,33 @@ export const initializeIAP = async () => {
 };
 
 /**
- * Get available subscription products
- * Returns array of product details
+ * Get available subscription products from StoreKit.
+ * IMPORTANT: react-native-iap v14 requires this to be called BEFORE
+ * any requestSubscription/requestPurchase call, otherwise StoreKit
+ * throws "Missing purchase request configuration".
+ *
+ * @param {string[]} [skus] - Optional explicit list of SKUs to fetch.
+ *                            Defaults to all known PRODUCT_IDS.
  */
-export const getAvailableProducts = async () => {
+export const getAvailableProducts = async (skus) => {
     try {
         if (!isInitialized) {
             await initializeIAP();
         }
 
-        const productIds = Object.values(PRODUCT_IDS);
-        const products = await RNIap.getProducts(productIds);
-        
-        console.log('Available products:', products);
-        return products;
+        const productIds = Array.isArray(skus) && skus.length > 0
+            ? skus
+            : Object.values(PRODUCT_IDS);
+
+        // react-native-iap@14.7.0 API: use fetchProducts for subscriptions.
+        const subscriptions = await RNIap.fetchProducts({ skus: productIds, type: 'subs' });
+        console.log(
+            'Available subscriptions:',
+            Array.isArray(subscriptions) ? subscriptions.map(s => s.id || s.productId) : subscriptions
+        );
+        return Array.isArray(subscriptions) ? subscriptions : [];
     } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching subscriptions:', error);
         return [];
     }
 };
@@ -84,87 +96,129 @@ export const getCurrentSubscriptions = async () => {
 };
 
 /**
- * Purchase a subscription
- * This initiates the purchase and handles receipt verification with backend
- * @param {string} productId - The product ID to purchase
- * @returns {Promise<Object>} Purchase result with subscription status
+ * Internal helper: trigger an iOS subscription purchase, then POST the receipt
+ * to the given backend verification endpoint and resolve once verified.
+ * @param {string} productId
+ * @param {string} verifyEndpoint - e.g. '/subscription/ios/verify-receipt'
+ */
+const purchaseAndVerify = (productId, verifyEndpoint) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!isInitialized) {
+                await initializeIAP();
+            }
+
+            // Ensure StoreKit has loaded the product before requesting purchase.
+            const subs = await RNIap.fetchProducts({ skus: [productId], type: 'subs' });
+            const matched =
+                Array.isArray(subs) &&
+                subs.find(s => (s.id || s.productId) === productId);
+            if (!matched) {
+                throw new Error(
+                    `Product "${productId}" was not returned by App Store. ` +
+                    `Make sure it exists in App Store Connect, is attached to a subscription group, ` +
+                    `and is in the "Ready to Submit" state.`
+                );
+            }
+            console.log('Loaded product from StoreKit:', matched.id || matched.productId);
+            console.log('Attempting to purchase:', productId, '→', verifyEndpoint);
+
+            let purchaseUpdateSubscription;
+            let purchaseErrorSubscription;
+
+            const cleanup = () => {
+                if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
+                if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+            };
+
+            purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(async (purchase) => {
+                try {
+                    console.log('Purchase successful:', purchase);
+
+                    const receipt = purchase.transactionReceipt;
+                    if (!receipt) {
+                        throw new Error('No receipt data received from purchase');
+                    }
+
+                    const response = await SikiyaAPI.post(verifyEndpoint, {
+                        receiptData: receipt,
+                        transactionId: purchase.transactionId || purchase.id,
+                    });
+
+                    if (response.data.success) {
+                        console.log('Receipt verified successfully:', response.data);
+                        await RNIap.finishTransaction({ purchase, isConsumable: false });
+                        cleanup();
+                        resolve({
+                            success: true,
+                            subscription: response.data.subscription,
+                            role: response.data.role,
+                        });
+                    } else {
+                        throw new Error('Receipt verification failed');
+                    }
+                } catch (error) {
+                    console.error('Error processing purchase:', error);
+                    cleanup();
+                    reject(error);
+                }
+            });
+
+            purchaseErrorSubscription = RNIap.purchaseErrorListener((error) => {
+                console.error('Purchase error:', error);
+                cleanup();
+
+                if (error.code === 'E_USER_CANCELLED') {
+                    reject(new Error('Purchase cancelled by user'));
+                } else if (error.code === 'E_NETWORK_ERROR') {
+                    reject(new Error('Network error. Please check your connection.'));
+                } else {
+                    reject(new Error(error.message || 'Purchase failed'));
+                }
+            });
+
+            try {
+                // react-native-iap@14.7.0 API: requestPurchase with the unified request object.
+                await RNIap.requestPurchase({
+                    request: {
+                        apple: {
+                            sku: productId,
+                            // Important: we finishTransaction after backend verification
+                            andDangerouslyFinishTransactionAutomatically: false,
+                        },
+                    },
+                    type: 'subs',
+                });
+            } catch (error) {
+                cleanup();
+                reject(error);
+            }
+        } catch (error) {
+            console.error('Error initiating purchase:', error);
+            reject(error);
+        }
+    });
+};
+
+/**
+ * Purchase the Contributor subscription.
+ * Sends the receipt to /subscription/ios/verify-receipt for verification.
+ * On success, the backend flips User_login.role to 'contributor'.
  */
 export const purchaseSubscription = async (productId) => {
-    try {
-        if (!isInitialized) {
-            await initializeIAP();
-        }
+    return purchaseAndVerify(productId, '/subscription/ios/verify-receipt');
+};
 
-        console.log('Attempting to purchase:', productId);
-        
-        // Set up purchase update listener BEFORE initiating purchase
-        const purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(async (purchase) => {
-            try {
-                console.log('Purchase successful:', purchase);
-                
-                // Get receipt data
-                const receipt = purchase.transactionReceipt;
-                
-                if (!receipt) {
-                    throw new Error('No receipt data received from purchase');
-                }
-
-                // Send receipt to backend for verification
-                const response = await SikiyaAPI.post('/subscription/ios/verify-receipt', {
-                    receiptData: receipt,
-                    transactionId: purchase.transactionId
-                });
-
-                if (response.data.success) {
-                    console.log('Receipt verified successfully:', response.data);
-                    
-                    // Finish the transaction
-                    await RNIap.finishTransaction(purchase, false);
-                    
-                    return {
-                        success: true,
-                        subscription: response.data.subscription,
-                        role: response.data.role
-                    };
-                } else {
-                    throw new Error('Receipt verification failed');
-                }
-            } catch (error) {
-                console.error('Error processing purchase:', error);
-                // Don't finish transaction if verification failed
-                throw error;
-            }
-        });
-
-        // Set up error listener
-        const purchaseErrorSubscription = RNIap.purchaseErrorListener((error) => {
-            console.error('Purchase error:', error);
-            purchaseUpdateSubscription.remove();
-            purchaseErrorSubscription.remove();
-        });
-
-        // Initiate purchase
-        await RNIap.requestPurchase(productId, false);
-        
-        // Note: The actual result comes through the purchaseUpdatedListener
-        // This function returns a promise that resolves when purchase completes
-        return new Promise((resolve, reject) => {
-            // Store resolve/reject for use in listeners
-            purchaseUpdateSubscription._resolve = resolve;
-            purchaseUpdateSubscription._reject = reject;
-        });
-    } catch (error) {
-        console.error('Error purchasing subscription:', error);
-        
-        // Handle specific error codes
-        if (error.code === 'E_USER_CANCELLED') {
-            throw new Error('Purchase cancelled by user');
-        } else if (error.code === 'E_NETWORK_ERROR') {
-            throw new Error('Network error. Please check your connection.');
-        } else {
-            throw new Error(error.message || 'Purchase failed');
-        }
-    }
+/**
+ * Purchase the Thought Leader subscription.
+ * Backend will reject the receipt unless the user's thoughtLeaderApplication.status === 'approved'.
+ * On success, the backend flips User_login.role to 'thoughtleader'.
+ */
+export const purchaseThoughtLeader = async () => {
+    return purchaseAndVerify(
+        PRODUCT_IDS.THOUGHTLEADER_MONTHLY,
+        '/subscription/ios/verify-thoughtleader-finalize'
+    );
 };
 
 /**
@@ -271,6 +325,7 @@ export default {
     getAvailableProducts,
     getCurrentSubscriptions,
     purchaseSubscription,
+    purchaseThoughtLeader,
     restorePurchases,
     finishTransaction,
     endConnection,

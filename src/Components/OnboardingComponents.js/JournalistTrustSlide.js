@@ -1,35 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from "react-native";
-import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, articleTitleFont, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTextColor, generalTextSize, generalTitleSize, auth_Style, articleTitleFont, MainBrownSecondaryColor, main_Style, MainSecondaryBlueColor } from "../../styles/GeneralAppStyle";
 import { useLanguage } from '../../Context/LanguageContext';
 
-const journalistImage = require("../../../assets/OnboardingImages/journalistWork.png");
 const box1Image = require("../../../assets/OnboardingImages/bad-feedback.png");
 
-const JournalistIntro = () => {
+const JournalistTrustSlide = () => {
   const { height } = useWindowDimensions();
   const { t } = useLanguage();
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%'}]}>
-      {/* Header Section */}
-      <View style={styles.headerSection}>
-        <View style={[styles.imageWrapper, main_Style.genContentElevation]}>
-          <Image source={journalistImage} style={styles.journalistImage} />
-        </View>
-        <Text style={styles.headline}>{t('onboarding.ourJournalists')}</Text>
+    <View style={[auth_Style.onboardingContainer, { height: height * 0.56, width: '94%' }]}>
+      <View style={styles.top}>
+        <Text style={styles.headline}>{t('onboarding.trustScore')}</Text>
       </View>
-
-      {/* Description Section */}
-      <View style={styles.descriptionContainer}>
-        <Text style={styles.description}>
-          {t('onboarding.journalistSpeech')}
-        </Text>
-      </View>
-
-      {/* Trust Score Info Box */}
-      <View style={[styles.bottomContainer, main_Style.genContentElevation]}>
-        <View style={styles.infoBox}>
+      <View style={styles.cardOuter}>
+        <View style={[styles.infoBox, main_Style.genContentElevation]}>
           <View style={styles.iconContainer}>
             <Image source={box1Image} style={styles.boxImage} />
           </View>
@@ -44,56 +30,25 @@ const JournalistIntro = () => {
 };
 
 const styles = StyleSheet.create({
-  headerSection: {
+  top: {
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  imageWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#F6F3EF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  journalistImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 12,
   },
   headline: {
     fontFamily: articleTitleFont,
     fontSize: generalTitleSize + 3,
     fontWeight: '700',
     color: MainBrownSecondaryColor,
-    marginTop: 12,
     textAlign: 'center',
     letterSpacing: 0.3,
   },
-  descriptionContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+  cardOuter: {
     flex: 1,
     justifyContent: 'center',
-  },
-  description: {
-    fontFamily: generalTextFont,
-    fontSize: generalTextSize,
-    color: generalTextColor,
-    textAlign: 'center',
-    lineHeight: 22,
-    letterSpacing: 0.2,
-  },
-  bottomContainer: {
     paddingHorizontal: 4,
-    paddingBottom: 4,
+    paddingBottom: 8,
   },
   infoBox: {
     flexDirection: 'row',
@@ -146,4 +101,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default JournalistIntro;
+export default JournalistTrustSlide;

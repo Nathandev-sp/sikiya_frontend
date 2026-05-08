@@ -1,18 +1,42 @@
-import React from 'react';
-import { View, StyleSheet, Image, StatusBar } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, StatusBar, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import LottieView from 'lottie-react-native';
 import { AppScreenBackgroundColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor } from '../styles/GeneralAppStyle';
 
 const AppPreloadingScreen = () => {
+  const logoScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoScale, {
+          toValue: 1.05,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoScale, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, [logoScale]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.logoContainer}>
-        <Image 
-          source={require("../../assets/SikiyaLogoV2/NathanApprovedSikiyaPreloadingLogo.png")}
-          style={[styles.logo]}
+        <Animated.Image 
+          source={require("../../assets/SikiyaLogoV2/SikiyaApprovedPreloadingAppLogo.png")}
+          style={[styles.logo, { transform: [{ scale: logoScale }] }]}
           resizeMode="contain"
         />
       </View>

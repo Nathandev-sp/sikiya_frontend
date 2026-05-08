@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useLanguage } from '../src/Context/LanguageContext';
 
 
-const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = null, quotaLoading = false, onUnlock, onUpgrade, userRole = '', modalTitle = null, titleColor = null, replyToName = null, onCancelReply = null }) => {
+const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = null, enforceQuota = true, quotaLoading = false, onUnlock, onUpgrade, userRole = '', modalTitle = null, titleColor = null, replyToName = null, onCancelReply = null }) => {
   const [text, setText] = useState('');
   const inputRef = useRef(null);
   const { t } = useLanguage();
@@ -36,7 +36,7 @@ const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = nul
   // determine disabled state for the send action
   const isGeneralUser = userRole === 'general';
   const remainingMainComments = quota?.remaining ?? null;
-  const quotaExceeded = isGeneralUser && quota && remainingMainComments !== null && remainingMainComments <= 0;
+  const quotaExceeded = enforceQuota && isGeneralUser && quota && remainingMainComments !== null && remainingMainComments <= 0;
 
   const sendDisabled = !text.trim() || isLoading || wordCount > maxWords || (!isReplyMode && quotaExceeded);
 
@@ -51,21 +51,21 @@ const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = nul
           <View style={styles.limitActions}>
             <TouchableOpacity 
               style={[styles.actionButton, styles.actionPrimary, main_Style.genButtonElevation]}
-              onPress={onUnlock}
-              disabled={quotaLoading || isLoading}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="play-outline" size={16} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
-              <Text style={[styles.actionButtonText, styles.actionPrimaryText]}>{t('comments.watchAd')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.actionSecondary, main_Style.genButtonElevation]}
               onPress={handleUpgrade}
               disabled={isLoading}
               activeOpacity={0.8}
             >
               <Ionicons name="rocket-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
               <Text style={styles.actionButtonText}>{t('comments.upgrade')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.actionSecondary, main_Style.genButtonElevation]}
+              onPress={onUnlock}
+              disabled={quotaLoading || isLoading}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="play-outline" size={16} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
+              <Text style={[styles.actionButtonText, styles.actionSecondaryText]}>{t('comments.watchAd')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -159,7 +159,8 @@ const CommentInputModal = ({ onSend, placeholder, isLoading = false, quota = nul
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: lightBannerBackgroundColor,
+    // Match modal top surface (avoid beige band under the rule)
+    backgroundColor: '#FFFFFF',
     width: '100%',
     alignSelf: 'center',
     paddingHorizontal: 16,
@@ -189,9 +190,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#419D78',
+    borderColor: 'rgba(245, 158, 11, 0.55)',
     borderRadius: 12,
-    backgroundColor: "#8CCFB4",
+    backgroundColor: "#FFF4E5",
   },
   limitTitle: {
     fontSize: articleTitleSize,
@@ -222,10 +223,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionPrimary: {
-    backgroundColor: '#fff',
+    backgroundColor: '#419D78',
   },
   actionSecondary: {
-    backgroundColor: '#419D78',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#419D78',
   },
   actionButtonText: {
     fontSize: generalTextSize,
@@ -233,7 +236,7 @@ const styles = StyleSheet.create({
     fontWeight: generalTitleFontWeight,
     color: '#fff',
   },
-  actionPrimaryText: {
+  actionSecondaryText: {
     color: MainBrownSecondaryColor,
   },
   inputSection: {

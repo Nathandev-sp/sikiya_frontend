@@ -27,7 +27,9 @@ const CommentElement = ({
     showDeleteButton, 
     onDelete,
     onBeforeNavigate,
-    testID 
+    testID,
+    /** Minimal chrome when nested inside settings/history grouped cards */
+    variant = 'default',
 }) => {
     const navigation = useNavigation();
     const { t } = useLanguage();
@@ -152,16 +154,35 @@ const CommentElement = ({
     // Safely get comment data with fallbacks
     const authorName = comment?.comment_author_id?.displayName || 'Unknown User';
     const authorProfilePic = comment?.comment_author_id?.profile_picture;
+    const authorRole = comment?.comment_author_id?.role;
     const commentContent = comment?.comment_content || '';
     const commentDate = comment?.created_on ? DateConverter(comment.created_on) : '';
     const shouldShowExpandButton = commentContent.length > MAX_TEXT_LENGTH;
     const displayText = isExpanded ? commentContent : commentContent.substring(0, MAX_TEXT_LENGTH);
 
+    const isEmbedded = variant === 'embedded';
+    const shouldShowProBadge = authorRole === 'thoughtleader' || authorRole === 'journalist';
+
     return (
         <View 
-            style={[styles.mainCommentContainer, main_Style.genContentElevation]}
+            style={[
+                styles.mainCommentContainer,
+                !isEmbedded && main_Style.genContentElevation,
+                isEmbedded && styles.embeddedInSettingsList,
+            ]}
             testID={testID || 'comment-element'}
         >
+            {shouldShowProBadge && (
+                <View
+                    style={[
+                        styles.proBadge,
+                        showDeleteButton && onDelete ? styles.proBadgeWithDelete : null,
+                    ]}
+                    pointerEvents="none"
+                >
+                    <Ionicons name="ribbon" size={14} color="#fff" />
+                </View>
+            )}
             {/* Author Info */}
             <View style={styles.authorProfileRow}>
                 <Image
@@ -343,6 +364,18 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.06)',
     },
+    embeddedInSettingsList: {
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        borderRadius: 0,
+        marginBottom: 0,
+        paddingHorizontal: 0,
+        paddingVertical: 4,
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: 0,
+    },
     authorProfileRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -477,6 +510,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 20,
+    },
+    proBadge: {
+        position: 'absolute',
+        top: 16,
+        right: 12,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: '#6D28D9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 15,
+        shadowColor: '#6D28D9',
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+    },
+    proBadgeWithDelete: {
+        right: 50,
     },
 });
 

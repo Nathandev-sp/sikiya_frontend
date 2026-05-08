@@ -19,7 +19,8 @@ import SikiyaAPI from '../../API/SikiyaAPI';
 
 // Product IDs - Load from environment variables
 const PRODUCT_IDS = {
-    CONTRIBUTOR_MONTHLY: process.env.EXPO_PUBLIC_GOOGLE_PRODUCT_ID || 'com.sikiya.contributor.monthly',
+    CONTRIBUTOR_MONTHLY: process.env.EXPO_PUBLIC_GOOGLE_PRODUCT_ID || 'com.nathan.sikiya.premium.monthly',
+    THOUGHTLEADER_MONTHLY: process.env.EXPO_PUBLIC_GOOGLE_THOUGHTLEADER_PRODUCT_ID || 'com.nathan.sikiya.thoughtleader.monthly',
 };
 
 let isInitialized = false;
@@ -53,10 +54,10 @@ export const getAvailableProducts = async () => {
         }
 
         const productIds = Object.values(PRODUCT_IDS);
-        const products = await RNIap.getSubscriptions({ skus: productIds });
+        const products = await RNIap.fetchProducts({ skus: productIds, type: 'subs' });
         
         console.log('Available products:', products);
-        return products;
+        return Array.isArray(products) ? products : [];
     } catch (error) {
         console.error('Error fetching products:', error);
         return [];
@@ -83,77 +84,80 @@ export const getCurrentSubscriptions = async () => {
 };
 
 /**
- * Purchase a subscription
- * This initiates the purchase and handles purchase verification with backend
- * @param {string} productId - The product ID to purchase
- * @returns {Promise<Object>} Purchase result with subscription status
+ * Internal helper: trigger an Android subscription purchase, then POST the purchase
+ * data to the given backend verification endpoint and resolve once verified.
+ * @param {string} productId
+ * @param {string} verifyEndpoint - e.g. '/subscription/android/verify-purchase'
  */
-export const purchaseSubscription = async (productId) => {
+const purchaseAndVerify = (productId, verifyEndpoint) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (!isInitialized) {
                 await initializeIAP();
             }
 
-            console.log('Attempting to purchase:', productId);
-            
+            // Ensure Google Play Billing has loaded the subscription product.
+            const subs = await RNIap.fetchProducts({ skus: [productId], type: 'subs' });
+            const matched =
+                Array.isArray(subs) &&
+                subs.find(s => (s.id || s.productId) === productId);
+            if (!matched) {
+                throw new Error(
+                    `Product "${productId}" was not returned by Google Play. ` +
+                    `Make sure it exists in Play Console, is active, and the app is signed with the upload key.`
+                );
+            }
+            console.log('Loaded product from Play Store:', matched.id || matched.productId);
+            console.log('Attempting to purchase:', productId, '→', verifyEndpoint);
+
             let purchaseUpdateSubscription;
             let purchaseErrorSubscription;
 
-            // Set up purchase update listener BEFORE initiating purchase
+            const cleanup = () => {
+                if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
+                if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+            };
+
             purchaseUpdateSubscription = RNIap.purchaseUpdatedListener(async (purchase) => {
                 try {
                     console.log('Purchase successful:', purchase);
-                    
-                    // Get purchase token (Android equivalent of receipt)
+
                     const purchaseToken = purchase.purchaseToken;
                     const orderId = purchase.orderId;
-                    
+
                     if (!purchaseToken) {
                         throw new Error('No purchase token received from purchase');
                     }
 
-                    // Send purchase data to backend for verification
-                    const response = await SikiyaAPI.post('/subscription/android/verify-purchase', {
-                        purchaseToken: purchaseToken,
-                        productId: productId,
-                        orderId: orderId
+                    const response = await SikiyaAPI.post(verifyEndpoint, {
+                        purchaseToken,
+                        productId,
+                        orderId,
                     });
 
                     if (response.data.success) {
                         console.log('Purchase verified successfully:', response.data);
-                        
-                        // Finish the transaction
-                        await RNIap.finishTransaction(purchase, false);
-                        
-                        // Clean up listeners
-                        if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
-                        if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
-                        
+                        await RNIap.finishTransaction({ purchase, isConsumable: false });
+                        cleanup();
                         resolve({
                             success: true,
                             subscription: response.data.subscription,
-                            role: response.data.role
+                            role: response.data.role,
                         });
                     } else {
                         throw new Error('Purchase verification failed');
                     }
                 } catch (error) {
                     console.error('Error processing purchase:', error);
-                    // Clean up listeners
-                    if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
-                    if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+                    cleanup();
                     reject(error);
                 }
             });
 
-            // Set up error listener
             purchaseErrorSubscription = RNIap.purchaseErrorListener((error) => {
                 console.error('Purchase error:', error);
-                if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
-                if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
-                
-                // Handle specific error codes
+                cleanup();
+
                 if (error.code === 'E_USER_CANCELLED') {
                     reject(new Error('Purchase cancelled by user'));
                 } else if (error.code === 'E_NETWORK_ERROR') {
@@ -163,13 +167,20 @@ export const purchaseSubscription = async (productId) => {
                 }
             });
 
-            // Initiate purchase
             try {
-                await RNIap.requestSubscription({ sku: productId });
+                await RNIap.requestPurchase({
+                    request: {
+                        google: {
+                            skus: [productId],
+                            // If you ever need to support multiple base plans/offers,
+                            // you'll pass subscriptionOffers here.
+                            subscriptionOffers: [],
+                        },
+                    },
+                    type: 'subs',
+                });
             } catch (error) {
-                // Clean up listeners on error
-                if (purchaseUpdateSubscription) purchaseUpdateSubscription.remove();
-                if (purchaseErrorSubscription) purchaseErrorSubscription.remove();
+                cleanup();
                 reject(error);
             }
         } catch (error) {
@@ -177,6 +188,27 @@ export const purchaseSubscription = async (productId) => {
             reject(error);
         }
     });
+};
+
+/**
+ * Purchase the Contributor subscription on Android.
+ * Sends the purchase token to /subscription/android/verify-purchase for verification.
+ * On success, the backend flips User_login.role to 'contributor'.
+ */
+export const purchaseSubscription = async (productId) => {
+    return purchaseAndVerify(productId, '/subscription/android/verify-purchase');
+};
+
+/**
+ * Purchase the Thought Leader subscription on Android.
+ * Backend will reject the purchase unless the user's thoughtLeaderApplication.status === 'approved'.
+ * On success, the backend flips User_login.role to 'thoughtleader'.
+ */
+export const purchaseThoughtLeader = async () => {
+    return purchaseAndVerify(
+        PRODUCT_IDS.THOUGHTLEADER_MONTHLY,
+        '/subscription/android/verify-thoughtleader-finalize'
+    );
 };
 
 /**
@@ -285,6 +317,7 @@ export default {
     getAvailableProducts,
     getCurrentSubscriptions,
     purchaseSubscription,
+    purchaseThoughtLeader,
     restorePurchases,
     finishTransaction,
     endConnection,

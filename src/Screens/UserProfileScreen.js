@@ -51,6 +51,15 @@ const UserProfileScreen = ({route}) => {
             ? i18n.t('profile.trustScore')
             : i18n.t('profile.respectScore');
 
+    const trialTotalDays = 7;
+    const trialRemainingPct = useMemo(() => {
+        if (!trialInfo?.isOnTrial) return 0;
+        const remaining = Number(trialInfo?.daysRemaining ?? 0);
+        if (!Number.isFinite(remaining)) return 0;
+        const pct = remaining / trialTotalDays;
+        return Math.max(0, Math.min(1, pct));
+    }, [trialInfo?.isOnTrial, trialInfo?.daysRemaining]);
+
     const fetchUserProfile = useCallback(async () => {
         try {
             if (!preloadedUserProfile) {
@@ -220,19 +229,27 @@ const UserProfileScreen = ({route}) => {
                                 <Text style={styles.selfDisplayName} numberOfLines={2}>
                                     {userProfile?.displayName || i18n.t('profile.displayNamePlaceholder')}
                                 </Text>
+                            </View>
+                            <View style={styles.selfRoleRow}>
+                                <Text style={styles.selfRoleLine} numberOfLines={1}>
+                                    {roleLabel}
+                                </Text>
                                 {authState.role === 'contributor' && (
-                                    <View style={styles.contributorBadgeWrap}>
-                                        <Image
-                                            source={require('../../assets/OnboardingImages/contributorImage.png')}
-                                            style={styles.contributorBadgeImage}
-                                            resizeMode="contain"
-                                        />
-                                    </View>
+                                    <Image
+                                        source={require('../../assets/OnboardingImages/contributorImage.png')}
+                                        style={styles.contributorBadgeImage}
+                                        resizeMode="contain"
+                                    />
+                                )}
+                                {authState.role === 'thoughtleader' && (
+                                    <Ionicons
+                                        name="ribbon"
+                                        size={14}
+                                        color="#6D28D9"
+                                        style={styles.thoughtLeaderBadgeIcon}
+                                    />
                                 )}
                             </View>
-                            <Text style={styles.selfRoleLine} numberOfLines={1}>
-                                {roleLabel}
-                            </Text>
                         </View>
                     </View>
 
@@ -271,14 +288,14 @@ const UserProfileScreen = ({route}) => {
                 </View>
 
                 {/* Free Trial Banner */}
-                {trialInfo.isOnTrial && trialInfo.daysRemaining > 0 && (
+                {trialInfo.isOnTrial &&
+                    trialInfo.daysRemaining > 0 &&
+                    authState?.role !== 'contributor' &&
+                    authState?.role !== 'thoughtleader' && (
                     <View style={[styles.trialBanner, main_Style.genButtonElevation]}>
                         {/* Decorative Background Elements */}
                         <View style={styles.trialBannerDecoTop} />
                         <View style={styles.trialBannerDecoBottom} />
-                        
-                        {/* Header Section with Icon and Badge */}
-                        
 
                         {/* Content Section */}
                         <View style={styles.trialContentSection}>
@@ -298,14 +315,26 @@ const UserProfileScreen = ({route}) => {
                                     </View>
                                     <TouchableOpacity 
                                         style={styles.trialCtaButton}
-                                        onPress={() => navigation.navigate('MembershipSettings')}
+                                        onPress={() =>
+                                            navigation.navigate('SubscriptionSettings', {
+                                                screen: 'MembershipSettings',
+                                            })
+                                        }
                                         activeOpacity={0.8}
                                     >
                                         <Text style={styles.trialCtaText}>{i18n.t('trial.upgrade', { defaultValue: 'Upgrade Now' })}</Text>
                                         <Ionicons name="arrow-forward" size={16} color={AppScreenBackgroundColor} />
                                     </TouchableOpacity>
                                 </View>
-                            
+
+                                <View style={styles.trialProgressBarContainer}>
+                                    <View
+                                        style={[
+                                            styles.trialProgressBarFill,
+                                            { width: `${Math.round(trialRemainingPct * 100)}%` },
+                                        ]}
+                                    />
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -493,15 +522,18 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
         opacity: 0.95,
     },
-    contributorBadgeWrap: {
-        paddingHorizontal: 6,
-        paddingVertical: 4,
-        borderRadius: 8,
-        backgroundColor: 'rgba(129, 88, 55, 0.1)',
+    selfRoleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        minWidth: 0,
     },
     contributorBadgeImage: {
-        width: 22,
-        height: 22,
+        width: 14,
+        height: 14,
+    },
+    thoughtLeaderBadgeIcon: {
+        marginLeft: 0,
     },
     selfMetricsRow: {
         flexDirection: 'row',
@@ -578,7 +610,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(102, 70, 44, 0.1)',
     },
     trialBanner: {
-        backgroundColor: MainBrownSecondaryColor,
+        backgroundColor: '#F4F1FF',
         marginHorizontal: 12,
         marginBottom: 12,
         padding: 16,
@@ -586,6 +618,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         overflow: 'hidden',
         position: 'relative',
+        borderWidth: 1,
+        borderColor: 'rgba(109, 40, 217, 0.12)',
     },
     trialBannerDecoTop: {
         position: 'absolute',
@@ -594,7 +628,7 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(109, 40, 217, 0.08)',
     },
     trialBannerDecoBottom: {
         position: 'absolute',
@@ -603,7 +637,7 @@ const styles = StyleSheet.create({
         width: 140,
         height: 140,
         borderRadius: 70,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: 'rgba(109, 40, 217, 0.06)',
     },
     trialHeaderSection: {
         flexDirection: 'row',
@@ -615,27 +649,29 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: genBtnBackgroundColor,
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: '#6D28D9',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
         elevation: 3,
+        borderWidth: 1,
+        borderColor: 'rgba(109, 40, 217, 0.10)',
     },
     trialBadge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(109, 40, 217, 0.10)',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderColor: 'rgba(109, 40, 217, 0.16)',
     },
     trialBadgeText: {
         fontSize: 11,
         fontWeight: '700',
-        color: AppScreenBackgroundColor,
+        color: '#4C1D95',
         fontFamily: generalTitleFont,
         letterSpacing: 1,
     },
@@ -645,13 +681,13 @@ const styles = StyleSheet.create({
     trialTitle: {
         fontSize: articleTitleSize,
         fontWeight: '700',
-        color: AppScreenBackgroundColor,
+        color: '#2E1065',
         fontFamily: generalTitleFont,
         marginBottom: 8,
     },
     trialMessage: {
         fontSize: generalTextSize,
-        color: 'rgba(255, 255, 255, 0.9)',
+        color: 'rgba(46, 16, 101, 0.82)',
         fontFamily: generalTextFont,
         lineHeight: 22,
         marginBottom: 0,
@@ -673,44 +709,44 @@ const styles = StyleSheet.create({
     trialDaysNumber: {
         fontSize: 32,
         fontWeight: '800',
-        color: AppScreenBackgroundColor,
+        color: '#2E1065',
         fontFamily: generalTitleFont,
     },
     trialDaysLabel: {
         fontSize: generalSmallTextSize,
-        color: 'rgba(255, 255, 255, 0.85)',
+        color: 'rgba(46, 16, 101, 0.72)',
         fontFamily: generalTextFont,
         fontWeight: '600',
     },
     trialCtaButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: '#6D28D9',
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 8,
         gap: 6,
-        shadowColor: '#000',
+        shadowColor: '#6D28D9',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
+        shadowOpacity: 0.18,
+        shadowRadius: 10,
         elevation: 3,
     },
     trialCtaText: {
         fontSize: 14,
         fontWeight: '700',
-        color: AppScreenBackgroundColor,
+        color: '#fff',
         fontFamily: generalTitleFont,
     },
     trialProgressBarContainer: {
         height: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        backgroundColor: 'rgba(109, 40, 217, 0.12)',
         borderRadius: 4,
         overflow: 'hidden',
     },
     trialProgressBarFill: {
         height: '100%',
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: '#6D28D9',
         borderRadius: 4,
     },
     savedFeedSection: {

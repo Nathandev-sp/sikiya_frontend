@@ -70,6 +70,19 @@ const HomeScreen = ({route}) => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('Explore'); // Default to Explore
     const [filteringCategory, setFilteringCategory] = useState(false); // For client-side filtering
+    const [categoryLoading, setCategoryLoading] = useState(() => ({
+        'Explore': !preloadedHomeArticles,
+        'Politics': false,
+        'Economy': false,
+        'Social': false,
+        'Tech': false,
+        'Business': false,
+        'Sports': false,
+        'Culture': false,
+        'Africa': false,
+        'World': false,
+    }));
+    const [emptyGraceUntilMs, setEmptyGraceUntilMs] = useState(() => Date.now() + 900);
     const loaderTimeoutRef = useRef(null);
     
     // Get headline article IDs to exclude from main list
@@ -136,6 +149,11 @@ const HomeScreen = ({route}) => {
 
     const fetchTopHeadlines = async (category = null, isInitial = false) => {
         try {
+            if (category) {
+                setCategoryLoading(prev => ({ ...prev, [category]: true }));
+                // Prevent the empty state from flashing while the request is in-flight.
+                setEmptyGraceUntilMs(Date.now() + 1200);
+            }
             const limit = category === 'Explore' ? 10 : 10; // Load 10 articles initially
             // For Explore, don't pass article_group (shows all articles)
             const endpoint = category === 'Explore' 
@@ -178,6 +196,9 @@ const HomeScreen = ({route}) => {
                 [category]: false
             }));
         } finally {
+            if (category) {
+                setCategoryLoading(prev => ({ ...prev, [category]: false }));
+            }
             // Only set loading=false if this was initial load
             // For category switching, loading should already be false
             if (isInitial) {
@@ -503,7 +524,9 @@ const HomeScreen = ({route}) => {
         
         // Show empty state if no articles and not loading
         const currentArticles = getCategoryArticles();
-        if (currentArticles.length === 0 && !loading && !loadingMore) {
+        const isFetchingCategory = Boolean(categoryLoading[selectedCategory]);
+        const inGraceWindow = Date.now() < emptyGraceUntilMs;
+        if (currentArticles.length === 0 && !loading && !loadingMore && !isFetchingCategory && !inGraceWindow) {
             // Get the category label for display
             const category = categories.find(c => c.key === selectedCategory);
             const categoryLabel = category 

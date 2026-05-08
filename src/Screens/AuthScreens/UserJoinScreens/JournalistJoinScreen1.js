@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AppScreenBackgroundColor, { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTextSize, generalTitleFont, generalTitleSize, generalTitleColor, lightBannerBackgroundColor, main_Style, MainBrownSecondaryColor, withdrawnTitleColor, articleTitleFont, MainSecondaryBlueColor } from "../../../styles/GeneralAppStyle";
@@ -9,7 +9,6 @@ import CountryCodePicker from "../../../Components/CountryCodePicker";
 import AfricanCountries from "../../../../assets/Data/AfricanCountries.json";
 import AllCountries from "../../../../assets/Data/AllCountries.json";
 import DatePickerModal from "../../../Components/DOBPicker";
-import GoBackButton from "../../../../NavComponents/GoBackButton";
 import VerticalSpacer from "../../../Components/UI/VerticalSpacer";
 import { useLanguage } from "../../../Context/LanguageContext";
 
@@ -36,6 +35,8 @@ const JournalistJoinScreen1 = ({ navigation }) => {
   // Sets error for highlight of missing information
   const [error, setError] = useState({});
 
+  const [step, setStep] = useState(1); // 1 | 2 (overall 1-2 of 4)
+
   // State for each input focus
   const [firstNameFocused, setFirstNameFocused] = useState(false);
   const [lastNameFocused, setLastNameFocused] = useState(false);
@@ -61,31 +62,61 @@ const JournalistJoinScreen1 = ({ navigation }) => {
     return digitsOnly.length >= 7 && digitsOnly.length <= 15;
   };
 
-  const handleNextJournalistJoin = () => {
-    // Check for empty fields
-    let newErrors = {};
-    
-    // Check required fields
-    if (!journalistFormData.firstName) newErrors.firstName = true;
-    if (!journalistFormData.lastName) newErrors.lastName = true;
-    if (!journalistFormData.dob) newErrors.dob = true;
-    if (!journalistFormData.phoneCountryCode) newErrors.phoneCountryCode = true;
-    if (!journalistFormData.phoneNumber) {
-      newErrors.phoneNumber = true;
-    } else if (!validatePhoneNumber(journalistFormData.phoneNumber)) {
-      newErrors.phoneNumber = true;
-    }
-    if (!journalistFormData.city) newErrors.city = true;
-    if (!journalistFormData.country) newErrors.country = true;
-    if (!journalistFormData.countryOfInterest) newErrors.countryOfInterest = true;
-    
-    setError(newErrors);
+  const step1Keys = useMemo(() => (["firstName", "lastName", "dob"]), []);
+  const step2Keys = useMemo(
+    () => (["country", "city", "phoneCountryCode", "phoneNumber", "countryOfInterest"]),
+    []
+  );
 
-    // Only proceed if no errors
-    if (Object.keys(newErrors).length === 0) {
-      // All fields are filled, proceed to next screen
-      navigation.navigate("JournalistJoin2", { journalistInfo: journalistFormData });
+  const validateStep = (keys) => {
+    const newErrors = {};
+
+    keys.forEach((key) => {
+      if (key === "phoneNumber") {
+        if (!journalistFormData.phoneNumber) {
+          newErrors.phoneNumber = true;
+          return;
+        }
+        if (!validatePhoneNumber(journalistFormData.phoneNumber)) {
+          newErrors.phoneNumber = true;
+          return;
+        }
+      }
+
+      if (!journalistFormData[key]) newErrors[key] = true;
+    });
+
+    setError((prev) => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const goToStep = (nextStep) => {
+    dismissKeyboard();
+    setStep(nextStep);
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 0);
+  };
+
+  const handleBack = () => {
+    if (step === 2) {
+      goToStep(1);
+      return;
     }
+    navigation.goBack();
+  };
+
+  const handleContinue = () => {
+    if (step === 1) {
+      const ok = validateStep(step1Keys);
+      if (ok) goToStep(2);
+      return;
+    }
+
+    const ok = validateStep(step2Keys);
+    if (!ok) return;
+
+    navigation.navigate("JournalistJoin2", { journalistInfo: journalistFormData });
   };
 
   return (
@@ -107,10 +138,14 @@ const JournalistJoinScreen1 = ({ navigation }) => {
             <View style={[styles.headerSection, { height: height * 0.34 }]}>
               <View style={[styles.logoContainer, main_Style.genButtonElevation]}>
                 <View style={styles.backButtonWrapper}>
-                  <GoBackButton 
-                    buttonStyle={styles.transparentBackButton}
-                    iconStyle={styles.backButtonIcon}
-                  />
+                  <TouchableOpacity
+                    hitSlop={defaultButtonHitslop}
+                    style={styles.transparentBackButton}
+                    activeOpacity={generalActiveOpacity}
+                    onPress={handleBack}
+                  >
+                    <Ionicons name="arrow-back" style={styles.backButtonIcon} />
+                  </TouchableOpacity>
                 </View>
                 <Image 
                   source={require("../../../../assets/SikiyaLogoV2/NathanApprovedSikiyaLogo1NB.png")}
@@ -127,177 +162,191 @@ const JournalistJoinScreen1 = ({ navigation }) => {
             </View>
 
             <View style={auth_Style.detailFormContainer}>
-              {/* First Name */}
-              <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>{t('profile.firstName')}</Text>
-                <View style={[
-                  auth_Style.authInputContainer,
-                  firstNameFocused && auth_Style.authInputContainerFocused,
-                  error.firstName && auth_Style.inputErrorCont
-                ]}>
-                  <Ionicons name="person-outline" style={auth_Style.authLogo}/>
-                  <TextInput
-                    ref={firstNameInputRef}
-                    style={auth_Style.input}
-                    hitSlop={defaultButtonHitslop}
-                    placeholder={t('profile.firstNamePlaceholder')}
-                    placeholderTextColor="#aaa"
-                    value={journalistFormData.firstName}
-                    onChangeText={text => handleFormChanges('firstName', text)}
-                    autoCapitalize="words"
-                    onFocus={() => {
-                      setFirstNameFocused(true);
-                      scrollRef.current?.scrollTo({ y: 0, animated: true });
-                    }}
-                    onBlur={() => setFirstNameFocused(false)}
-                  />
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>Step {step} of 4</Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
+                  <View style={[styles.progressDot, { left: `${(step / 4) * 100}%` }]} />
                 </View>
               </View>
 
-              {/* Last Name */}
-              <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>{t('profile.lastName')}</Text>
-                <View style={[
-                  auth_Style.authInputContainer,
-                  lastNameFocused && auth_Style.authInputContainerFocused,
-                  error.lastName && auth_Style.inputErrorCont
-                ]}>
-                  <Ionicons name="person-outline" style={auth_Style.authLogo}/>
-                  <TextInput
-                    ref={lastNameInputRef}
-                    style={auth_Style.input}
-                    hitSlop={defaultButtonHitslop}
-                    placeholder={t('profile.lastNamePlaceholder')}
-                    placeholderTextColor="#aaa"
-                    value={journalistFormData.lastName}
-                    onChangeText={text => handleFormChanges('lastName', text)}
-                    autoCapitalize="words"
-                    onFocus={() => {
-                      setLastNameFocused(true);
-                      scrollRef.current?.scrollTo({ y: 60, animated: true });
-                    }}
-                    onBlur={() => setLastNameFocused(false)}
-                  />
-                </View>
-              </View>
+              {step === 1 ? (
+                <>
+                  {/* First Name */}
+                  <View style={auth_Style.authInputBundle}> 
+                    <Text style={auth_Style.authLabel}>{t('profile.firstName')}</Text>
+                    <View style={[
+                      auth_Style.authInputContainer,
+                      firstNameFocused && auth_Style.authInputContainerFocused,
+                      error.firstName && auth_Style.inputErrorCont
+                    ]}>
+                      <Ionicons name="person-outline" style={auth_Style.authLogo}/>
+                      <TextInput
+                        ref={firstNameInputRef}
+                        style={auth_Style.input}
+                        hitSlop={defaultButtonHitslop}
+                        placeholder={t('profile.firstNamePlaceholder')}
+                        placeholderTextColor="#aaa"
+                        value={journalistFormData.firstName}
+                        onChangeText={text => handleFormChanges('firstName', text)}
+                        autoCapitalize="words"
+                        onFocus={() => {
+                          setFirstNameFocused(true);
+                          scrollRef.current?.scrollTo({ y: 0, animated: true });
+                        }}
+                        onBlur={() => setFirstNameFocused(false)}
+                        returnKeyType="next"
+                        onSubmitEditing={() => lastNameInputRef.current?.focus()}
+                      />
+                    </View>
+                  </View>
 
-              {/* Date of Birth */}
-              <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>{t('profile.dateOfBirth')}</Text>
-                <DatePickerModal
-                  value={journalistFormData.dob}
-                  onSelect={date => handleFormChanges('dob', date)}
-                  error={error.dob}
-                  label={t('profile.dateOfBirth')}
-                  placeholder={t('profile.dateOfBirthPlaceholder')}
-                  onOpen={dismissKeyboard}
-                />
-              </View>
+                  {/* Last Name */}
+                  <View style={auth_Style.authInputBundle}> 
+                    <Text style={auth_Style.authLabel}>{t('profile.lastName')}</Text>
+                    <View style={[
+                      auth_Style.authInputContainer,
+                      lastNameFocused && auth_Style.authInputContainerFocused,
+                      error.lastName && auth_Style.inputErrorCont
+                    ]}>
+                      <Ionicons name="person-outline" style={auth_Style.authLogo}/>
+                      <TextInput
+                        ref={lastNameInputRef}
+                        style={auth_Style.input}
+                        hitSlop={defaultButtonHitslop}
+                        placeholder={t('profile.lastNamePlaceholder')}
+                        placeholderTextColor="#aaa"
+                        value={journalistFormData.lastName}
+                        onChangeText={text => handleFormChanges('lastName', text)}
+                        autoCapitalize="words"
+                        onFocus={() => {
+                          setLastNameFocused(true);
+                          scrollRef.current?.scrollTo({ y: 60, animated: true });
+                        }}
+                        onBlur={() => setLastNameFocused(false)}
+                      />
+                    </View>
+                  </View>
 
-              {/* WhatsApp Phone Number */}
-              <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>{t('profile.whatsAppPhoneNumber')}</Text>
-                <View style={styles.phoneContainer}>
-                  <View style={styles.countryCodeContainer}>
-                    <CountryCodePicker
-                      value={journalistFormData.phoneCountryCode}
-                      onSelect={code => handleFormChanges('phoneCountryCode', code)}
-                      error={error.phoneCountryCode}
-                      placeholder="Code"
+                  {/* Date of Birth */}
+                  <View style={auth_Style.authInputBundle}>
+                    <Text style={auth_Style.authLabel}>{t('profile.dateOfBirth')}</Text>
+                    <DatePickerModal
+                      value={journalistFormData.dob}
+                      onSelect={date => handleFormChanges('dob', date)}
+                      error={error.dob}
+                      label={t('profile.dateOfBirth')}
+                      placeholder={t('profile.dateOfBirthPlaceholder')}
                       onOpen={dismissKeyboard}
-                      label={t('profile.countryCode')}
                     />
                   </View>
-                  <View style={[
-                    auth_Style.authInputContainer,
-                    phoneNumberFocused && auth_Style.authInputContainerFocused,
-                    error.phoneNumber && auth_Style.inputErrorCont,
-                    styles.phoneNumberContainer
-                  ]}>
-                    <Ionicons name="call-outline" style={auth_Style.authLogo}/>
-                    <TextInput
-                      ref={phoneNumberInputRef}
-                      style={auth_Style.input}
-                      hitSlop={defaultButtonHitslop}
-                      placeholder={t('profile.whatsAppPhoneNumberPlaceholder')}
-                      placeholderTextColor="#aaa"
-                      value={journalistFormData.phoneNumber}
-                      onChangeText={text => {
-                        // Only allow digits
-                        const digitsOnly = text.replace(/\D/g, '');
-                        handleFormChanges('phoneNumber', digitsOnly);
+                </>
+              ) : (
+                <>
+                  {/* Country */}
+                  <View style={auth_Style.authInputBundle}>
+                    <Text style={auth_Style.authLabel}>{t('profile.countryOfResidence')}</Text>
+                    <CountryPicker
+                      value={journalistFormData.country}
+                      onSelect={country => {
+                        handleFormChanges('country', country);
+                        if (journalistFormData.city) {
+                          handleFormChanges('city', '');
+                        }
                       }}
-                      keyboardType="phone-pad"
-                      maxLength={15}
-                      onFocus={() => {
-                        setPhoneNumberFocused(true);
-                        scrollRef.current?.scrollTo({ y: 240, animated: true });
-                      }}
-                      onBlur={() => setPhoneNumberFocused(false)}
+                      countryList={AllCountries}
+                      error={error.country}
+                      label={t('profile.countryOfResidence')}
+                      placeholder={t('profile.countryOfResidencePlaceholder')}
+                      onOpen={dismissKeyboard}
                     />
                   </View>
-                </View>
-                {error.phoneNumber && journalistFormData.phoneNumber && !validatePhoneNumber(journalistFormData.phoneNumber) && (
-                  <Text style={styles.errorText}>{t('profile.phoneNumberError')}</Text>
-                )}
-              </View>
 
-              {/* Country */}
-              <View style={auth_Style.authInputBundle}>
-                <Text style={auth_Style.authLabel}>{t('profile.countryOfResidence')}</Text>
-                <CountryPicker
-                  value={journalistFormData.country}
-                  onSelect={country => {
-                    handleFormChanges('country', country);
-                    // Clear city when country changes
-                    if (journalistFormData.city) {
-                      handleFormChanges('city', '');
-                    }
-                  }}
-                  countryList={AllCountries}
-                  error={error.country}
-                  label={t('profile.countryOfResidence')}
-                  placeholder={t('profile.countryOfResidencePlaceholder')}
-                  onOpen={dismissKeyboard}
-                />
-              </View>
+                  {/* City */}
+                  <View style={auth_Style.authInputBundle}> 
+                    <Text style={auth_Style.authLabel}>{t('profile.cityOfResidence')}</Text>
+                    <CityPicker
+                      value={journalistFormData.city}
+                      onSelect={city => handleFormChanges('city', city)}
+                      selectedCountry={journalistFormData.country}
+                      error={error.city}
+                      label={t('profile.cityOfResidence')}
+                      placeholder={t('profile.cityOfResidencePlaceholder')}
+                      onOpen={dismissKeyboard}
+                    />
+                  </View>
 
-              {/* City */}
-              <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>{t('profile.cityOfResidence')}</Text>
-                <CityPicker
-                  value={journalistFormData.city}
-                  onSelect={city => handleFormChanges('city', city)}
-                  selectedCountry={journalistFormData.country}
-                  error={error.city}
-                  label={t('profile.cityOfResidence')}
-                  placeholder={t('profile.cityOfResidencePlaceholder')}
-                  onOpen={dismissKeyboard}
-                />
-              </View>
+                  {/* WhatsApp Phone Number */}
+                  <View style={auth_Style.authInputBundle}>
+                    <Text style={auth_Style.authLabel}>{t('profile.whatsAppPhoneNumber')}</Text>
+                    <View style={styles.phoneContainer}>
+                      <View style={styles.countryCodeContainer}>
+                        <CountryCodePicker
+                          value={journalistFormData.phoneCountryCode}
+                          onSelect={code => handleFormChanges('phoneCountryCode', code)}
+                          error={error.phoneCountryCode}
+                          placeholder="Code"
+                          onOpen={dismissKeyboard}
+                          label={t('profile.countryCode')}
+                        />
+                      </View>
+                      <View style={[
+                        auth_Style.authInputContainer,
+                        phoneNumberFocused && auth_Style.authInputContainerFocused,
+                        error.phoneNumber && auth_Style.inputErrorCont,
+                        styles.phoneNumberContainer
+                      ]}>
+                        <Ionicons name="call-outline" style={auth_Style.authLogo}/>
+                        <TextInput
+                          ref={phoneNumberInputRef}
+                          style={auth_Style.input}
+                          hitSlop={defaultButtonHitslop}
+                          placeholder={t('profile.whatsAppPhoneNumberPlaceholder')}
+                          placeholderTextColor="#aaa"
+                          value={journalistFormData.phoneNumber}
+                          onChangeText={text => {
+                            const digitsOnly = text.replace(/\D/g, '');
+                            handleFormChanges('phoneNumber', digitsOnly);
+                          }}
+                          keyboardType="phone-pad"
+                          maxLength={15}
+                          onFocus={() => {
+                            setPhoneNumberFocused(true);
+                            scrollRef.current?.scrollTo({ y: 240, animated: true });
+                          }}
+                          onBlur={() => setPhoneNumberFocused(false)}
+                        />
+                      </View>
+                    </View>
+                    {error.phoneNumber && journalistFormData.phoneNumber && !validatePhoneNumber(journalistFormData.phoneNumber) && (
+                      <Text style={styles.errorText}>{t('profile.phoneNumberError')}</Text>
+                    )}
+                  </View>
 
-              {/* African Country of Interest */}
-              <View style={auth_Style.authInputBundle}> 
-                <Text style={auth_Style.authLabel}>{t('profile.interestedCountry')}</Text>
-                <CountryPicker
-                  value={journalistFormData.countryOfInterest}
-                  onSelect={country => handleFormChanges('countryOfInterest', country)}
-                  countryList={AfricanCountries}
-                  error={error.countryOfInterest}
-                  label={t('profile.interestedCountry')}
-                  placeholder={t('profile.africanCountryOfInterestPlaceholder')}
-                  onOpen={dismissKeyboard}
-                />
-              </View>
+                  {/* African Country of Interest */}
+                  <View style={auth_Style.authInputBundle}> 
+                    <Text style={auth_Style.authLabel}>{t('profile.interestedCountry')}</Text>
+                    <CountryPicker
+                      value={journalistFormData.countryOfInterest}
+                      onSelect={country => handleFormChanges('countryOfInterest', country)}
+                      countryList={AfricanCountries}
+                      error={error.countryOfInterest}
+                      label={t('profile.interestedCountry')}
+                      placeholder={t('profile.africanCountryOfInterestPlaceholder')}
+                      onOpen={dismissKeyboard}
+                    />
+                  </View>
+                </>
+              )}
 
               {/* Continue Button */}
               <TouchableOpacity
                 hitSlop={defaultButtonHitslop}
                 style={[auth_Style.authButtonStyle, styles.continueButton]}
                 activeOpacity={generalActiveOpacity}
-                onPress={handleNextJournalistJoin}
+                onPress={handleContinue}
               >
-                <Text style={auth_Style.authButtonText}>Continue</Text>
+                <Text style={auth_Style.authButtonText}>{t('common.continue')}</Text>
                 <Ionicons name="arrow-forward" size={18} color="#fff" style={styles.arrowIcon} />
               </TouchableOpacity>
             </View>
@@ -368,6 +417,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 24,
+  },
+  progressHeader: {
+    marginBottom: 14,
+    alignItems: "center",
+  },
+  progressLabel: {
+    fontFamily: generalTextFont,
+    fontSize: 12,
+    color: withdrawnTitleColor,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  progressTrack: {
+    width: "35%",
+    minWidth: 140,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+    overflow: "visible",
+    position: "relative",
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: MainSecondaryBlueColor,
+  },
+  progressDot: {
+    position: "absolute",
+    top: -4,
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    backgroundColor: MainSecondaryBlueColor,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    transform: [{ translateX: -7 }],
   },
   continueButton: {
     flexDirection: 'row',

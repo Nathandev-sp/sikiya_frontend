@@ -43,8 +43,8 @@ export const useRewardedAd = (adUnitId) => {
     const [rewardedAd, setRewardedAd] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Don't show ads for journalist, contributor, or admin
-    const adFreeRoles = ['journalist', 'contributor', 'admin'];
+    // Don't show ads for journalist, contributor, thought leaders, or admin
+    const adFreeRoles = ['journalist', 'contributor', 'thoughtleader', 'admin'];
     const shouldShowAds = !adFreeRoles.includes(userRole);
 
     useEffect(() => {

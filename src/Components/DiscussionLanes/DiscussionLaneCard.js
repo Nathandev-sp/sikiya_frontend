@@ -14,13 +14,13 @@ import {
     generalTextFont,
     generalTextSize,
     generalTitleFontWeight,
-    main_Style,
 } from '../../styles/GeneralAppStyle';
 import {
     LANE_FADED_TEXT,
     LANE_UNSELECTED_BORDER,
     LANE_UNSELECTED_FILL,
 } from '../../theme/discussionLanePalette';
+import { useLanguage } from '../../Context/LanguageContext';
 
 const CARD_TEXT = '#1F2937';
 const MUTED = '#6B7280';
@@ -35,17 +35,19 @@ export default function DiscussionLaneCard({
     onBinaryVote,
     onJoinBinaryLane,
     voting = false,
+    alwaysShowJoinBinary = false,
     joinDiscussionLabel,
     oneCommentLabel,
     manyCommentsLabel,
 }) {
+    const { t } = useLanguage();
     const isBinary = lane.laneType === 'binary';
     const tEn = lane.translations?.en;
     const tFr = lane.translations?.fr;
-    const t = lang === 'fr' ? tFr : tEn;
-    const title = lane.title || t?.title || lane.key;
-    const primaryLabel = t?.binaryPrimaryLabel || 'Yes';
-    const secondaryLabel = t?.binarySecondaryLabel || 'No';
+    const tLane = lang === 'fr' ? tFr : tEn;
+    const title = lane.title || tLane?.title || lane.key;
+    const primaryLabel = tLane?.binaryPrimaryLabel || 'Yes';
+    const secondaryLabel = tLane?.binarySecondaryLabel || 'No';
     const vs = lane.voteSummary;
     const userSide = vs?.userSide;
     const totalVotes = vs?.total ?? 0;
@@ -56,6 +58,13 @@ export default function DiscussionLaneCard({
     const cardBg = palette.cardSurface;
     const countLabel =
         commentCount === 1 ? oneCommentLabel || 'comment' : manyCommentsLabel || 'comments';
+
+    const sentimentCaption =
+        showBar &&
+        t('article.communitySentimentLine', {
+            primaryPct: Math.round(primaryPct),
+            primaryLabel,
+        });
 
     const primaryBtnStyle = (selected, pressed) => {
         const hasVote = Boolean(userSide);
@@ -180,7 +189,6 @@ export default function DiscussionLaneCard({
                     ...cardShell,
                     styles.openCard,
                     { minHeight: OPEN_CARD_MIN_HEIGHT },
-                    main_Style.genContentElevation,
                     pressed && Platform.OS === 'ios' ? { opacity: 0.96 } : null,
                 ]}
                 onPress={() => onOpenOpenLane(lane)}
@@ -196,9 +204,12 @@ export default function DiscussionLaneCard({
                         <Text style={styles.commentLineTight}>
                             {commentCount} {countLabel}
                         </Text>
-                        <Text style={[styles.joinInline, { color: palette.accent }]}>
-                            {joinDiscussionLabel}
-                        </Text>
+                        <View style={styles.joinLabelRow}>
+                            <Ionicons name="chatbubbles-outline" size={15} color={palette.accent} />
+                            <Text style={[styles.joinInline, { color: palette.accent }]}>
+                                {joinDiscussionLabel}
+                            </Text>
+                        </View>
                     </View>
                     <Pressable
                         style={({ pressed }) => [
@@ -220,7 +231,7 @@ export default function DiscussionLaneCard({
     }
 
     return (
-        <View style={[...cardShell, main_Style.genContentElevation]}>
+        <View style={cardShell}>
             <View style={styles.binaryHeader}>
                 <View style={[styles.iconWrap, { backgroundColor: palette.iconTileBg }]}>
                     <Ionicons name={lane.icon} size={20} color={palette.base} />
@@ -232,9 +243,11 @@ export default function DiscussionLaneCard({
 
             {showBar ? (
                 <View style={styles.resultsBlock}>
-                    <Text style={styles.pctLine}>
-                        {primaryLabel} {primaryPct}% · {secondaryLabel} {secondaryPct}%
-                    </Text>
+                    {sentimentCaption ? (
+                        <Text style={styles.pctLine} numberOfLines={2}>
+                            {sentimentCaption}
+                        </Text>
+                    ) : null}
                     <BinaryVoteResultBar
                         primaryPct={primaryPct}
                         secondaryPct={secondaryPct}
@@ -247,15 +260,18 @@ export default function DiscussionLaneCard({
                 {commentCount} {countLabel}
             </Text>
 
-            {userSide ? (
+            {(userSide || alwaysShowJoinBinary) ? (
                 <Pressable
                     onPress={() => onJoinBinaryLane(lane)}
                     style={styles.joinPress}
                     android_ripple={ripple}
                 >
-                    <Text style={[styles.joinHint, { color: palette.accent }]}>
-                        {joinDiscussionLabel}
-                    </Text>
+                    <View style={styles.joinLabelRow}>
+                        <Ionicons name="chatbubbles-outline" size={17} color={palette.accent} />
+                        <Text style={[styles.joinHint, { color: palette.accent }]}>
+                            {joinDiscussionLabel}
+                        </Text>
+                    </View>
                 </Pressable>
             ) : null}
         </View>
@@ -268,7 +284,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         marginHorizontal: 0,
-        borderWidth: 1,
+        borderWidth: 0.8,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#0F172A',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.07,
+                shadowRadius: 10,
+            },
+            android: {
+                elevation: 4,
+            },
+        }),
     },
     openCard: {
         justifyContent: 'center',
@@ -317,11 +344,18 @@ const styles = StyleSheet.create({
         fontFamily: generalTextFont,
         marginTop: 6,
     },
-    joinInline: {
-        fontSize: generalSmallTextSize,
-        fontFamily: generalTextFont,
-        fontWeight: '600',
+    joinLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
         marginTop: 6,
+        flexWrap: 'wrap',
+    },
+    joinInline: {
+        fontSize: generalSmallTextSize + 0.5,
+        fontFamily: generalTextFont,
+        fontWeight: '700',
+        flexShrink: 1,
     },
     plusBtn: {
         width: 40,
@@ -333,17 +367,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     joinHint: {
-        fontSize: generalSmallTextSize,
+        fontSize: generalSmallTextSize + 1,
         fontFamily: generalTextFont,
-        fontWeight: '600',
-        marginTop: 8,
+        fontWeight: '700',
+        flexShrink: 1,
     },
     joinPress: {
         alignSelf: 'flex-start',
+        marginTop: 8,
     },
     btnRow: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 16,
         marginBottom: 2,
     },
     binBtn: {
@@ -363,14 +398,15 @@ const styles = StyleSheet.create({
     },
     resultsBlock: {
         marginTop: 8,
-        gap: 6,
+        gap: 8,
     },
     pctLine: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: generalTextFont,
-        color: '#64748B',
+        color: '#475569',
         fontWeight: '600',
-        letterSpacing: 0.2,
+        letterSpacing: 0.15,
+        lineHeight: 17,
     },
     votingHint: {
         alignItems: 'center',

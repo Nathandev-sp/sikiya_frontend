@@ -295,6 +295,9 @@ function UserProfileStackNav({preloadedUserProfile}) {
       >
       <UserProfileStack.Screen name="UserProfile" component={UserProfileScreen} options={{headerShown: false}} initialParams={{preloadedUserProfile}}/>
       <UserProfileStack.Screen name="UserFollow" component={UserFollowScreen} options={{headerShown: false}} />
+      {/* Keep author profiles navigable inside UserProfile stack so back returns correctly */}
+      <UserProfileStack.Screen name="AuthorProfile" component={AuthorProfileScreen} options={{headerShown: false}} />
+      <UserProfileStack.Screen name="AuthorProfileScreen" component={AuthorProfileScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="Settings" component={SettingsScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="ProfileSettings" component={ProfileSettingScreen} options={{headerShown: false}} />
       <UserProfileStack.Screen name="SubscriptionSettings" component={SubscriptionStackNav} options={{headerShown: false}} />

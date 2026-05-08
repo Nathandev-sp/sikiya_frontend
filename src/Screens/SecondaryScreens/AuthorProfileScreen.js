@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Pressable, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Pressable, StatusBar, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
@@ -264,8 +264,9 @@ const AuthorProfileScreen = ({ route }) => {
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
 
-    const heroSubtitle = (user.journalist_affiliation && String(user.journalist_affiliation).trim())
-        || formatRole(user.role);
+    const journalistAffiliation =
+        user.journalist_affiliation && String(user.journalist_affiliation).trim();
+    const roleLabel = formatRole(user.role);
     const scorePercent = user.role === 'journalist' ? (user.trust_score ?? 0) : (user.respect_score ?? 0);
     const scoreLabel = user.role === 'journalist' ? i18n.t('profile.trustScore') : i18n.t('profile.respectScore');
 
@@ -315,49 +316,77 @@ const AuthorProfileScreen = ({ route }) => {
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: homeScreenPadding + 8 }}
                     showsVerticalScrollIndicator={false}
                 >
-                {/* Profile hero — open layout, no heavy card */}
+                {/* Profile hero — avatar left, name / affiliation / followers / trust+follow on the right */}
                 <View style={styles.heroSection}>
-                    <View style={styles.heroAvatarShell}>
-                        <Image
-                            source={user.profile_picture
-                                ? { uri: getImageUrl(user.profile_picture) }
-                                : require('../../../assets/functionalImages/ProfilePic.png')}
-                            style={styles.heroAvatar}
-                        />
-                        {user.isSikiyaCertified && (
-                            <View style={styles.heroVerifiedBadge}>
-                                <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
-                            </View>
-                        )}
-                    </View>
-
-                    <Text style={styles.heroName} numberOfLines={2}>
-                        {user.displayName}
-                    </Text>
-                    <Text style={styles.heroSubtitle} numberOfLines={2}>
-                        {heroSubtitle}
-                    </Text>
-                    <Text style={styles.heroFollowersMeta}>
-                        {formatFollowers(user.number_of_followers)} · {i18n.t('profile.followers')}
-                    </Text>
-
-                    <View style={styles.heroActionsRow}>
-                        <TrustScoreRing percent={scorePercent} label={scoreLabel} />
-                        <View style={styles.heroFollowWrap}>
-                            {isOwnProfile ? (
-                                <View style={styles.selfProfilePill}>
-                                    <Ionicons name="person-circle-outline" size={18} color={MainBrownSecondaryColor} />
-                                    <Text style={styles.selfProfilePillText}>{i18n.t('profile.selfProfile')}</Text>
+                    <View style={styles.heroMainRow}>
+                        <View style={styles.heroAvatarShell}>
+                            <Image
+                                source={user.profile_picture
+                                    ? { uri: getImageUrl(user.profile_picture) }
+                                    : require('../../../assets/functionalImages/ProfilePic.png')}
+                                style={styles.heroAvatar}
+                            />
+                            {user.isSikiyaCertified && (
+                                <View style={styles.heroVerifiedBadge}>
+                                    <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
                                 </View>
-                            ) : (
-                                <FollowButton
-                                    pill
-                                    initialFollowed={isFollowing}
-                                    onToggle={handleFollowToggle}
-                                    followLabel={i18n.t('profile.follow')}
-                                    followingLabel={i18n.t('profile.followingButton')}
-                                />
                             )}
+                        </View>
+
+                        <View style={styles.heroInfoColumn}>
+                            <Text style={styles.heroName} numberOfLines={2}>
+                                {user.displayName}
+                            </Text>
+                            {user.role === 'journalist' ? (
+                                <Text style={styles.heroSubtitle} numberOfLines={2}>
+                                    {journalistAffiliation || roleLabel}
+                                </Text>
+                            ) : (
+                                <View style={styles.heroRoleRow}>
+                                    <Text style={styles.heroSubtitle} numberOfLines={2}>
+                                        {roleLabel}
+                                    </Text>
+                                    {user.role === 'contributor' && (
+                                        <Image
+                                            source={require('../../../assets/OnboardingImages/contributorImage.png')}
+                                            style={styles.heroRoleBadgeImage}
+                                            resizeMode="contain"
+                                        />
+                                    )}
+                                    {user.role === 'thoughtleader' && (
+                                        <Ionicons
+                                            name="ribbon"
+                                            size={16}
+                                            color="#6D28D9"
+                                            style={styles.heroRoleBadgeIcon}
+                                        />
+                                    )}
+                                </View>
+                            )}
+                            <Text style={styles.heroFollowersMeta}>
+                                {formatFollowers(user.number_of_followers)} · {i18n.t('profile.followers')}
+                            </Text>
+
+                            <View style={styles.heroActionsRow}>
+                                <TrustScoreRing percent={scorePercent} label={scoreLabel} />
+                                <View style={styles.heroFollowWrap}>
+                                    {isOwnProfile ? (
+                                        <View style={[styles.selfProfilePill, styles.heroSelfProfilePillStretch]}>
+                                            <Ionicons name="person-circle-outline" size={18} color={MainBrownSecondaryColor} />
+                                            <Text style={styles.selfProfilePillText}>{i18n.t('profile.selfProfile')}</Text>
+                                        </View>
+                                    ) : (
+                                        <FollowButton
+                                            pill
+                                            pillStretch
+                                            initialFollowed={isFollowing}
+                                            onToggle={handleFollowToggle}
+                                            followLabel={i18n.t('profile.follow')}
+                                            followingLabel={i18n.t('profile.followingButton')}
+                                        />
+                                    )}
+                                </View>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -498,14 +527,26 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     heroSection: {
-        alignItems: 'center',
+        width: '100%',
         paddingHorizontal: homeScreenPadding,
-        paddingTop: 22,
+        paddingTop: 20,
         paddingBottom: 14,
+    },
+    heroMainRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: 18,
+        width: '100%',
     },
     heroAvatarShell: {
         position: 'relative',
-        marginBottom: 8,
+        flexShrink: 0,
+    },
+    heroInfoColumn: {
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'flex-start',
     },
     heroAvatar: {
         width: 118,
@@ -528,21 +569,37 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: mainTitleColor,
         fontFamily: articleTitleFont,
-        textAlign: 'center',
+        textAlign: 'left',
         letterSpacing: 0.2,
         marginBottom: 4,
-        paddingHorizontal: 8,
+        paddingHorizontal: 0,
+        lineHeight: 30,
+        ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
     },
     heroSubtitle: {
         fontSize: withdrawnTitleSize + 1.5,
         fontWeight: '400',
         color: MainBrownSecondaryColor,
         fontFamily: generalTextFont,
-        textAlign: 'center',
+        textAlign: 'left',
         lineHeight: 20,
         opacity: 0.92,
-        paddingHorizontal: 12,
+        paddingHorizontal: 0,
         marginBottom: 4,
+        ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
+    },
+    heroRoleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        minWidth: 0,
+    },
+    heroRoleBadgeImage: {
+        width: 14,
+        height: 14,
+    },
+    heroRoleBadgeIcon: {
+        marginLeft: 0,
     },
     heroFollowersMeta: {
         fontSize: generalSmallTextSize - 0.5,
@@ -550,21 +607,30 @@ const styles = StyleSheet.create({
         color: withdrawnTitleColor,
         fontFamily: generalTextFont,
         letterSpacing: 0.25,
-        marginBottom: 10,
+        marginBottom: 6,
+        ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
     },
     heroActionsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 18,
+        justifyContent: 'flex-start',
+        gap: 12,
         width: '100%',
-        paddingHorizontal: 4,
+        paddingHorizontal: 0,
     },
     heroFollowWrap: {
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'stretch',
         justifyContent: 'center',
         minHeight: TRUST_RING_SIZE + TRUST_RING_LABEL_SPACE,
     },
+    heroSelfProfilePillStretch: {
+        width: '100%',
+        alignSelf: 'stretch',
+    },
     trustRingWrap: {
+        width: TRUST_RING_SIZE,
         alignItems: 'center',
     },
     trustRingSvgBox: {
@@ -667,7 +733,7 @@ const styles = StyleSheet.create({
         marginHorizontal: homeScreenPadding,
         paddingVertical: 22,
         paddingHorizontal: 22,
-        backgroundColor: 'rgba(253, 252, 248, 0.95)',
+        backgroundColor: '#F2EFE3',
         borderRadius: 14,
         borderLeftWidth: 3,
         borderLeftColor: PrimBtnColor,

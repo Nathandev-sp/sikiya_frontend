@@ -4,13 +4,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AppScreenBackgroundColor, { auth_Style, bannerBackgroundColor, cardBackgroundColor, defaultButtonHitslop, generalActiveOpacity, generalTextFont, generalTitleFont, main_Style, MainBrownSecondaryColor, withdrawnTitleColor } from "../../styles/GeneralAppStyle";
 import { Ionicons } from "@expo/vector-icons";
 import SikiyaIntro from "../../Components/OnboardingComponents.js/SikiyaIntro";
-import SikiyaValues from "../../Components/OnboardingComponents.js/SikiyaValues";
-import JournalistIntro from "../../Components/OnboardingComponents.js/JournalistIntro";
-import UserIntro from "../../Components/OnboardingComponents.js/UserIntro";
+import SikiyaValueSlide from "../../Components/OnboardingComponents.js/SikiyaValueSlide";
 import ApplyToBe from "../../Components/OnboardingComponents.js/ApplyToBe";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
 import { useLanguage } from "../../Context/LanguageContext";
 import { Context as AuthContext } from "../../Context/AuthContext";
+
+/** First five onboarding steps: intro + four value slides — rectangular progress dots */
+const ONBOARDING_DOT_STEPS = 5;
 
 const OnboardingScreen = ({ navigation }) => {
   const { height, width } = useWindowDimensions();
@@ -22,12 +23,11 @@ const OnboardingScreen = ({ navigation }) => {
 
   const onboardingComponents = [
     <SikiyaIntro key="intro" />,
-    <SikiyaValues key="values" />,
-    <JournalistIntro key="journalist" />,
-    <UserIntro key="user" />,
+    <SikiyaValueSlide key="value-coverage" valueIndex={0} />,
+    <SikiyaValueSlide key="value-verified" valueIndex={1} />,
+    <SikiyaValueSlide key="value-expert" valueIndex={2} />,
+    <SikiyaValueSlide key="value-discussion" valueIndex={3} />,
     <ApplyToBe key="apply" />,
-
-    // Add more components here
   ];
 
   // Slide to next or previous component
@@ -69,6 +69,19 @@ const OnboardingScreen = ({ navigation }) => {
     <SafeAreaView style={auth_Style.authSafeArea} >
       <StatusBar barStyle={"dark-content"} />
       <AuthScreenMiniHeader title={t('onboarding.welcome')} />
+      {step < ONBOARDING_DOT_STEPS && (
+        <View style={styles.progressDotsRow} accessibilityRole="progressbar">
+          {Array.from({ length: ONBOARDING_DOT_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.progressDot,
+                i === step && styles.progressDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
       <View style={auth_Style.onboardingFormContainer}>
 
       
@@ -152,6 +165,25 @@ const OnboardingScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  progressDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  progressDot: {
+    width: 22,
+    height: 5,
+    borderRadius: 2,
+    backgroundColor: '#D4D0CA',
+  },
+  progressDotActive: {
+    backgroundColor: MainBrownSecondaryColor,
+    width: 28,
+  },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',

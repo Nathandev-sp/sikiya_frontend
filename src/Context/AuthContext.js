@@ -320,6 +320,53 @@ const updateRole = (dispatch) => async (role) => {
 };
 // -------------------------------------------------
 
+// Refresh auth state from /me ---------------------
+// Useful after a successful in-app purchase so the local role flips immediately
+// (e.g. 'general' -> 'contributor' or 'general' -> 'thoughtleader') without forcing a logout.
+const refreshAuth = (dispatch) => async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      return null;
+    }
+
+    const userInfoResponse = await SikiyaAPI.get('/me');
+    const userRole = userInfoResponse.data.role;
+    const userEmail = userInfoResponse.data.email;
+    const userVerifiedEmail = userInfoResponse.data.verifiedEmail;
+    const isOnTrial = userInfoResponse.data.isOnTrial || false;
+    const trialEndDate = userInfoResponse.data.trialEndDate;
+    const daysRemaining = userInfoResponse.data.daysRemaining || 0;
+
+    await AsyncStorage.multiSet([
+      ['role', userRole || null],
+      ['verifiedEmail', String(userVerifiedEmail || false)],
+      ['email', userEmail || ''],
+      ['isOnTrial', String(isOnTrial)],
+      ['trialEndDate', trialEndDate || '']
+    ]);
+
+    dispatch({
+      type: 'signin',
+      payload: {
+        token,
+        role: userRole,
+        verifiedEmail: userVerifiedEmail || false,
+        email: userEmail || null,
+        isOnTrial: isOnTrial,
+        trialEndDate: trialEndDate,
+        daysRemaining: daysRemaining
+      }
+    });
+
+    return userInfoResponse.data;
+  } catch (err) {
+    console.log('Error refreshing auth state:', err?.message || err);
+    return null;
+  }
+};
+// -------------------------------------------------
+
 // clear token -------------------------------------
 const clearState = (dispatch) => async () => {
   try {
@@ -465,6 +512,6 @@ const fetchTrialStatus = (dispatch) => async () => {
 // Update the export
 export const {Provider, Context} = createDataContext(
   authReducer,
-  { signup, signin, clearErrorMessage, updateRole, tryLocalSignin, verifyEmail, resendVerificationCode, clearState, signout, fetchTrialStatus },
+  { signup, signin, clearErrorMessage, updateRole, tryLocalSignin, refreshAuth, verifyEmail, resendVerificationCode, clearState, signout, fetchTrialStatus },
   { token: null, role: null, errorMessage: '', verifiedEmail: false, email: null, isOnTrial: false, trialEndDate: null, daysRemaining: 0 }
 );

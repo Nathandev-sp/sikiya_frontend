@@ -1,8 +1,28 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, TextInput, Switch, Linking, Alert, StatusBar } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, ScrollView, TextInput, Switch, Alert, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppScreenBackgroundColor, { articleTextSize, articleTitleSize, auth_Style, cardBackgroundColor, commentTextSize, defaultButtonHitslop, generalActiveOpacity, generalTextColor, generalTextFont, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, largeTextSize, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize, lightBannerBackgroundColor, genBtnBackgroundColor, mainBrownColor } from '../../styles/GeneralAppStyle';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import AppScreenBackgroundColor, {
+    defaultButtonHitslop,
+    generalActiveOpacity,
+    generalSmallTextSize,
+    generalTextColor,
+    generalTextFont,
+    generalTextFontWeight,
+    generalTextSize,
+    generalTitleFont,
+    generalTitleFontWeight,
+    largeTextSize,
+    main_Style,
+    MainBrownSecondaryColor,
+    secCardBackgroundColor,
+    settingsStyles,
+    withdrawnTitleColor,
+    withdrawnTitleSize,
+    lightBannerBackgroundColor,
+    articleTitleSize,
+    generalTitleColor,
+} from '../../styles/GeneralAppStyle';
+import { Ionicons } from '@expo/vector-icons';
 import VerticalSpacer from '../../Components/UI/VerticalSpacer';
 import GoBackButton from '../../../NavComponents/GoBackButton';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -37,8 +57,6 @@ const ProfileSettingScreen = () => {
     const [interestedCountry, setInterestedCountry] = useState('');
     const [areaOfExpertise, setAreaOfExpertise] = useState('');
     const [respectScore, setRespectScore] = useState(75); // Example score
-    const [showVerificationInfo, setShowVerificationInfo] = useState(false);
-    const [isVerified, setIsVerified] = useState(false);
     const [profileImageKey, setProfileImageKey] = useState(null);
     const [profileImageVersion, setProfileImageVersion] = useState(Date.now()); // Cache-busting version
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -50,12 +68,11 @@ const ProfileSettingScreen = () => {
     const [biographyFocused, setBiographyFocused] = useState(false);
     const [areaOfExpertiseFocused, setAreaOfExpertiseFocused] = useState(false);
 
-    //Adding states for loading and error handling can be done here
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     const loadUserProfile = async () => {
-        setIsLoading(true);
+        setIsInitialLoading(true);
         try {
             const response = await SikiyaAPI.get('/settings/user/profile');
             const profile = response.data;
@@ -73,13 +90,12 @@ const ProfileSettingScreen = () => {
             setInterestedCountry(profile.interested_african_country || '');
             setAreaOfExpertise(profile.area_of_expertise || '');
             setRespectScore(profile.trust_score || 0);
-            setIsVerified(profile.isVerified || false);
             setUserRole(profile.role || null);
             setProfileImageKey(profile.profile_picture || null);
-        } catch (error) {
-            setError('Failed to load profile');
+        } catch (err) {
+            Alert.alert(t('common.error'), t('alerts.errorDescription'));
         } finally {
-            setIsLoading(false);
+            setIsInitialLoading(false);
         }
     };
 
@@ -103,15 +119,8 @@ const ProfileSettingScreen = () => {
             });
 
             setProfileImageKey(response.data.imageKey);
-            // Update version to force image refresh (cache-busting)
             setProfileImageVersion(Date.now());
-            console.log('Profile image uploaded successfully');
-            console.log('Profile image key:', response.data.imageKey);
-            console.log('Profile image URL:', response.data.imageUrl);
         } catch (error) {
-            console.log('Image upload error:', error);
-            console.log('Error response:', error.response?.data);
-            console.log('Error status:', error.response?.status);
             Alert.alert(t('alerts.uploadFailed'), t('alerts.uploadFailedDescription'));
             setProfileImageKey(null);
         } finally {
@@ -180,8 +189,8 @@ const ProfileSettingScreen = () => {
 
     const handleSave = async () => {
         try {
-            setIsLoading(true);
-            
+            setIsSaving(true);
+
             const response = await SikiyaAPI.put('/settings/user/profile', {
                 displayName: customDisplayName,
                 bio: biography,
@@ -192,8 +201,6 @@ const ProfileSettingScreen = () => {
             });
 
             if (response.data.success) {
-                console.log('Profile updated successfully');
-                
                 // Update local state with returned profile data
                 const updatedProfile = response.data.profile;
                 setFirstname(updatedProfile.firstname);
@@ -203,8 +210,7 @@ const ProfileSettingScreen = () => {
                 setInterestedCountry(updatedProfile.interested_african_country);
                 setAreaOfExpertise(updatedProfile.area_of_expertise);
                 setRespectScore(updatedProfile.trust_score);
-                setIsVerified(updatedProfile.isVerified);
-                
+
                 // Navigate back and trigger refresh on UserProfileScreen
                 navigation.goBack();
             }
@@ -212,12 +218,8 @@ const ProfileSettingScreen = () => {
             console.error('Error saving profile:', error);
             Alert.alert(t('alerts.error'), t('alerts.errorDescription'));
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
-    };
-
-    const handleEmailPress = () => {
-        Linking.openURL('mailto:nathan.cibonga@sikiya.org');
     };
 
     const handleResetPassword = async () => {
@@ -272,15 +274,20 @@ const ProfileSettingScreen = () => {
         return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
     };
 
-    if (isLoading) {
+    if (isInitialLoading) {
         return (
-            <SafeAreaView style={[main_Style.safeArea]} edges={['top', 'left', 'right']}>
-                <BigLoaderAnim />
+            <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
+                <StatusBar barStyle={'dark-content'} />
+                <View style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
+                    <GoBackButton />
+                </View>
+                <View style={styles.initialLoadingBox}>
+                    <BigLoaderAnim />
+                    <Text style={styles.loadingSubtext}>{t('common.loading')}</Text>
+                </View>
             </SafeAreaView>
         );
     }
-    console.log('Profile image key:', profileImageKey);
-    console.log('Profile image URL updated:', getImageUrl(profileImageKey));
 
     return (
         <SafeAreaView style={[main_Style.safeArea, styles.container]} edges={['top', 'left', 'right']}>
@@ -288,16 +295,23 @@ const ProfileSettingScreen = () => {
             <View style={{position: 'absolute', top: 10, left: 10, zIndex: 10}}>
                 <GoBackButton />
             </View>
-            
-            <ScrollView 
+
+            <ScrollView
                 ref={scrollViewRef}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                automaticallyAdjustKeyboardInsets={true}
+                contentInset={{ bottom: 40 }}
+                scrollIndicatorInsets={{ bottom: 40 }}
+                contentContainerStyle={{ paddingBottom: 40 }}
             >
-                
-                {/* Header Section */}
-                <View style={styles.headerSection}>
-                    <TouchableOpacity 
+                <View style={settingsStyles.headerSection}>
+                    <Ionicons name="person-circle-outline" style={settingsStyles.headerIcon} />
+                    <Text style={settingsStyles.headerTitle}>{t('generalSettings.profileSettings')}</Text>
+                </View>
+
+                <View style={styles.heroBlock}>
+                    <TouchableOpacity
                         style={styles.profileImageContainer}
                         onPress={pickImage}
                         activeOpacity={0.7}
@@ -307,63 +321,63 @@ const ProfileSettingScreen = () => {
                             {uploadingImage ? (
                                 <SmallLoadingState />
                             ) : profileImageKey ? (
-                                <Image 
+                                <Image
                                     key={`${profileImageKey}-${profileImageVersion}`}
-                                    source={{ 
+                                    source={{
                                         uri: `${getImageUrl(profileImageKey)}?v=${profileImageVersion}`,
                                     }}
                                     style={styles.profileImage}
-                                    onError={(error) => {
-                                        console.log('Image load error:', error);
-                                    }}
                                 />
                             ) : (
-                                <Image 
+                                <Image
                                     source={require('../../../assets/functionalImages/ProfilePic.png')}
-                                    style={styles.profileImage} 
+                                    style={styles.profileImage}
                                 />
                             )}
                         </View>
                         <View style={styles.cameraIconOverlay}>
-                            <Ionicons name="camera" size={20} color="#fff" />
+                            <Ionicons name="camera" size={18} color="#fff" />
                         </View>
                     </TouchableOpacity>
-                    {userRole && (
+                    {userRole ? (
                         <View style={styles.roleTag}>
                             <Text style={styles.roleTagText}>{getRoleDisplayText(userRole)}</Text>
                         </View>
-                    )}
+                    ) : null}
                 </View>
 
-                {/* Respect Score Display */}
-                <View style={[styles.formContainerName, main_Style.genButtonElevation]}>
-                    {/* Name Title Section */}
-                    <View style={styles.nameTitleSection}>
-                        <Text style={styles.nameTitle}>
-                            {firstname && lastname 
-                                ? `${firstname} ${lastname}`.trim()
-                                : firstname || lastname || 'Name not set'}
-                        </Text>
-                    </View>
-                    
-                    <View style={styles.scoreContainer}>
-                        <View style={styles.scoreTitleContainer}>
-                            <Ionicons name="trophy-outline" size={24} color={MainSecondaryBlueColor} />
-                            <Text style={styles.sectionTitle}>{t('profile.trustScore')}</Text>
+                <View style={styles.categoryContainer}>
+                    <View style={styles.categoryHeader}>
+                        <View style={styles.iconContainer}>
+                            <Ionicons name="trophy-outline" size={20} color={withdrawnTitleColor} />
                         </View>
-                        <View style={styles.scoreValueContainer}>
+                        <Text style={styles.categoryTitle}>{t('profile.trustScore')}</Text>
+                    </View>
+                    <View style={[styles.listCard, main_Style.genButtonElevation]}>
+                        <View style={styles.nameTitleSection}>
+                            <Text style={styles.nameTitle}>
+                                {firstname && lastname
+                                    ? `${firstname} ${lastname}`.trim()
+                                    : firstname || lastname || '—'}
+                            </Text>
+                        </View>
+                        <View style={styles.scoreRow}>
                             <Text style={styles.scorePercentage}>{respectScore}%</Text>
                             <View style={styles.scoreBarBackground}>
-                                <View style={[styles.scoreBarFill, { width: `${respectScore}%` }]} />
+                                <View style={[styles.scoreBarFill, { width: `${Math.min(100, Math.max(0, respectScore))}%` }]} />
                             </View>
                         </View>
                     </View>
                 </View>
 
-                <VerticalSpacer height={20} />
-
-                <View style={[styles.formContainerDetails, main_Style.genButtonElevation]}>
-                    {/* Toggle for display name format */}
+                <View style={styles.categoryContainer}>
+                    <View style={styles.categoryHeader}>
+                        <View style={styles.iconContainer}>
+                            <Ionicons name="create-outline" size={20} color={withdrawnTitleColor} />
+                        </View>
+                        <Text style={styles.categoryTitle}>{t('generalSettings.profile')}</Text>
+                    </View>
+                    <View style={[styles.listCard, main_Style.genButtonElevation]}>
                     <View style={styles.toggleGroup}>
                         <View style={styles.toggleTextContainer}>
                             <Text style={styles.toggleLabel}>{t('profileSettings.useFullNameAsDisplay')}</Text>
@@ -371,12 +385,10 @@ const ProfileSettingScreen = () => {
                         <Switch
                             value={useFullNameAsDisplay}
                             onValueChange={setUseFullNameAsDisplay}
-                            trackColor={{ false: '#d3d3d3', true: '#007AA3' }}
+                            trackColor={{ false: '#d3d3d3', true: MainBrownSecondaryColor }}
                             thumbColor={'#fff'}
                         />
                     </View>
-
-                    <VerticalSpacer height={20} />
 
                     {/* Display Name (editable when toggle is OFF) */}
                     <View style={styles.inputGroup} ref={displayNameContainerRef}>
@@ -440,18 +452,51 @@ const ProfileSettingScreen = () => {
                         </Text>
                     </View>
 
+                    {/* Area of Expertise */}
+                    <View style={styles.inputGroup} ref={areaOfExpertiseContainerRef}>
+                        <View style={styles.labelContainer}>
+                            <Text style={styles.label}>{t('profile.areaOfExpertise')}</Text>
+                        </View>
+                        <TextInput
+                            ref={areaOfExpertiseInputRef}
+                            style={[
+                                styles.input,
+                                styles.inputBrownBorder,
+                                styles.textAreaExpertise,
+                                areaOfExpertiseFocused && styles.inputFocused,
+                            ]}
+                            value={areaOfExpertise}
+                            onChangeText={setAreaOfExpertise}
+                            placeholder={t('onboarding.areaOfExpertisePlaceholder')}
+                            placeholderTextColor="#999"
+                            multiline
+                            numberOfLines={2}
+                            textAlignVertical="top"
+                            onFocus={() => {
+                                setAreaOfExpertiseFocused(true);
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollTo({ y: 400, animated: true });
+                                }, 300);
+                            }}
+                            onBlur={() => setAreaOfExpertiseFocused(false)}
+                        />
+                        <Text style={styles.helperText}>
+                            {`${t('profileSettings.listYourProfessionalSkillsKnowledgeAreasOrInterests')} (${areaOfExpertise.length}/300)`}
+                        </Text>
+                    </View>
+
                     {/* Biography */}
                     <View style={styles.inputGroup} ref={biographyContainerRef}>
                         <View style={styles.labelContainer}>
-                            
                             <Text style={styles.label}>{t('profile.bio')}</Text>
                         </View>
                         <TextInput
                             ref={biographyInputRef}
                             style={[
-                                styles.input, 
+                                styles.input,
+                                styles.inputBrownBorder,
                                 styles.textArea,
-                                biographyFocused && styles.inputFocused
+                                biographyFocused && styles.inputFocused,
                             ]}
                             value={biography}
                             onChangeText={setBiography}
@@ -462,9 +507,8 @@ const ProfileSettingScreen = () => {
                             textAlignVertical="top"
                             onFocus={() => {
                                 setBiographyFocused(true);
-                                // Scroll to a specific position to bring input into view
                                 setTimeout(() => {
-                                    scrollViewRef.current?.scrollTo({ y: 400, animated: true });
+                                    scrollViewRef.current?.scrollTo({ y: 520, animated: true });
                                 }, 300);
                             }}
                             onBlur={() => setBiographyFocused(false)}
@@ -474,112 +518,20 @@ const ProfileSettingScreen = () => {
                         </Text>
                     </View>
 
-                   
-
-                    {/* Area of Expertise */}
-                    <View style={styles.inputGroup} ref={areaOfExpertiseContainerRef}>
-                        <View style={styles.labelContainer}>
-                            
-                            <Text style={styles.label}>{t('profile.areaOfExpertise')}</Text>
-                        </View>
-                        <TextInput
-                            ref={areaOfExpertiseInputRef}
-                            style={[
-                                styles.input, 
-                                styles.textArea,
-                                areaOfExpertiseFocused && styles.inputFocused
-                            ]}
-                            value={areaOfExpertise}
-                            onChangeText={setAreaOfExpertise}
-                            placeholder={t('onboarding.areaOfExpertisePlaceholder')}
-                            placeholderTextColor="#999"
-                            multiline
-                            numberOfLines={3}
-                            textAlignVertical="top"
-                            onFocus={() => {
-                                setAreaOfExpertiseFocused(true);
-                                // Scroll to a specific position to bring input into view
-                                setTimeout(() => {
-                                    scrollViewRef.current?.scrollTo({ y: 600, animated: true });
-                                }, 300);
-                            }}
-                            onBlur={() => setAreaOfExpertiseFocused(false)}
-                        />
-                        <Text style={styles.helperText}>
-                            {t('profileSettings.listYourProfessionalSkillsKnowledgeAreasOrInterests')} ({areaOfExpertise.length}/300)
-                        </Text>
-                    </View>
-
-                    {/* Save Button */}
-                    <TouchableOpacity 
-                        style={[styles.saveButton, main_Style.genButtonElevation]} 
+                    <TouchableOpacity
+                        style={[styles.saveButton, main_Style.genButtonElevation, isSaving && styles.saveButtonDisabled]}
                         onPress={handleSave}
                         activeOpacity={generalActiveOpacity}
+                        disabled={isSaving}
                     >
-                        <Ionicons name="save-outline" size={18} color={AppScreenBackgroundColor} />
+                        {isSaving ? (
+                            <ActivityIndicator color={AppScreenBackgroundColor} size="small" />
+                        ) : (
+                            <Ionicons name="save-outline" size={18} color={AppScreenBackgroundColor} />
+                        )}
                         <Text style={styles.saveButtonText}>{t('common.save')}</Text>
                     </TouchableOpacity>
-                </View>
-
-                <VerticalSpacer height={20} />
-
-                {/* Verified User Section */}
-                <View style={[styles.formContainerDetails, main_Style.genButtonElevation]}>
-                    <TouchableOpacity 
-                        style={styles.verificationHeader}
-                        onPress={() => setShowVerificationInfo(!showVerificationInfo)}
-                        activeOpacity={generalActiveOpacity}
-                    >
-                        <View style={styles.verificationTitleContainer}>
-                            <Text style={styles.sectionTitle}>{t('profileSettings.verifiedUser')}</Text>
-                            {isVerified ? (
-                                <Ionicons name="checkmark-circle" size={20} color="#49A078" />
-                            ) : (
-                                <Ionicons name="close-circle" size={20} color="#9CA3AF" />
-                            )}
-                        </View>
-                        <Ionicons 
-                            name={showVerificationInfo ? "chevron-up" : "chevron-down"} 
-                            size={20} 
-                            color={withdrawnTitleColor} 
-                        />
-                    </TouchableOpacity>
-
-                    {showVerificationInfo && (
-                        <View style={styles.verificationContent}>
-                            <View style={styles.divider} />
-                            
-                            {isVerified ? (
-                                <View style={styles.verifiedBadge}>
-                                    <Ionicons name="shield-checkmark" size={40} color="#49A078" />
-                                    <Text style={styles.verifiedText}>{t('profileSettings.yourAccountIsVerified')}</Text>
-                                    <Text style={styles.verifiedSubtext}>
-                                        {t('profileSettings.haveBeenSikiyaVerified')}
-                                    </Text>
-                                </View>
-                            ) : (
-                                <>
-                                    <Text style={styles.verificationText}>
-                                        {t('profileSettings.sendUsID')}
-                                    </Text>
-                                    
-                                    <TouchableOpacity 
-                                        style={styles.emailButton}
-                                        onPress={handleEmailPress}
-                                        activeOpacity={generalActiveOpacity}
-                                    >
-                                        <Ionicons name="mail-outline" size={16} color={MainBrownSecondaryColor} />
-                                        <Text style={styles.emailText}>nathan.cibonga@sikiya.org</Text>
-                                    </TouchableOpacity>
-
-                                    <Text style={styles.verificationFooter}>
-                                        <Ionicons name="time-outline" size={12} color={withdrawnTitleColor} />
-                                        {' '}{t('profileSettings.getVerifiedWithin')}
-                                    </Text>
-                                </>
-                            )}
-                        </View>
-                    )}
+                    </View>
                 </View>
 
                 <VerticalSpacer height={35} />
@@ -594,87 +546,104 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: AppScreenBackgroundColor,
     },
-    headerSection: {
+    initialLoadingBox: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 30,
-        paddingTop: 60,
+    },
+    loadingSubtext: {
+        marginTop: 12,
+        fontSize: generalSmallTextSize,
+        color: withdrawnTitleColor,
+        fontFamily: generalTextFont,
+    },
+    heroBlock: {
+        alignItems: 'center',
+        paddingTop: 4,
+        paddingBottom: 8,
+    },
+    categoryContainer: {
+        marginBottom: 22,
+    },
+    categoryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 10,
+    },
+    iconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    categoryTitle: {
+        fontSize: generalTextSize,
+        fontWeight: generalTitleFontWeight,
+        color: withdrawnTitleColor,
+        marginLeft: 8,
+        fontFamily: generalTitleFont,
+    },
+    listCard: {
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        marginHorizontal: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        borderWidth: 0.8,
+        borderColor: 'rgba(0,0,0,0.05)',
+        overflow: 'hidden',
     },
     profileImageContainer: {
         alignItems: 'center',
         marginBottom: 12,
     },
     profileImageWrapper: {
-        //borderRadius: 45,
-        //padding: 2.5,
         overflow: 'hidden',
-        
     },
     profileImageLoading: {
-        borderColor: '#ccc',
+        opacity: 0.85,
     },
     profileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        padding: 2.5,
-        borderWidth: 2,
-        borderColor: MainSecondaryBlueColor,
+        padding: 2,
+        borderWidth: 3,
+        borderColor: MainBrownSecondaryColor,
         backgroundColor: AppScreenBackgroundColor,
-        //backgroundColor: 'red',
     },
     cameraIconOverlay: {
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: MainSecondaryBlueColor,
-        borderRadius: 20,
-        width: 32,
-        height: 32,
+        backgroundColor: MainBrownSecondaryColor,
+        borderRadius: 18,
+        width: 30,
+        height: 30,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#fff',
     },
     roleTag: {
-        marginTop: 8,
+        marginTop: 4,
         alignSelf: 'center',
-        backgroundColor: MainSecondaryBlueColor,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 16,
+        backgroundColor: MainBrownSecondaryColor,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 999,
     },
     roleTagText: {
         color: '#fff',
-        fontSize: generalTextSize,
+        fontSize: generalSmallTextSize,
         fontWeight: '600',
         fontFamily: generalTitleFont,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    formContainerName: {
-        backgroundColor: cardBackgroundColor,
-        borderRadius: 8,
-        marginHorizontal: 12,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        
-    },
-    formContainerDetails: {
-        backgroundColor: '#FFF',
-        borderRadius: 8,
-        marginHorizontal: 12,
-        padding: 12,
-        borderWidth: 0.8,
-        borderColor: 'rgba(0,0,0,0.05)',
-        
+        letterSpacing: 0.4,
     },
     nameTitleSection: {
-        marginBottom: 4,
-        paddingBottom: 8,
+        marginBottom: 8,
+        paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: generalTextColor,
-        //backgroundColor: "red"
+        borderBottomColor: '#f0f0f0',
     },
     nameTitle: {
         fontSize: articleTitleSize,
@@ -683,89 +652,71 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
         textAlign: 'center',
     },
-    scoreContainer: {
-        paddingVertical: 8,
-    },
-    scoreTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 2,
-    },
-    scoreValueContainer: {
-        marginTop: 0,
-        //backgroundColor: "red"
+    scoreRow: {
+        paddingTop: 8,
     },
     scorePercentage: {
         fontSize: largeTextSize,
         fontWeight: 'bold',
-        color: MainSecondaryBlueColor,
+        color: MainBrownSecondaryColor,
         fontFamily: generalTitleFont,
         textAlign: 'center',
-        marginBottom: 4,
+        marginBottom: 8,
     },
     scoreBarBackground: {
         height: 8,
-        backgroundColor: AppScreenBackgroundColor,
+        backgroundColor: secCardBackgroundColor,
         borderRadius: 6,
         overflow: 'hidden',
     },
     scoreBarFill: {
         height: '100%',
-        backgroundColor: MainSecondaryBlueColor,
+        backgroundColor: MainBrownSecondaryColor,
         borderRadius: 6,
     },
     inputGroup: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     labelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 8,
         gap: 8,
     },
     label: {
         fontSize: generalTextSize,
-        fontWeight: '600',
+        fontWeight: generalTextFontWeight,
         color: generalTextColor,
         fontFamily: generalTitleFont,
-        letterSpacing: 0.3,
     },
     input: {
-        backgroundColor: "#FFFFFF",
+        backgroundColor: '#FFFFFF',
         borderRadius: 8,
         paddingVertical: 10,
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
         fontSize: generalTextSize,
         fontFamily: generalTextFont,
         color: generalTextColor,
-        borderWidth: 0.8,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.08)',
+    },
+    inputBrownBorder: {
+        borderWidth: 0.5,
         borderColor: MainBrownSecondaryColor,
-        zIndex: 8,
-        shadowColor: '#000000', // iOS shadow properties
-        shadowOffset: { width: 0, height: 0.2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 0.3,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: "#FFFFFF",
+        backgroundColor: '#FFFFFF',
         borderRadius: 8,
-        borderWidth: 0.8,
-        borderColor: MainBrownSecondaryColor,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.08)',
         paddingHorizontal: 12,
-        //paddingVertical: 10,
-        zIndex: 8,
-        shadowColor: '#000000', // iOS shadow properties
-        shadowOffset: { width: 0, height: 0.2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 0.3,
     },
     inputIcon: {
         fontSize: 20,
         color: MainBrownSecondaryColor,
-        marginRight: 10,
+        marginRight: 8,
     },
     inputText: {
         flex: 1,
@@ -780,22 +731,21 @@ const styles = StyleSheet.create({
         paddingTop: 12,
         paddingBottom: 12,
     },
+    /** ~2 lines — compact vs bio */
+    textAreaExpertise: {
+        minHeight: 52,
+        maxHeight: 72,
+        paddingTop: 10,
+        paddingBottom: 10,
+    },
     inputFocused: {
-        borderColor: '#2BA1E6',
-        borderWidth: 1.2,
-        backgroundColor: '#F0F6FA',
-        shadowColor: '#2BA1E6',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderColor: MainBrownSecondaryColor,
+        borderWidth: 1,
+        backgroundColor: lightBannerBackgroundColor,
     },
     disabledInput: {
-        backgroundColor: secCardBackgroundColor,
-        borderColor: '#ccc',
+        backgroundColor: lightBannerBackgroundColor,
+        borderColor: 'rgba(0,0,0,0.06)',
     },
     disabledInputText: {
         color: generalTextColor,
@@ -807,160 +757,46 @@ const styles = StyleSheet.create({
         color: withdrawnTitleColor,
         marginTop: 6,
         fontFamily: generalTextFont,
-        lineHeight: 16,
-        fontStyle: 'italic',
+        lineHeight: 18,
     },
     toggleGroup: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 16,
-        paddingHorizontal: 4,
-        borderBottomWidth: 1.5,
-        borderBottomColor: '#E5E7EB',
-        marginBottom: 4,
+        paddingVertical: 4,
+        marginBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        paddingBottom: 16,
     },
     toggleTextContainer: {
         flex: 1,
-        marginRight: 16,
+        marginRight: 14,
     },
     toggleLabel: {
         fontSize: generalTextSize,
-        fontWeight: '600',
-        color: generalTitleColor,
+        fontWeight: generalTextFontWeight,
+        color: generalTextColor,
         fontFamily: generalTitleFont,
-        letterSpacing: 0.2,
-    },
-    toggleDescription: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        marginTop: 4,
-        fontFamily: generalTextFont,
-        lineHeight: 16,
     },
     saveButton: {
         backgroundColor: MainBrownSecondaryColor,
         paddingVertical: 14,
-        borderRadius: 8,
+        borderRadius: 10,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        marginTop: 2,
-        shadowColor: MainBrownSecondaryColor,
-        shadowOffset: {
-            width: 0,
-            height: 3,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
+        marginTop: 4,
+    },
+    saveButtonDisabled: {
+        opacity: 0.7,
     },
     saveButtonText: {
         color: AppScreenBackgroundColor,
         fontSize: generalTextSize,
         fontWeight: '700',
         fontFamily: generalTitleFont,
-        letterSpacing: 0.5,
-    },
-    sectionTitle: {
-        fontSize: generalTextSize,
-        fontWeight: '700',
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
-        letterSpacing: 0.3,
-    },
-    verificationHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    verificationTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    verificationContent: {
-        marginTop: 12,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#f0f0f0',
-        marginBottom: 12,
-    },
-    verificationText: {
-        fontSize: commentTextSize,
-        color: generalTextColor,
-        fontFamily: generalTextFont,
-        lineHeight: 18,
-        marginBottom: 12,
-    },
-    emailButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: secCardBackgroundColor,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-        gap: 8,
-        marginBottom: 12,
-    },
-    emailText: {
-        fontSize: commentTextSize,
-        color: MainBrownSecondaryColor,
-        fontFamily: generalTextFont,
-        fontWeight: '500',
-    },
-    verificationFooter: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        alignSelf: 'center',
-        fontStyle: 'italic',
-    },
-    resetPasswordButton: {
-        backgroundColor: MainBrownSecondaryColor,
-        paddingVertical: 12,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        marginTop: 8,
-    },
-    resetPasswordText: {
-        color: AppScreenBackgroundColor,
-        fontSize: generalTextSize,
-        fontWeight: '600',
-        fontFamily: generalTitleFont,
-    },
-    passwordHelperText: {
-        fontSize: withdrawnTitleSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    verifiedBadge: {
-        alignItems: 'center',
-        paddingVertical: 20,
-        backgroundColor: '#F0FDF4',
-        borderRadius: 8,
-        marginTop: 4,
-    },
-    verifiedText: {
-        fontSize: commentTextSize,
-        fontWeight: '600',
-        color: '#49A078',
-        fontFamily: generalTitleFont,
-        marginTop: 12,
-    },
-    verifiedSubtext: {
-        fontSize: 11,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-        marginTop: 4,
-        textAlign: 'center',
     },
 });
 

@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { auth_Style, defaultButtonHitslop, generalActiveOpacity, generalTitleColor, generalTitleFont, generalTextFont, generalTextSize, generalTitleSize, MainBrownSecondaryColor, withdrawnTitleColor, generalTextColor, lightBannerBackgroundColor, main_Style, cardBackgroundColor, MainSecondaryBlueColor, commentTextSize } from "../../styles/GeneralAppStyle";
 import AuthScreenMiniHeader from "../../Components/AuthScreenMiniHeader";
-import GoBackButton from "../../../NavComponents/GoBackButton";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../Context/LanguageContext";
 
@@ -13,7 +12,7 @@ import { termsAndConditions } from "../../../assets/PDFs/UserT&C";
 
 const JournalistTermConditions = ({ route }) => {
   const navigation = useNavigation();
-  const { journalistInfo, journalistInfo2, profileImageKey } = route.params;
+  const { journalistInfo, journalistInfo2, profileImageKey, profileImageUrl } = route.params;
   const [agreed, setAgreed] = useState(false);
   const { appLanguage, t } = useLanguage();
   
@@ -32,10 +31,28 @@ const JournalistTermConditions = ({ route }) => {
     });
   };
 
+  const handleBackToStep4 = () => {
+    navigation.navigate("JournalistJoin2", {
+      journalistInfo,
+      journalistInfo2,
+      profileImageKey,
+      profileImageUrl,
+      initialStep: 2, // Step 4 of 4
+    });
+  };
+
   return (
     <SafeAreaView style={auth_Style.authSafeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={"dark-content"} />
       <AuthScreenMiniHeader title={t('onboarding.termsAndConditions')} />
+      <TouchableOpacity
+        hitSlop={defaultButtonHitslop}
+        style={styles.backToJoinButton}
+        activeOpacity={generalActiveOpacity}
+        onPress={handleBackToStep4}
+      >
+        <Ionicons name="arrow-back" style={styles.backButtonIcon} />
+      </TouchableOpacity>
       
       <View style={[auth_Style.formContainer, main_Style.genContentElevation]}>
         {/* Terms and Conditions ScrollView */}
@@ -97,6 +114,21 @@ const JournalistTermConditions = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  backToJoinButton: {
+    position: "absolute",
+    top: 53,
+    left: 10,
+    zIndex: 50,
+    backgroundColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    padding: 6,
+  },
+  backButtonIcon: {
+    fontSize: 28,
+    color: MainBrownSecondaryColor,
+  },
   termsContainer: {
     flex: 1,
     marginHorizontal: 12,

@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions, TouchableOpacity } from "react-native";
-import { generalTitleFont, generalTextFont, generalTitleColor, generalTextColor, generalTextSize, generalTitleSize, auth_Style, generalActiveOpacity, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, articleTitleSize } from "../../styles/GeneralAppStyle";
+import { generalTitleFont, generalTextFont, generalTextColor, generalTextSize, generalTitleSize, auth_Style, generalActiveOpacity, main_Style, MainBrownSecondaryColor, MainSecondaryBlueColor, articleTitleFont } from "../../styles/GeneralAppStyle";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from '../../Context/LanguageContext';
+import { Ionicons } from "@expo/vector-icons";
 
 const journalistImage = require("../../../assets/OnboardingImages/journalistWork.png");
 const userImage = require("../../../assets/OnboardingImages/team.png");
@@ -21,45 +22,87 @@ const ApplyToBe = () => {
   }
 
   return (
-    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%', justifyContent: "space-between", paddingVertical: 16}]}>
-      {/* Join as User Button */}
-      <TouchableOpacity 
-        style={[styles.ButtonContainer, styles.imageLeftContainer, main_Style.genButtonElevation]} 
-        activeOpacity={generalActiveOpacity} 
-        onPress={handleUserPress}
-      >
-        <View style={styles.imageWrapper}>
-          <Image source={userImage} style={styles.largeImage} />
-        </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.headlineUser}>{t('onboarding.joinAsUser')}</Text>
-          <Text style={styles.description}>
-            {t('onboarding.joinAsUserDescription')}
-          </Text>
-        </View>
-      </TouchableOpacity>
+    <View style={[auth_Style.onboardingContainer, {height: height*0.56, width: '94%', paddingVertical: 12}]}>
+      <View style={styles.headerBlock}>
+        <Text style={styles.headerTitle}>{t('onboarding.chooseJoinPath')}</Text>
+      </View>
 
-      {/* Apply to be Journalist Button */}
-      <TouchableOpacity 
-        style={[styles.ButtonContainer, styles.imageRightContainer, main_Style.genButtonElevation]} 
-        activeOpacity={generalActiveOpacity} 
-        onPress={handleJournalistPress}
-      >
-        <View style={styles.textContainer}>
-          <Text style={styles.headlineJourn}>{t('onboarding.applyToBeJournalist')}</Text>
-          <Text style={styles.description}>
-            {t('onboarding.joinAsJournalistDescription')}
-          </Text>
-        </View>
-        <View style={styles.imageWrapper}>
-          <Image source={journalistImage} style={styles.largeImage} />
-        </View>
-      </TouchableOpacity>
+      <View style={styles.cardsColumn}>
+        {/* Join as User Button */}
+        <TouchableOpacity 
+          style={[styles.ButtonContainer, styles.userBorder, main_Style.genButtonElevation]} 
+          activeOpacity={generalActiveOpacity} 
+          onPress={handleUserPress}
+          accessibilityRole="button"
+        >
+          <View style={styles.imageWrapper}>
+            <Image source={userImage} style={styles.largeImage} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.headlineUser}>{t('onboarding.joinAsUser')}</Text>
+            <Text style={styles.description}>
+              {t('onboarding.joinAsUserDescription')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={MainSecondaryBlueColor} />
+        </TouchableOpacity>
+
+        {/* Apply to be Journalist Button */}
+        <TouchableOpacity 
+          style={[styles.ButtonContainer, styles.journalistBorder, main_Style.genButtonElevation]} 
+          activeOpacity={generalActiveOpacity} 
+          onPress={handleJournalistPress}
+          accessibilityRole="button"
+        >
+          <View style={styles.imageWrapper}>
+            <Image source={journalistImage} style={styles.largeImage} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.headlineJourn}>{t('onboarding.applyToBeJournalist')}</Text>
+            <Text style={styles.description}>
+              {t('onboarding.joinAsJournalistDescription')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={MainBrownSecondaryColor} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  headerBlock: {
+    width: '100%',
+    paddingHorizontal: 8,
+    paddingTop: 4,
+    paddingBottom: 12,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontFamily: articleTitleFont,
+    fontSize: generalTitleSize + 3,
+    fontWeight: '700',
+    color: MainBrownSecondaryColor,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    marginBottom: 10,
+  },
+  headerSubtitle: {
+    fontFamily: generalTextFont,
+    fontSize: generalTextSize,
+    color: generalTextColor,
+    textAlign: 'center',
+    lineHeight: 22,
+    letterSpacing: 0.2,
+    paddingHorizontal: 8,
+  },
+  cardsColumn: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 14,
+    paddingBottom: 4,
+  },
   ButtonContainer: {
     flex: 1,
     maxHeight: '48%',
@@ -69,16 +112,15 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 16,
     backgroundColor: '#F6F3EF',
-  },
-  imageLeftContainer: {
     flexDirection: 'row',
-    borderWidth: 1.2,
-    borderColor: MainSecondaryBlueColor
   },
-  imageRightContainer: {
-    flexDirection: 'row-reverse',
+  userBorder: {
     borderWidth: 1.2,
-    borderColor: MainBrownSecondaryColor
+    borderColor: MainSecondaryBlueColor,
+  },
+  journalistBorder: {
+    borderWidth: 1.2,
+    borderColor: MainBrownSecondaryColor,
   },
   imageWrapper: {
     width: 80,
@@ -106,20 +148,20 @@ const styles = StyleSheet.create({
   },
   headlineUser: {
     fontFamily: generalTitleFont,
-    fontSize: articleTitleSize,
+    fontSize: generalTitleSize + 2,
     fontWeight: '700',
     color: MainSecondaryBlueColor,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.3,
   },
   headlineJourn: {
     fontFamily: generalTitleFont,
-    fontSize: articleTitleSize,
+    fontSize: generalTitleSize + 2,
     fontWeight: '700',
     color: MainBrownSecondaryColor,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.3,
   },
   description: {
@@ -127,7 +169,7 @@ const styles = StyleSheet.create({
     fontSize: generalTextSize - 1,
     color: generalTextColor,
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.2,
   },
 });

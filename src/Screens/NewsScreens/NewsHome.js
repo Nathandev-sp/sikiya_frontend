@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useState, useRef, useContext, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, useWindowDimensions, ScrollView, TouchableOpacity, StatusBar, Alert, Modal, PanResponder, Animated, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppScreenBackgroundColor, { articleLineHeight, articleTextSize, articleTitleFont, articleTitleSize, bannerBackgroundColor, cardBackgroundColor, commentTextSize, defaultButtonHitslop, genBtnBackgroundColor, generalActiveOpacity, generalLineHeight, generalSmallLineHeight, generalSmallTextSize, generalTextColor, generalTextFont, generalTextFontWeight, generalTextSize, generalTitleColor, generalTitleFont, generalTitleFontWeight, generalTitleSize, lightBannerBackgroundColor, main_Style, mainBrownColor, MainBrownSecondaryColor, secCardBackgroundColor, withdrawnTitleColor, withdrawnTitleSize } from '../../styles/GeneralAppStyle';
@@ -18,12 +18,14 @@ import { getImageUrl } from '../../utils/imageUrl';
 import BannerAdComponent from '../../Components/Ads/BannerAd';
 import { useInterstitialAd } from '../../Components/Ads/InterstitialAd';
 import { Context as AuthContext } from '../../Context/AuthContext';
+import ArticleInfluenceSection from '../../Components/ArticleInfluenceSection';
 import i18n from '../../utils/i18n';
 import { useRewardedAd } from '../../Components/Ads/RewardedAd';
 import { useLanguage } from '../../Context/LanguageContext';
 import DiscussionLaneCard from '../../Components/DiscussionLanes/DiscussionLaneCard';
 import { getDiscussionLanePalette } from '../../theme/discussionLanePalette';
 import { getHomeCategoryChipColor } from '../../theme/homeCategoryColors';
+import { INFLUENCE_SENTIMENT } from '../../Components/ArticleInfluenceItem';
 
 let articlesReadCount = 0;
 
@@ -412,12 +414,12 @@ const createStyles = (height) => StyleSheet.create({
         fontFamily: generalTextFont,
     },
     highlightSection: {
-        backgroundColor: '#FBFAF6',
-        borderRadius: 16,
+        backgroundColor: '#F2EFE3', //#F9F7F1 #FBFAF6
+        borderRadius: 8,
         padding: 18,
         marginTop: 12,
-        marginBottom: 20,
-        borderLeftWidth: 4,
+        marginBottom: 24,
+        borderLeftWidth: 1.5,
         borderLeftColor: MainBrownSecondaryColor,
     },
     highlightLabel: {
@@ -441,6 +443,7 @@ const createStyles = (height) => StyleSheet.create({
         width: '100%',
         alignSelf: 'center',
         maxWidth: 680,
+        marginBottom: 16,
     },
     fullContentLabel: {
         fontSize: generalTitleSize,
@@ -462,6 +465,144 @@ const createStyles = (height) => StyleSheet.create({
         width: '100%',
         alignSelf: 'center',
     },
+    expertOpinionActionsRow: {
+        width: '100%',
+        alignSelf: 'center',
+        marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+    },
+    expertOpinionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        backgroundColor: '#F2EFE3',
+        borderWidth: 1,
+        borderColor: 'rgba(102, 70, 44, 0.18)',
+    },
+    expertOpinionButtonText: {
+        fontFamily: generalTextFont,
+        fontSize: generalSmallTextSize,
+        lineHeight: generalSmallLineHeight,
+        color: MainBrownSecondaryColor,
+        fontWeight: generalTitleFontWeight,
+    },
+    expertOpinionModalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'center',
+        paddingHorizontal: 18,
+    },
+    expertOpinionModalCard: {
+        backgroundColor: AppScreenBackgroundColor,
+        borderRadius: 16,
+        padding: 16,
+    },
+    expertOpinionModalTitle: {
+        fontFamily: generalTitleFont,
+        fontSize: generalTitleSize,
+        lineHeight: generalLineHeight,
+        color: MainBrownSecondaryColor,
+        fontWeight: generalTitleFontWeight,
+        marginBottom: 12,
+    },
+    expertOpinionModalHint: {
+        marginTop: -6,
+        marginBottom: 12,
+        fontFamily: generalTextFont,
+        fontSize: generalSmallTextSize,
+        lineHeight: generalSmallLineHeight,
+        color: withdrawnTitleColor,
+        fontWeight: generalTextFontWeight,
+    },
+    expertOpinionSentimentRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 12,
+        flexWrap: 'wrap',
+    },
+    expertOpinionSentimentChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.12)',
+        backgroundColor: '#FFFFFF',
+    },
+    expertOpinionSentimentChipActive: {
+        borderColor: 'rgba(102, 70, 44, 0.35)',
+        backgroundColor: '#F2EFE3',
+    },
+    expertOpinionSentimentChipText: {
+        fontFamily: generalTextFont,
+        fontSize: generalSmallTextSize,
+        lineHeight: generalSmallLineHeight,
+        color: withdrawnTitleColor,
+        fontWeight: generalTextFontWeight,
+    },
+    expertOpinionSentimentChipTextActive: {
+        color: MainBrownSecondaryColor,
+        fontWeight: generalTitleFontWeight,
+    },
+    expertOpinionInput: {
+        minHeight: 120,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.12)',
+        backgroundColor: '#FFFFFF',
+        fontFamily: generalTextFont,
+        fontSize: generalTextSize,
+        lineHeight: generalLineHeight,
+        color: generalTextColor,
+        marginBottom: 12,
+    },
+    expertOpinionCounter: {
+        marginTop: -6,
+        marginBottom: 12,
+        fontFamily: generalTextFont,
+        fontSize: generalSmallTextSize,
+        lineHeight: generalSmallLineHeight,
+        color: withdrawnTitleColor,
+        textAlign: 'right',
+    },
+    expertOpinionModalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 10,
+    },
+    expertOpinionCancel: {
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.12)',
+    },
+    expertOpinionCancelText: {
+        fontFamily: generalTextFont,
+        fontSize: generalTextSize,
+        lineHeight: generalLineHeight,
+        color: withdrawnTitleColor,
+        fontWeight: generalTextFontWeight,
+    },
+    expertOpinionSubmit: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 10,
+        backgroundColor: MainBrownSecondaryColor,
+    },
+    expertOpinionSubmitText: {
+        fontFamily: generalTextFont,
+        fontSize: generalTextSize,
+        lineHeight: generalLineHeight,
+        color: '#FFFFFF',
+        fontWeight: generalTitleFontWeight,
+    },
     modalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.35)',
@@ -478,7 +619,7 @@ const createStyles = (height) => StyleSheet.create({
     },
     modalHandle: {
         width: 48,
-        height: 5,
+        height: 4,
         borderRadius: 3,
         backgroundColor: 'rgba(0,0,0,0.2)',
         alignSelf: 'center',
@@ -575,6 +716,30 @@ const createStyles = (height) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    modalLaneNewCommentsBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: 'rgba(139,90,43,0.08)',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.06)',
+        gap: 12,
+    },
+    modalLaneNewCommentsBannerText: {
+        flex: 1,
+        fontSize: generalSmallTextSize + 1,
+        fontFamily: generalTextFont,
+        color: generalTextColor,
+        fontWeight: '600',
+        lineHeight: 20,
+    },
+    modalLaneNewCommentsBannerAction: {
+        fontSize: generalSmallTextSize + 1,
+        fontFamily: generalTitleFont,
+        fontWeight: '800',
+    },
     modalCloseButton: {
         position: 'absolute',
         right: 12,
@@ -588,14 +753,14 @@ const createStyles = (height) => StyleSheet.create({
         zIndex: 10,
     },
     discussionLanesSection: {
-        borderRadius: 16,
+        borderRadius: 8,
         paddingTop: 14,
         paddingHorizontal: 12,
         paddingBottom: 16,
         marginTop: 8,
         marginBottom: 20,
-        borderLeftWidth: 4,
-        backgroundColor: '#FFFFFF',
+        borderLeftWidth: 1.5,
+        backgroundColor: '#F2EFE3',
     },
     discussionLanesSectionTitle: {
         fontSize: commentTextSize,
@@ -688,9 +853,19 @@ const NewsHome = ({ route }) => {
     const readTimeIntervalRef = useRef(null); // Interval for tracking read time
     const [discussionModalVisible, setDiscussionModalVisible] = useState(false);
     const [selectedLane, setSelectedLane] = useState(null);
+    const [hasNewLaneComments, setHasNewLaneComments] = useState(false);
+    const laneCommentsBaselineRef = useRef(null);
+    const awaitingFreshBaselineRef = useRef(false);
+    const laneCommentPollIntervalRef = useRef(null);
     const [replyingToComment, setReplyingToComment] = useState(null); // { commentId, authorName }
     const [laneCounts, setLaneCounts] = useState({});
     const [laneVotingKey, setLaneVotingKey] = useState(null);
+    const [expertOpinions, setExpertOpinions] = useState([]);
+    const [expertOpinionsLoading, setExpertOpinionsLoading] = useState(false);
+    const [expertOpinionModalVisible, setExpertOpinionModalVisible] = useState(false);
+    const [expertOpinionText, setExpertOpinionText] = useState('');
+    const [expertOpinionSentiment, setExpertOpinionSentiment] = useState('neutral');
+    const [expertOpinionSaving, setExpertOpinionSaving] = useState(false);
 
     // Pan responder for swipe-to-dismiss
     const modalTranslateY = useRef(new Animated.Value(0)).current;
@@ -817,6 +992,186 @@ const NewsHome = ({ route }) => {
         }
     }, [article?._id, displayDiscussionLanes.length, fetchLaneCounts]);
 
+    const canPostExpertOpinion = userRole === 'thoughtleader' || userRole === 'journalist';
+
+    const hydrateExpertOpinionsFromArticle = useCallback((a) => {
+        const apiOpinions = a?.expertOpinions || [];
+        if (!Array.isArray(apiOpinions) || apiOpinions.length === 0) return [];
+        const mapped = apiOpinions.map((op) => {
+            const author = op.author || {};
+            const displayName =
+                author.displayName ||
+                `${author.firstname || ''} ${author.lastname || ''}`.trim() ||
+                i18n.t('profile.unknown');
+            const occupation = author.area_of_expertise || author.journalist_affiliation || '';
+            return {
+                id: op._id,
+                text: op.opinion_content,
+                displayName,
+                occupation,
+                profilePicture: author.profile_picture || null,
+                sentiment: op.sentiment || 'neutral',
+                likeCount: op.number_of_likes ?? 0,
+                isLiked: Boolean(op.likedByMe),
+                authorId: author._id || op.author_id,
+            };
+        });
+        return mapped.slice(0, 10);
+    }, []);
+
+    const fetchExpertOpinions = useCallback(async () => {
+        if (!article?._id) return;
+
+        // Prefer embedded expert opinions from the article payload (bulk + detail endpoints).
+        const embedded = hydrateExpertOpinionsFromArticle(article);
+        if (embedded.length) {
+            setExpertOpinions(embedded);
+            return;
+        }
+
+        setExpertOpinionsLoading(true);
+        try {
+            const res = await SikiyaAPI.get(`/expert-opinion/article/${article._id}`);
+            const apiOpinions = res.data?.opinions || [];
+            const mapped = apiOpinions.map((op) => {
+                const author = op.author || {};
+                const displayName =
+                    author.displayName ||
+                    `${author.firstname || ''} ${author.lastname || ''}`.trim() ||
+                    i18n.t('profile.unknown');
+                const occupation = author.area_of_expertise || author.journalist_affiliation || '';
+                return {
+                    id: op._id,
+                    text: op.opinion_content,
+                    displayName,
+                    occupation,
+                    profilePicture: author.profile_picture || null,
+                    sentiment: op.sentiment || 'neutral',
+                    likeCount: op.number_of_likes ?? 0,
+                    isLiked: Boolean(op.likedByMe),
+                    authorId: author._id || op.author_id,
+                };
+            });
+            // Backend already sorts by recency and limits to 10, but keep frontend safe.
+            setExpertOpinions(mapped.slice(0, 10));
+        } catch (err) {
+            // Non-critical — hide the section if endpoint is unavailable.
+            setExpertOpinions([]);
+        } finally {
+            setExpertOpinionsLoading(false);
+        }
+    }, [article?._id, article?.expertOpinions, hydrateExpertOpinionsFromArticle]);
+
+    const toggleExpertOpinionLike = useCallback(
+        async (opinionId) => {
+            const current = expertOpinions.find((o) => o.id === opinionId);
+            if (!current) return;
+
+            const nextLiked = !current.isLiked;
+            setExpertOpinions((prev) =>
+                prev.map((o) =>
+                    o.id === opinionId
+                        ? {
+                            ...o,
+                            isLiked: nextLiked,
+                            likeCount: Math.max(0, (o.likeCount ?? 0) + (nextLiked ? 1 : -1)),
+                        }
+                        : o,
+                ),
+            );
+
+            try {
+                if (nextLiked) {
+                    await SikiyaAPI.post(`/expert-opinion/${opinionId}/like`);
+                } else {
+                    await SikiyaAPI.delete(`/expert-opinion/${opinionId}/like`);
+                }
+            } catch (err) {
+                // Re-sync with server on failure.
+                fetchExpertOpinions();
+            }
+        },
+        [expertOpinions, fetchExpertOpinions],
+    );
+
+    useEffect(() => {
+        fetchExpertOpinions();
+    }, [fetchExpertOpinions]);
+
+    const expertOpinionsForSection = useMemo(
+        () =>
+            (expertOpinions || []).map((o) => ({
+                ...o,
+                onLikePress: () => toggleExpertOpinionLike(o.id),
+                onHeaderPress:
+                    o.authorId
+                        ? () =>
+                            navigation.navigate('AuthorProfile', {
+                                userId: o.authorId,
+                                ...(o.displayName ? { displayName: o.displayName } : {}),
+                            })
+                        : undefined,
+            })),
+        [expertOpinions, toggleExpertOpinionLike],
+    );
+
+    const submitExpertOpinion = useCallback(async () => {
+        if (!article?._id) return;
+        const trimmed = (expertOpinionText || '').trim();
+        if (!trimmed.length) {
+            Alert.alert(i18n.t('common.error') || 'Error', i18n.t('comments.emptyComment') || 'Please write something.');
+            return;
+        }
+        if (trimmed.length > 200) {
+            Alert.alert(
+                i18n.t('common.error') || 'Error',
+                i18n.t('articleInfluence.opinionTooLong', { max: 200 }) || 'Your opinion is too long.',
+            );
+            return;
+        }
+        setExpertOpinionSaving(true);
+        try {
+            const res = await SikiyaAPI.post(`/expert-opinion/article/${article._id}`, {
+                opinion_content: trimmed,
+                sentiment: expertOpinionSentiment,
+            });
+            // Optimistically surface the saved opinion immediately (then refresh from server).
+            const saved = res.data;
+            if (saved?._id) {
+                const author = saved.author || {};
+                const displayName =
+                    author.displayName ||
+                    `${author.firstname || ''} ${author.lastname || ''}`.trim() ||
+                    i18n.t('profile.unknown');
+                const occupation = author.area_of_expertise || author.journalist_affiliation || '';
+                const optimistic = {
+                    id: saved._id,
+                    text: saved.opinion_content,
+                    displayName,
+                    occupation,
+                    profilePicture: author.profile_picture || null,
+                    sentiment: saved.sentiment || expertOpinionSentiment || 'neutral',
+                    likeCount: saved.number_of_likes ?? 0,
+                    isLiked: Boolean(saved.likedByMe),
+                    authorId: author._id || saved.author_id,
+                };
+                setExpertOpinions((prev) => {
+                    const withoutMine = (prev || []).filter((o) => o.id !== optimistic.id);
+                    return [optimistic, ...withoutMine].slice(0, 10);
+                });
+            }
+            setExpertOpinionModalVisible(false);
+            setExpertOpinionText('');
+            setExpertOpinionSentiment('neutral');
+            fetchExpertOpinions();
+        } catch (err) {
+            const msg = err?.response?.data?.error || err?.message || 'Failed to save expert opinion';
+            Alert.alert(i18n.t('common.error') || 'Error', msg);
+        } finally {
+            setExpertOpinionSaving(false);
+        }
+    }, [article?._id, expertOpinionText, expertOpinionSentiment, fetchExpertOpinions]);
+
     const getJournalistName = useCallback(() => {
         if (!article?.journalist) return i18n.t('article.unknownAuthor');
 
@@ -839,6 +1194,9 @@ const NewsHome = ({ route }) => {
     }, [article]);
 
     const openDiscussionLane = useCallback((lane) => {
+        setHasNewLaneComments(false);
+        laneCommentsBaselineRef.current = null;
+        awaitingFreshBaselineRef.current = false;
         setSelectedLane(lane);
         setDiscussionModalVisible(true);
     }, []);
@@ -892,7 +1250,64 @@ const NewsHome = ({ route }) => {
     const closeDiscussionLane = useCallback(() => {
         setDiscussionModalVisible(false);
         setSelectedLane(null);
+        setHasNewLaneComments(false);
+        laneCommentsBaselineRef.current = null;
+        awaitingFreshBaselineRef.current = false;
     }, []);
+
+    const handleLaneCommentsTotalChange = useCallback((total) => {
+        laneCommentsBaselineRef.current = total;
+        if (awaitingFreshBaselineRef.current) {
+            awaitingFreshBaselineRef.current = false;
+        }
+    }, []);
+
+    const handleLaneNewCommentsBannerPress = useCallback(() => {
+        setHasNewLaneComments(false);
+        awaitingFreshBaselineRef.current = true;
+        setRefreshCommentsKey((k) => k + 1);
+    }, []);
+
+    useEffect(() => {
+        if (laneCommentPollIntervalRef.current) {
+            clearInterval(laneCommentPollIntervalRef.current);
+            laneCommentPollIntervalRef.current = null;
+        }
+        if (!discussionModalVisible || !selectedLane?.key || !article?._id) {
+            return;
+        }
+        const articleIdStr = String(article._id);
+        const laneKey = selectedLane.key;
+
+        const tick = async () => {
+            try {
+                const res = await SikiyaAPI.get(
+                    `/comments/article/${articleIdStr}/count?discussionLaneKey=${encodeURIComponent(laneKey)}`
+                );
+                const serverTotal = res.data?.totalComments ?? 0;
+                if (awaitingFreshBaselineRef.current) {
+                    laneCommentsBaselineRef.current = serverTotal;
+                    awaitingFreshBaselineRef.current = false;
+                    return;
+                }
+                const baseline = laneCommentsBaselineRef.current;
+                if (baseline == null) return;
+                if (serverTotal > baseline) {
+                    setHasNewLaneComments(true);
+                }
+            } catch (_) {
+                // Silent: avoid empty-state flashes on slow/errors
+            }
+        };
+
+        laneCommentPollIntervalRef.current = setInterval(tick, 12000);
+        return () => {
+            if (laneCommentPollIntervalRef.current) {
+                clearInterval(laneCommentPollIntervalRef.current);
+                laneCommentPollIntervalRef.current = null;
+            }
+        };
+    }, [discussionModalVisible, selectedLane?.key, article?._id]);
 
     /** Prefer route params so id is correct on first paint when the screen is reused (state may still hold the previous article). */
     const activeArticleId = React.useMemo(() => {
@@ -962,6 +1377,13 @@ const NewsHome = ({ route }) => {
         }
     }, []);
 
+    // Preload comment quota for general users so the "limit reached" card can render immediately.
+    useEffect(() => {
+        if (userRole === 'general') {
+            fetchCommentQuota();
+        }
+    }, [userRole, fetchCommentQuota]);
+
     const handleUnlockComment = useCallback(() => {
         if (userRole !== 'general') return;
         
@@ -979,13 +1401,22 @@ const NewsHome = ({ route }) => {
     }, [handleWatchAd, userRole, adCooldownSeconds]);
 
     const handleUpgrade = useCallback(() => {
-        navigation.navigate('UserProfileGroup', {
-            screen: 'SubscriptionSettings',
-            params: {
-                screen: 'MembershipSettings'
-            }
-        });
-    }, [navigation]);
+        // Close comments sheet first so the transition feels intentional.
+        setModalVisible(false);
+        closeDiscussionLane();
+        setReplyingToComment(null);
+
+        // Let the modal close animation finish before navigating.
+        setTimeout(() => {
+            navigation.navigate('UserProfileGroup', {
+                screen: 'SubscriptionSettings',
+                params: {
+                    screen: 'MembershipSettings',
+                    params: { returnTab: 'Home' },
+                }
+            });
+        }, 220);
+    }, [navigation, closeDiscussionLane]);
 
     const handleWatchAd = useCallback(async () => {
         if (!isAdLoaded) {
@@ -1070,6 +1501,9 @@ const NewsHome = ({ route }) => {
             const response = await SikiyaAPI.post('/comment/main/new', payload);
 
             if (response.status === 201) {
+                if (selectedLane?.key) {
+                    awaitingFreshBaselineRef.current = true;
+                }
                 setRefreshCommentsKey(prevKey => prevKey + 1);
                 setModalVisible(false);
                 setCommentQuota(prev => prev ? {
@@ -1122,6 +1556,9 @@ const NewsHome = ({ route }) => {
             const response = await SikiyaAPI.post('/comment/reply', payload);
             if (response.status === 201 || response.status === 200) {
                 setReplyingToComment(null);
+                if (selectedLane?.key) {
+                    awaitingFreshBaselineRef.current = true;
+                }
                 setRefreshCommentsKey(prevKey => prevKey + 1);
                 setArticle(prev => ({
                     ...prev,
@@ -1536,8 +1973,115 @@ const NewsHome = ({ route }) => {
                         <Text style={styles.fullContentLabel}>{i18n.t('article.fullArticle')}</Text>
                         <Text style={styles.articleContent}>{article.article_content}</Text>
                     </View>
-                    <View style={styles.horizontalRule} />
                     
+                    {canPostExpertOpinion ? (
+                        <View style={styles.expertOpinionActionsRow}>
+                            <TouchableOpacity
+                                style={styles.expertOpinionButton}
+                                onPress={() => setExpertOpinionModalVisible(true)}
+                                activeOpacity={generalActiveOpacity}
+                                hitSlop={defaultButtonHitslop}
+                            >
+                                <Ionicons name="chatbubble-ellipses-outline" size={16} color={MainBrownSecondaryColor} />
+                                <Text style={styles.expertOpinionButtonText}>
+                                    {i18n.t('articleInfluence.addExpertOpinion') || 'Add expert opinion'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : null}
+
+                    <ArticleInfluenceSection opinions={expertOpinionsForSection} />
+
+                    <Modal
+                        transparent
+                        visible={expertOpinionModalVisible}
+                        animationType="fade"
+                        onRequestClose={() => setExpertOpinionModalVisible(false)}
+                    >
+                        <View style={styles.expertOpinionModalBackdrop}>
+                            <View style={styles.expertOpinionModalCard}>
+                                <Text style={styles.expertOpinionModalTitle}>
+                                    {i18n.t('articleInfluence.addExpertOpinion') || 'Add expert opinion'}
+                                </Text>
+                                <Text style={styles.expertOpinionModalHint}>
+                                    {i18n.t('articleInfluence.oneOpinionPerArticle') ||
+                                        'You can only post one expert opinion per article (posting again updates it).'}
+                                </Text>
+
+                                <View style={styles.expertOpinionSentimentRow}>
+                                    {[
+                                        { key: 'support', label: i18n.t('articleInfluence.sentimentSupport') || 'Support' },
+                                        { key: 'neutral', label: i18n.t('articleInfluence.sentimentNeutral') || 'Neutral' },
+                                        { key: 'disapprove', label: i18n.t('articleInfluence.sentimentDisapprove') || 'Disagree' },
+                                    ].map((opt) => {
+                                        const active = expertOpinionSentiment === opt.key;
+                                        const c = INFLUENCE_SENTIMENT[opt.key] || INFLUENCE_SENTIMENT.neutral;
+                                        return (
+                                            <TouchableOpacity
+                                                key={opt.key}
+                                                style={[
+                                                    styles.expertOpinionSentimentChip,
+                                                    { borderColor: active ? c : 'rgba(0,0,0,0.12)' },
+                                                    active ? { backgroundColor: `${c}1F` } : null,
+                                                ]}
+                                                onPress={() => setExpertOpinionSentiment(opt.key)}
+                                                activeOpacity={generalActiveOpacity}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.expertOpinionSentimentChipText,
+                                                        active ? { color: c, fontWeight: generalTitleFontWeight } : null,
+                                                    ]}
+                                                >
+                                                    {opt.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
+
+                                <TextInput
+                                    value={expertOpinionText}
+                                    onChangeText={setExpertOpinionText}
+                                    placeholder={i18n.t('articleInfluence.writeOpinionPlaceholder') || 'Write your expert opinion...'}
+                                    placeholderTextColor={withdrawnTitleColor}
+                                    style={styles.expertOpinionInput}
+                                    multiline
+                                    textAlignVertical="top"
+                                    editable={!expertOpinionSaving}
+                                    maxLength={200}
+                                />
+
+                                <Text style={styles.expertOpinionCounter}>
+                                    {i18n.t('articleInfluence.charCount', { count: (expertOpinionText || '').length, max: 200 }) ||
+                                        `${(expertOpinionText || '').length}/200`}
+                                </Text>
+
+                                <View style={styles.expertOpinionModalActions}>
+                                    <TouchableOpacity
+                                        style={styles.expertOpinionCancel}
+                                        onPress={() => setExpertOpinionModalVisible(false)}
+                                        activeOpacity={generalActiveOpacity}
+                                        disabled={expertOpinionSaving}
+                                    >
+                                        <Text style={styles.expertOpinionCancelText}>
+                                            {i18n.t('common.cancel') || 'Cancel'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.expertOpinionSubmit}
+                                        onPress={submitExpertOpinion}
+                                        activeOpacity={generalActiveOpacity}
+                                        disabled={expertOpinionSaving}
+                                    >
+                                        <Text style={styles.expertOpinionSubmitText}>
+                                            {expertOpinionSaving ? (i18n.t('common.saving') || 'Saving...') : (i18n.t('common.post') || 'Post')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    </Modal>
                     {/* Discussion lanes (section + cards) */}
                     <View style={styles.commentsSection}>
                         {displayDiscussionLanes.length > 0 && (
@@ -1630,6 +2174,27 @@ const NewsHome = ({ route }) => {
                                     </TouchableOpacity>
                                 </View>
 
+                                {hasNewLaneComments && (
+                                    <TouchableOpacity
+                                        style={styles.modalLaneNewCommentsBanner}
+                                        onPress={handleLaneNewCommentsBannerPress}
+                                        activeOpacity={0.75}
+                                        accessibilityRole="button"
+                                    >
+                                        <Text style={styles.modalLaneNewCommentsBannerText}>
+                                            {t('comments.newCommentsPosted')}
+                                        </Text>
+                                        <Text
+                                            style={[
+                                                styles.modalLaneNewCommentsBannerAction,
+                                                { color: discussionPalette.accent },
+                                            ]}
+                                        >
+                                            {t('common.update')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+
                                 {/* Article header with image and title 
                                 <View style={[styles.modalHeaderRow, { borderBottomColor: selectedLane.backgroundColor, borderBottomWidth: 1.2 }]}>
                                     <Image
@@ -1670,6 +2235,7 @@ const NewsHome = ({ route }) => {
                                     onAddCommentPress={() => setModalVisible(true)}
                                     onReplyToComment={(commentId, authorName) => setReplyingToComment({ commentId, authorName })}
                                     onBeforeNavigate={closeDiscussionLane}
+                                    onTotalCountChange={selectedLane?.key ? handleLaneCommentsTotalChange : undefined}
                                 />
                             </ScrollView>
                             

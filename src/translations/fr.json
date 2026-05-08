@@ -4,6 +4,8 @@
     "error": "Erreur",
     "success": "Succès",
     "cancel": "Annuler",
+    "post": "Publier",
+    "saving": "Enregistrement...",
     "save": "Enregistrer",
     "current": "Actuel",
     "noChanges": "Aucun changement",
@@ -35,7 +37,8 @@
     "noResults": "Aucun résultat trouvé",
     "tryAgain": "Réessayer",
     "somethingWentWrong": "Une erreur s'est produite",
-    "words": "mots"
+    "words": "mots",
+    "update": "Mettre à jour"
   },
   "auth": {
     "welcome": "Bienvenue",
@@ -193,7 +196,20 @@
     "unknownAuthor": "Auteur inconnu",
     "defaultAffiliation": "Sikiya",
     "discussionLanes": "Lignes de discussion",
-    "discussionLanesHint": "Dites où vous vous situez — puis rejoignez la discussion. Sur les sujets polarisants, choisissez d’abord un camp ; votre vote met à jour les résultats."
+    "discussionLanesHint": "Dites où vous vous situez, puis rejoignez la discussion.",
+    "communitySentimentLine": "Avis de la communauté : {{primaryPct}}% — {{primaryLabel}}"
+  },
+  "articleInfluence": {
+    "sectionTitle": "Avis d'experts",
+    "addExpertOpinion": "Ajouter un avis d'expert",
+    "writeOpinionPlaceholder": "Écrivez votre avis d'expert...",
+    "oneOpinionPerArticle": "Vous ne pouvez publier qu’un seul avis d’expert par article (publier à nouveau le mettra à jour).",
+    "charCount": "{{count}}/{{max}}",
+    "opinionTooLong": "Votre avis doit contenir au maximum {{max}} caractères.",
+    "sentimentSupport": "Soutient",
+    "sentimentNeutral": "Mitigé",
+    "sentimentDisapprove": "S'oppose",
+    "likes": "j'aime"
   },
   "video": {
     "video": "Vidéo",
@@ -285,6 +301,7 @@
   },
   "settings": {
     "settings": "Paramètres",
+    "language": "Langue",
     "accountSettings": "Paramètres du compte",
     "profileSettings": "Paramètres du profil",
     "privacySettings": "Paramètres de confidentialité",
@@ -432,7 +449,17 @@
     "truthAccuracy": "Vérité & Précision",
     "truthAccuracyDesc": "Tenir les journalistes responsables.",
     "coverage": "Couverture",
-    "coverageDesc": "Chaque histoire compte.",
+    "coverageTagline": "Un réseau de journalistes à l’échelle de l’Afrique",
+    "coverageDesc": "Des freelances et reporters affiliés qui offrent des perspectives diverses et de terrain sur tout le continent.",
+    "verified": "Vérifié",
+    "verifiedTagline": "Une confiance mesurable",
+    "verifiedDesc": "Un score de confiance transparent et un système de vérification des éditeurs pour une presse responsable.",
+    "expertOpinion": "Avis d’experts",
+    "expertOpinionTagline": "Au-delà des titres",
+    "expertOpinionDesc": "Des experts et des voix éclairées décryptent ce que l’actualité signifie vraiment.",
+    "discussion": "Discussion",
+    "discussionTagline": "Là où la conversation a lieu",
+    "discussionDesc": "Votez, prenez position et rejoignez des discussions structurées dans des espaces dédiés.",
     "openDialogue": "Dialogue Ouvert",
     "openDialogueDesc": "Échanges constructifs.",
     "respect": "Respect",
@@ -447,6 +474,8 @@
     "userNewsDesc": "Lisez les dernières actualités avec du contexte. Suivez les sujets et restez informé.",
     "userDiscussionLane": "Espaces de discussion",
     "userDiscussionLaneDesc": "Participez à des discussions ciblées autour de l’actualité. Partagez des points de vue, répondez aux autres et explorez différentes perspectives.",
+    "chooseJoinPath": "Choisissez comment vous souhaitez rejoindre",
+    "chooseJoinPathDesc": "Choisissez une option pour commencer — vous pourrez toujours explorer l’autre plus tard.",
     "joinAsUser": "REJOINDRE EN TANT QUE UTILISATEUR",
     "applyToBeJournalist": "POSTULER POUR DEVENIR JOURNALISTE",
     "joinAsJournalistDescription": "Rapportez les faits. Lancez votre parcours journalistique.",
@@ -562,6 +591,7 @@
   "generalSettings": {
     "settings": "Paramètres",
     "profileDescription": "Modifier les informations du profil",
+    "profileSettings": "Paramètres du profil",
     "profile": "Profil",
     "membership": "Abonnement",
     "membershipDescription": "Gérer votre abonnement",
@@ -646,6 +676,7 @@
     "failedToStartSubscription": "Échec du démarrage de l'abonnement. Veuillez réessayer.",
     "journalistAccess": "Accès journaliste",
     "verifiedJournalist": "Journaliste vérifié",
+    "journalistPremiumHeroSubtitle": "Toutes les fonctionnalités premium sont incluses avec votre compte",
     "premiumAccessIncluded": "Accès premium inclus",
     "complimentary": "Gratuit",
     "verifiedAccount": "Compte vérifié",
@@ -949,7 +980,7 @@
     "mainCommentsLeftToday": "Commentaires principaux restants aujourd'hui",
     "of": "sur",
     "dailyCommentLimit": "Limite atteinte pour aujourd’hui",
-    "dailyCommentLimitDescription": "Vous pouvez toujours répondre aux commentaires principaux. Mettez à niveau ou regardez une publicité pour débloquer plus de commentaires.",
+    "dailyCommentLimitDescription": "Vous pouvez toujours répondre. Regardez une courte publicité pour continuer à commenter, ou mettez à niveau pour un accès illimité.",
     "watchAd": "Publicité",
     "upgrade": "Mettre à niveau",
     "postingIn": "Publication dans",
@@ -964,7 +995,8 @@
     "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.",
     "oneComment": "commentaire",
     "manyComments": "commentaires",
-    "joinDiscussion": "Rejoindre la discussion"
+    "joinDiscussion": "Rejoindre la discussion",
+    "newCommentsPosted": "Nouveaux commentaires —"
   }
 }
 

@@ -30,8 +30,8 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
         if (!role) return i18n.t('profile.generalUser') || 'General User';
         const roleMap = {
             'journalist': i18n.t('journalist.journalist') || 'Journalist',
-            'thoughtleader': i18n.t('profile.thoughtLeader') || 'Thought Leader',
-            'contributor': i18n.t('onboarding.contributors') || 'Contributor',
+            'thoughtleader': i18n.t('profile.thoughtLeaders') || i18n.t('profile.thoughtLeader') || 'Thought Leaders',
+            'contributor': i18n.t('onboarding.contributors') || 'Contributors',
             'general': i18n.t('profile.generalUser') || 'General User',
             'needID': i18n.t('profile.pendingVerification') || 'Pending Verification'
         };
@@ -108,11 +108,13 @@ const PeopleDisplay = memo(({ journalist, onFollowToggle }) => {
                     <View style={styles.profileInfoContainer}>
                         <View style={styles.roleNameStack}>
                             <View style={styles.roleBadge}>
-                                <Ionicons
-                                    name={getRoleIcon()}
-                                    size={11}
-                                    color={PrimBtnColor}
-                                />
+                                    {journalist.role === 'journalist' && (
+                                        <Ionicons
+                                            name={getRoleIcon()}
+                                            size={11}
+                                            color={PrimBtnColor}
+                                        />
+                                    )}
                                 <Text style={styles.roleText} numberOfLines={1}>{role.toUpperCase()}</Text>
                             </View>
                             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">{fullName}</Text>

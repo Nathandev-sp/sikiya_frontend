@@ -9,7 +9,7 @@ import { MainBrownSecondaryColor, generalTextFont, generalTextColor, generalTitl
 import { useLanguage } from '../src/Context/LanguageContext';
 
 
-const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, onReplyToComment, onBeforeNavigate, hideHeader = false, totalCommentCount = null }) => {
+const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refreshKey, commentLoading, setCommentLoading, onAddCommentPress, onReplyToComment, onBeforeNavigate, hideHeader = false, totalCommentCount = null, onTotalCountChange = null }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,14 +40,18 @@ const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refres
                 
                 // Handle paginated response
                 if (response.data.comments) {
+                    const nextTotal = response.data.pagination.totalComments;
                     setComments(response.data.comments);
-                    setTotalCount(response.data.pagination.totalComments);
+                    setTotalCount(nextTotal);
+                    if (typeof onTotalCountChange === 'function') onTotalCountChange(nextTotal);
                     setHasMore(response.data.pagination.hasNextPage);
                     setCurrentPage(1);
                 } else {
                     // Backward compatibility if backend returns array directly
                     setComments(response.data);
-                    setTotalCount(response.data.length);
+                    const nextTotal = response.data.length;
+                    setTotalCount(nextTotal);
+                    if (typeof onTotalCountChange === 'function') onTotalCountChange(nextTotal);
                     setHasMore(false);
                 }
                 //console.log("Fetched comments:", response.data);
@@ -60,7 +64,7 @@ const FeedbackContainer = ({ articleId, videoId, discussionLaneId = null, refres
         };
         if (articleId || videoId) fetchComments();
         
-    }, [articleId, videoId, discussionLaneId, refreshKey]);
+    }, [articleId, videoId, discussionLaneId, refreshKey, onTotalCountChange]);
 
     // Update totalCount when totalCommentCount prop changes
     useEffect(() => {

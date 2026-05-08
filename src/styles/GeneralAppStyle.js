@@ -60,7 +60,7 @@ const homeCardVerticalGap = 8;
 const homeCardBorderRadius = 12;
 const homeChipBorderRadius = 20;
 /** Slightly warmer than app chrome so the feed feels like one surface */
-const homeFeedBackgroundColor = '#F3F0EA';
+const homeFeedBackgroundColor = '#F8F6F2';
 
 const homeCardShadowStyle = {
     shadowColor: '#2C2416',
@@ -173,7 +173,9 @@ const auth_Style = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: generalTextFont,
+    fontWeight: "normal",
     fontSize: generalTextSize,
+    letterSpacing: 0,
     color: '#222',
     backgroundColor: 'transparent',
     borderWidth: 0,

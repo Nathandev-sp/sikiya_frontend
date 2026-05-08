@@ -15,6 +15,8 @@ const FollowButton = ({
   pill = false,
   /** Smaller, outline-style pill for list rows (e.g. PeopleDisplay) */
   pillSubtle = false,
+  /** Fill horizontal space in a row (e.g. profile hero next to trust ring) */
+  pillStretch = false,
   followLabel = 'Follow',
   followingLabel = 'Following',
 }) => {
@@ -38,6 +40,7 @@ const FollowButton = ({
       <TouchableOpacity
         style={[
           styles.pillButton,
+          pillStretch && styles.pillButtonStretch,
           subtle && styles.pillButtonSubtle,
           followed
             ? subtle
@@ -170,6 +173,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.14,
     shadowRadius: 10,
     elevation: 4,
+  },
+  pillButtonStretch: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   pillNotFollowing: {
     backgroundColor: PrimBtnColor,

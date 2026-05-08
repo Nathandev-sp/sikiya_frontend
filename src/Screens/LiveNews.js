@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef, useCallback, useContext} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, FlatList, Image, ActivityIndicator, ScrollView, StatusBar, Alert, Platform, Modal, KeyboardAvoidingView, TouchableWithoutFeedback} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreenBackgroundColor, { 
@@ -41,9 +41,12 @@ import { useInterstitialAd } from '../Components/Ads/InterstitialAd';
 import RewardedAdModal from '../Components/Ads/RewardedAdModal';
 import BigLoaderAnim from '../Components/LoadingComps/BigLoaderAnim';
 import { useLanguage } from '../Context/LanguageContext';
+import DiscussionLaneCard from '../Components/DiscussionLanes/DiscussionLaneCard';
+import { getDiscussionLanePalette } from '../theme/discussionLanePalette';
 
 const LiveNews = ({ preloadedVideos, route }) => {
     const { width, height } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const { videoId } = route?.params || {};
     const flatListRef = useRef(null);
     const navigation = useNavigation();
@@ -62,7 +65,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const rewardedAdUnitId = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
     const { showRewardedAd, isLoaded: isAdLoaded } = useRewardedAd(rewardedAdUnitId);
 
-    const { showAd: showInterstitial, isLoaded: interstitialReady } = useInterstitialAd();
+    const { showAd: showInterstitial, isLoaded: interstitialReady, isShowing: isInterstitialShowing } = useInterstitialAd();
     const videosSwipedRef = useRef(0);
     const interstitialRef = useRef({ showAd: showInterstitial, isLoaded: interstitialReady });
     useEffect(() => {
@@ -90,6 +93,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const [replyingToComment, setReplyingToComment] = useState(null);
     const [videoDiscussionLanes, setVideoDiscussionLanes] = useState([]);
     const [lanesLoading, setLanesLoading] = useState(false);
+    const [lanePickerVisible, setLanePickerVisible] = useState(false);
+    const [laneVotingKey, setLaneVotingKey] = useState(null);
+    const lanesCacheRef = useRef({}); // videoId -> { video, lanes }
     
     // Ad-related state (only for general users)
     const watchedVideosRef = useRef(new Set()); // Track unique videos watched
@@ -103,8 +109,49 @@ const LiveNews = ({ preloadedVideos, route }) => {
     const adCooldownTimerRef = useRef(null);
     
     const iconColor = AppScreenBackgroundColor;
+    const discussionPalette = React.useMemo(
+        () => getDiscussionLanePalette(selectedLaneVideo?.video_group),
+        [selectedLaneVideo?.video_group]
+    );
+
+    const getVideoIdString = useCallback((videoOrId) => {
+        if (videoOrId == null) return '';
+        const raw = typeof videoOrId === 'object' && videoOrId !== null
+            ? (videoOrId._id ?? videoOrId.id)
+            : videoOrId;
+        if (raw == null) return '';
+        if (typeof raw === 'string') return raw;
+        if (typeof raw === 'object' && raw.$oid) return String(raw.$oid);
+        return String(raw);
+    }, []);
+
+    const mergeVideoDetailIntoList = useCallback((detail) => {
+        const id = getVideoIdString(detail);
+        if (!id) return;
+        setVideos((prev) => (prev || []).map((v) => (getVideoIdString(v) === id ? { ...v, ...detail } : v)));
+    }, [getVideoIdString]);
+
+    const prefetchVideoDiscussionLanes = useCallback(async (videoOrId) => {
+        const id = getVideoIdString(videoOrId);
+        if (!id) return null;
+        if (lanesCacheRef.current[id]?.lanes) {
+            return lanesCacheRef.current[id];
+        }
+        try {
+            const res = await SikiyaAPI.get(`/video/${id}`);
+            const lanes = res.data?.discussionLanes || [];
+            lanesCacheRef.current[id] = { video: res.data, lanes };
+            if (res.data) {
+                mergeVideoDetailIntoList(res.data);
+            }
+            return lanesCacheRef.current[id];
+        } catch (err) {
+            // Silent: this is prefetch; UI will still fetch on demand
+            return null;
+        }
+    }, [getVideoIdString, mergeVideoDetailIntoList]);
     
-    // Preload next videos for smoother experience
+    // Preload next videos + discussion lanes for smoother experience
     useEffect(() => {
         if (videos.length > 0 && currentVideoIndex < videos.length - 1) {
             // Preload next 2 videos
@@ -119,9 +166,17 @@ const LiveNews = ({ preloadedVideos, route }) => {
                         // Silent fail - just optimization
                     });
                 }
+                // Prefetch lanes so lane picker is instant
+                if (video?._id) {
+                    prefetchVideoDiscussionLanes(video._id);
+                }
             });
         }
-    }, [currentVideoIndex, videos]);
+        // Also prefetch lanes for the currently visible video
+        if (videos[currentVideoIndex]?._id) {
+            prefetchVideoDiscussionLanes(videos[currentVideoIndex]._id);
+        }
+    }, [currentVideoIndex, videos, prefetchVideoDiscussionLanes]);
 
     const rewardedModalCopy = pendingRewardAction === 'comments'
         ? {
@@ -221,12 +276,20 @@ const LiveNews = ({ preloadedVideos, route }) => {
     }, [handleWatchAd, isGeneralUser, adCooldownSeconds]);
 
     const handleUpgradeVideos = useCallback(() => {
-        navigation.navigate('UserProfileGroup', {
-            screen: 'SubscriptionSettings',
-            params: {
-                screen: 'MembershipSettings'
-            }
-        });
+        // Hide overlay first so navigation feels clean (this workflow only)
+        setVideoLimitReached(false);
+        setPendingRewardAction(null);
+
+        // Let overlay fade out before navigating
+        setTimeout(() => {
+            navigation.navigate('UserProfileGroup', {
+                screen: 'SubscriptionSettings',
+                params: {
+                    screen: 'MembershipSettings',
+                    params: { returnTab: 'Live' },
+                }
+            });
+        }, 220);
     }, [navigation]);
 
     // Comment quota handlers (general users)
@@ -364,13 +427,20 @@ const LiveNews = ({ preloadedVideos, route }) => {
     }, [isGeneralUser, adCooldownSeconds]);
 
     const handleUpgradeComment = useCallback(() => {
-        navigation.navigate('UserProfileGroup', {
-            screen: 'SubscriptionSettings',
-            params: {
-                screen: 'MembershipSettings'
-            }
-        });
-    }, [navigation]);
+        // Close comments sheet first so the navigation doesn't feel stacked.
+        closeCommentSheet();
+
+        // Let the modal close animation finish before navigating.
+        setTimeout(() => {
+            navigation.navigate('UserProfileGroup', {
+                screen: 'SubscriptionSettings',
+                params: {
+                    screen: 'MembershipSettings',
+                    params: { returnTab: 'Live' },
+                }
+            });
+        }, 220);
+    }, [navigation, closeCommentSheet]);
 
     // Initialize with preloaded videos
     useEffect(() => {
@@ -468,10 +538,8 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     videosSinceLastAdRef.current += 1;
 
                     // Stop feed after 10 videos for general users
-                    if (videosSinceLastAdRef.current > 10) {
-                        setVideoLimitReached(true);
-                        setPendingRewardAction('videos');
-                        setShowAdModal(true);
+                    if (videosSinceLastAdRef.current >= 10) {
+                        handleVideoQuotaExceeded();
                     }
                 }
             }
@@ -504,19 +572,34 @@ const LiveNews = ({ preloadedVideos, route }) => {
     };
 
 
-    const openCommentModal = useCallback(async () => {
+    const openLanePicker = useCallback(async () => {
         const videoToShow = currentVideo ?? (videos[0] ?? null);
         if (!videoToShow) return;
         if (isGeneralUser) {
             fetchCommentQuota();
         }
-        setSelectedLaneVideo(videoToShow);
-        setModalVisible(true);
+        // Open immediately; populate lanes async (cache/network)
+        setLanePickerVisible(true);
         setLanesLoading(true);
+        setSelectedLaneVideo(videoToShow);
+        setSelectedLane(null);
+        setVideoDiscussionLanes([]); // avoid showing stale lanes from previous video
 
         try {
-            const response = await SikiyaAPI.get(`/video/${videoToShow._id}`);
-            const rawLanes = response.data?.discussionLanes || [];
+            const cached = lanesCacheRef.current[videoToShow._id];
+            let responseData = cached?.video;
+            let rawLanes = cached?.lanes;
+
+            if (!rawLanes) {
+                const prefetched = await prefetchVideoDiscussionLanes(videoToShow._id);
+                responseData = prefetched?.video;
+                rawLanes = prefetched?.lanes || [];
+            }
+
+            // keep enriched video payload so theming (video_group) is available
+            if (responseData) {
+                setSelectedLaneVideo(responseData);
+            }
             const mapped = rawLanes.map((lane) => {
                 const tEn = lane.translations?.en;
                 const tFr = lane.translations?.fr;
@@ -529,16 +612,59 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 };
             });
             setVideoDiscussionLanes(mapped);
-            if (mapped.length > 0) {
-                setSelectedLane(mapped[0]);
-            }
         } catch (err) {
             console.error('Error fetching video discussion lanes:', err);
             setVideoDiscussionLanes([]);
         } finally {
             setLanesLoading(false);
         }
-    }, [fetchCommentQuota, isGeneralUser, currentVideo, videos, lang]);
+    }, [fetchCommentQuota, isGeneralUser, currentVideo, videos, lang, prefetchVideoDiscussionLanes]);
+
+    const closeLanePicker = useCallback(() => {
+        setLanePickerVisible(false);
+    }, []);
+
+    const openCommentsForLane = useCallback((lane) => {
+        if (!lane) return;
+        setSelectedLane(lane);
+        setLanePickerVisible(false);
+        setModalVisible(true);
+    }, []);
+
+    const handleBinaryLaneVote = useCallback(async (lane, side) => {
+        const vid = selectedLaneVideo?._id;
+        if (!vid || !lane?.key) return;
+        const hadUserVote = Boolean(lane.voteSummary?.userSide);
+        if (hadUserVote && lane.voteSummary?.userSide === side) {
+            openCommentsForLane(lane);
+            return;
+        }
+        setLaneVotingKey(lane.key);
+        try {
+            const res = await SikiyaAPI.put(
+                `/video/${vid}/lanes/${encodeURIComponent(lane.key)}/vote`,
+                { side }
+            );
+            const vs = res.data?.voteSummary;
+            if (!vs) return;
+            setVideoDiscussionLanes((prev) =>
+                (prev || []).map((l) => (l.key === lane.key ? { ...l, voteSummary: vs } : l))
+            );
+            // keep cache in sync
+            if (lanesCacheRef.current[vid]?.lanes) {
+                lanesCacheRef.current[vid].lanes = (lanesCacheRef.current[vid].lanes || []).map((l) =>
+                    l.key === lane.key ? { ...l, voteSummary: vs } : l
+                );
+            }
+        } catch (err) {
+            Alert.alert(
+                'Error',
+                err?.response?.data?.error || err.message || 'Could not save your vote.'
+            );
+        } finally {
+            setLaneVotingKey(null);
+        }
+    }, [selectedLaneVideo, openCommentsForLane]);
 
     const closeCommentSheet = useCallback(() => {
         setModalVisible(false);
@@ -721,9 +847,10 @@ const LiveNews = ({ preloadedVideos, route }) => {
                 setModalVisible={setModalVisible}
                 videoPlayersRef={videoPlayersRef}
                 onVideoQuotaExceeded={handleVideoQuotaExceeded}
-                openCommentModal={openCommentModal}
+                openCommentModal={openLanePicker}
                 setVideos={setVideos}
                 videoLimitReached={videoLimitReached}
+                isInterstitialShowing={isInterstitialShowing}
                 isScreenFocused={isScreenFocused}
             />
         );
@@ -799,6 +926,79 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     ) : null
                 }
             />
+
+            {/* Discussion lanes picker (step 1) */}
+            <Modal
+                transparent
+                visible={lanePickerVisible}
+                animationType="fade"
+                onRequestClose={closeLanePicker}
+            >
+                <View style={styles.lanePickerBackdrop}>
+                    <View
+                        style={[
+                            styles.lanePickerSheet,
+                            main_Style.genContentElevation,
+                            {
+                                marginBottom: 16 + (insets?.bottom || 0),
+                                height: Math.min(height * 0.62, 520),
+                            },
+                        ]}
+                    >
+                        <View style={styles.lanePickerHeader}>
+                            <View style={styles.lanePickerHeaderText}>
+                                <Text style={styles.lanePickerTitle}>{t('article.discussionLanes')}</Text>
+                                <Text style={styles.lanePickerHint}>{t('article.discussionLanesHint')}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.lanePickerCloseButton}
+                                onPress={closeLanePicker}
+                                activeOpacity={0.8}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close" size={20} color={withdrawnTitleColor} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView
+                            style={styles.lanePickerScroll}
+                            contentContainerStyle={styles.lanePickerContent}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {lanesLoading ? (
+                                <View style={styles.lanePickerLoading}>
+                                    <MediumLoadingState />
+                                </View>
+                            ) : (
+                                <>
+                                    {videoDiscussionLanes.map((lane) => (
+                                        <DiscussionLaneCard
+                                            key={lane.key || lane.id}
+                                            lane={lane}
+                                            palette={discussionPalette}
+                                            lang={lang}
+                                            commentCount={lane.commentCount ?? 0}
+                                            onOpenOpenLane={openCommentsForLane}
+                                            onBinaryVote={handleBinaryLaneVote}
+                                            onJoinBinaryLane={openCommentsForLane}
+                                            voting={laneVotingKey === lane.key}
+                                            alwaysShowJoinBinary={true}
+                                            joinDiscussionLabel={t('comments.joinDiscussion')}
+                                            oneCommentLabel={t('comments.oneComment') || 'comment'}
+                                            manyCommentsLabel={t('comments.manyComments') || 'comments'}
+                                        />
+                                    ))}
+                                    {videoDiscussionLanes.length === 0 && (
+                                        <View style={styles.lanePickerEmpty}>
+                                            <Text style={styles.lanePickerEmptyText}>{t('video.noDiscussionLanes') || t('video.noVideosAvailable')}</Text>
+                                        </View>
+                                    )}
+                                </>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
             
             {/* Comment sheet modal (roll-up) with FeedbackContainer + CommentInputModal + lane switcher */}
             <Modal
@@ -814,15 +1014,23 @@ const LiveNews = ({ preloadedVideos, route }) => {
                     <View
                         style={[
                             styles.modalSheet,
-                            { height: height * 0.88 },
+                            { height: height * 0.78 },
                         ]}
                     >
                         {selectedLaneVideo && (
                             <>
                                 {selectedLane && (
-                                    <View style={[styles.modalLaneFlag, { backgroundColor: selectedLane.backgroundColor }]}>
-                                        <Ionicons name={selectedLane.icon} size={18} color={selectedLane.textColor || '#fff'} />
-                                        <Text style={styles.modalLaneFlagText} numberOfLines={1}>
+                                    <View
+                                        style={[
+                                            styles.modalLaneFlag,
+                                            { borderBottomColor: 'rgba(0,0,0,0.08)' },
+                                        ]}
+                                    >
+                                        <View style={[styles.modalLaneAccent, { backgroundColor: discussionPalette.accent }]} />
+                                        <View style={styles.modalLaneIconWrap}>
+                                            <Ionicons name={selectedLane.icon} size={18} color={discussionPalette.accent} />
+                                        </View>
+                                        <Text style={[styles.modalLaneFlagText, { color: discussionPalette.accent }]} numberOfLines={1}>
                                             {selectedLane.title}
                                         </Text>
                                         <TouchableOpacity
@@ -831,48 +1039,9 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                             activeOpacity={0.7}
                                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                         >
-                                            <Ionicons name="close" size={20} color={selectedLane.textColor || '#fff'} />
+                                            <Ionicons name="close" size={20} color={withdrawnTitleColor} />
                                         </TouchableOpacity>
                                     </View>
-                                )}
-
-                                {lanesLoading ? (
-                                    <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                                        <MediumLoadingState />
-                                    </View>
-                                ) : (
-                                    <ScrollView
-                                        horizontal
-                                        showsHorizontalScrollIndicator={false}
-                                        style={styles.laneSwitcherScroll}
-                                        contentContainerStyle={styles.laneSwitcherContent}
-                                    >
-                                        {videoDiscussionLanes.map((lane) => (
-                                            <TouchableOpacity
-                                                key={lane.key || lane.id}
-                                                style={[
-                                                    styles.discussionLaneCard,
-                                                    { backgroundColor: lane.backgroundColor, width: width * 0.6 },
-                                                ]}
-                                                onPress={() => setSelectedLane(lane)}
-                                                activeOpacity={generalActiveOpacity}
-                                            >
-                                                <View style={styles.discussionLaneContent}>
-                                                    <View style={styles.discussionLaneIcon}>
-                                                        <Ionicons name={lane.icon} size={20} color={lane.textColor || '#fff'} />
-                                                    </View>
-                                                    <View style={styles.discussionLaneInfo}>
-                                                        <Text style={styles.discussionLaneTitle} numberOfLines={1}>
-                                                            {lane.title}
-                                                        </Text>
-                                                        <Text style={styles.discussionLaneCommentCount}>
-                                                            {lane.commentCount} {lane.commentCount === 1 ? t('comments.comment') || 'comment' : t('comments.comments')}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </ScrollView>
                                 )}
 
                                 {selectedLane && (
@@ -914,7 +1083,7 @@ const LiveNews = ({ preloadedVideos, route }) => {
                                         onUpgrade={handleUpgradeComment}
                                         userRole={userRole}
                                         modalTitle={replyingToComment ? null : selectedLane.title}
-                                        titleColor={selectedLane.backgroundColor}
+                                        titleColor={discussionPalette.accent}
                                         replyToName={replyingToComment?.authorName ?? null}
                                         onCancelReply={replyingToComment ? () => setReplyingToComment(null) : undefined}
                                     />
@@ -950,20 +1119,20 @@ const LiveNews = ({ preloadedVideos, route }) => {
                         <View style={styles.quotaActions}>
                             <TouchableOpacity 
                                 style={[styles.quotaButton, styles.quotaPrimary, main_Style.genButtonElevation]}
+                                onPress={handleUpgradeVideos}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>{t('comments.upgrade')}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.quotaButton, styles.quotaSecondary, main_Style.genButtonElevation]}
                                 onPress={handleUnlockVideos}
                                 disabled={videoQuotaLoading}
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="play-outline" size={18} color={MainBrownSecondaryColor} style={{ marginRight: 6 }} />
-                                <Text style={[styles.quotaButtonText, styles.quotaPrimaryText]}>{t('comments.watchAd')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[styles.quotaButton, styles.quotaSecondary, main_Style.genButtonElevation]}
-                                onPress={handleUpgradeVideos}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons name="rocket-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                                <Text style={styles.quotaButtonText}>{t('comments.upgrade')}</Text>
+                                <Text style={[styles.quotaButtonText, styles.quotaSecondaryText]}>{t('comments.watchAd')}</Text>
                             </TouchableOpacity>
                         </View>
                         
@@ -999,6 +1168,7 @@ const VideoItemComponent = ({
     openCommentModal,
     setVideos: setVideosProp,
     videoLimitReached,
+    isInterstitialShowing,
     isScreenFocused,
 }) => {
     const resolveJournalistName = (journalist) => {
@@ -1054,7 +1224,7 @@ const VideoItemComponent = ({
 
     useEffect(() => {
         // Only play video if it's active AND quota limit hasn't been reached AND screen is focused
-        const shouldPlay = isActive && !videoLimitReached && isScreenFocused;
+        const shouldPlay = isActive && !videoLimitReached && isScreenFocused && !isInterstitialShowing;
         
         if (shouldPlay && videoPlayer && typeof videoPlayer.play === 'function') {
             const playPromise = videoPlayer.play();
@@ -1376,20 +1546,17 @@ const VideoItemComponent = ({
                             activeOpacity={generalActiveOpacity}
                         >
                             <Ionicons name="chatbubble-outline" size={20} color={iconColor} />
-                            {item?.number_of_comments > 0 && (
-                            <Text style={styles.actionCount}>{formatNumber(item.number_of_comments)}</Text>
-                            )}
                         </TouchableOpacity>
                         
                     </View>
                     
-                    {/* Share Button */}
+                    {/* Share Button (match Article share UI) */}
                     <TouchableOpacity 
-                        style={[styles.actionButton, main_Style.genButtonElevation]} 
+                        style={[styles.actionButton, styles.actionButtonShare, main_Style.genButtonElevation]} 
                         onPress={handleShare}
                         activeOpacity={generalActiveOpacity}
                     >
-                        <Ionicons name="share-social-outline" size={20} color={iconColor} />
+                        <Ionicons name="share-outline" size={22} color="#fff" />
                     </TouchableOpacity>
                     
                     {/* Profile Button */}
@@ -1499,28 +1666,28 @@ const styles = StyleSheet.create({
     },
     bottomInfoSection: {
         position: 'absolute',
-        bottom: 26,
+        bottom: 75,
         left: 0,
         right: 0,
         flexDirection: 'row',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingBottom: 60,
-        paddingTop: 40,
+        paddingBottom: 28,
+        paddingTop: 18,
     },
     titleContainer: {
         flex: 1,
         marginRight: 12,
         backgroundColor:  'rgba(0, 0, 0, 0.85)', //'rgba(0, 0, 0, 0.85)'
-        padding: 16,
+        padding: 12,
         borderRadius: 12,
         backdropFilter: 'blur(10px)',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.4)',
     },
     articleTitle: {
-        fontSize: articleTitleSize,
+        fontSize: articleTitleSize - 3,
         fontWeight: articleTitleFontWeight,
         color: '#FFFFFF',
         fontFamily: articleTitleFont,
@@ -1601,6 +1768,11 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    actionButtonShare: {
+        backgroundColor: 'rgba(0,0,0,0.34)',
+        borderWidth: 0.8,
+        borderColor: 'rgba(255,255,255,0.32)',
+    },
     actionCount: {
         fontSize: generalSmallTextSize - 2,
         color: '#FFFFFF',
@@ -1617,6 +1789,83 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.35)',
         justifyContent: 'flex-end',
     },
+    lanePickerBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 14,
+    },
+    lanePickerSheet: {
+        backgroundColor: '#F6F4EF',
+        borderRadius: 18,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.6)',
+    },
+    lanePickerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        paddingBottom: 10,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+    },
+    lanePickerHeaderText: {
+        flex: 1,
+        paddingRight: 12,
+    },
+    lanePickerTitle: {
+        fontSize: generalTitleSize - 2,
+        fontFamily: generalTitleFont,
+        fontWeight: '800',
+        color: '#8B1C13',
+        letterSpacing: 0.4,
+    },
+    lanePickerHint: {
+        marginTop: 6,
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        fontWeight: generalTextFontWeight,
+        color: withdrawnTitleColor,
+        lineHeight: generalSmallTextSize + 6,
+    },
+    lanePickerCloseButton: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: 'rgba(255,255,255,0.65)',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lanePickerScroll: {
+        flex: 1,
+    },
+    lanePickerContent: {
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+        gap: 14,
+    },
+    lanePickerLoading: {
+        paddingVertical: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lanePickerEmpty: {
+        paddingVertical: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lanePickerEmptyText: {
+        fontSize: generalSmallTextSize,
+        fontFamily: generalTextFont,
+        color: withdrawnTitleColor,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
     modalSheet: {
         backgroundColor: AppScreenBackgroundColor,
         borderTopLeftRadius: 24,
@@ -1625,123 +1874,61 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     modalLaneFlag: {
-        minHeight: 32,
+        minHeight: 44,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 12,
+        paddingTop: 12,
+        paddingBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
+        justifyContent: 'flex-start',
+        gap: 10,
         position: 'relative',
+        backgroundColor: '#FBFAF6',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    modalLaneAccent: {
+        width: 4,
+        alignSelf: 'stretch',
+        borderRadius: 2,
         backgroundColor: MainBrownSecondaryColor,
+        marginRight: 2,
+    },
+    modalLaneIconWrap: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.04)',
     },
     modalLaneFlagText: {
-        fontSize: commentTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: '#fff',
+        fontSize: commentTextSize + 1,
+        fontWeight: '800',
+        color: generalTextColor,
         fontFamily: generalTitleFont,
         flex: 1,
-        textAlign: 'center',
+        textAlign: 'left',
     },
     modalLaneCloseButton: {
         position: 'absolute',
         right: 16,
-        top: 8,
+        top: 10,
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    laneSwitcherScroll: {
-        paddingTop: 2,
-        maxHeight: 56,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(0,0,0,0.08)',
-        backgroundColor: cardBackgroundColor,
-    },
-    laneSwitcherContent: {
-        paddingHorizontal: 16,
-        paddingVertical: 4,
-        gap: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    discussionLaneCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
-        marginRight: 10,
-    },
-    discussionLaneContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-        gap: 10,
-        minWidth: 0,
-    },
-    discussionLaneIcon: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        //backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    discussionLaneInfo: {
-        flex: 1,
-        minWidth: 0,
-    },
-    discussionLaneTitle: {
-        fontSize: generalSmallTextSize,
-        fontWeight: generalTitleFontWeight,
-        color: '#fff',
-        fontFamily: generalTextFont,
-        marginBottom: 4,
-    },
-    discussionLaneCommentCount: {
-        fontSize: generalSmallTextSize,
-        fontWeight: generalTextFontWeight,
-        color: 'rgba(255, 255, 255, 0.7)',
-        fontFamily: generalTextFont,
-    },
-    laneChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 12,
         backgroundColor: 'rgba(0,0,0,0.06)',
-        marginRight: 10,
-        minWidth: 100,
-        maxWidth: 160,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    laneChipSelected: {
-        backgroundColor: MainBrownSecondaryColor,
-    },
-    laneChipTitle: {
-        fontSize: generalSmallTextSize + 1,
-        fontWeight: generalTitleFontWeight,
-        color: generalTitleColor,
-        fontFamily: generalTitleFont,
-        marginBottom: 2,
-    },
-    laneChipTitleSelected: {
-        color: '#fff',
-    },
-    laneChipCount: {
-        fontSize: generalSmallTextSize,
-        color: withdrawnTitleColor,
-        fontFamily: generalTextFont,
-    },
-    laneChipCountSelected: {
-        color: 'rgba(255, 255, 255, 0.85)',
-    },
+    // Lane switcher styles removed: lane is chosen in step-1 picker
     modalContentWrapper: {
         flex: 1,
     },
@@ -1789,9 +1976,11 @@ const styles = StyleSheet.create({
     videoQuotaOverlay: {
         width: '100%',
         maxWidth: 400,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#FFF4E5',
         borderRadius: 20,
         padding: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(245, 158, 11, 0.55)',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -1809,7 +1998,7 @@ const styles = StyleSheet.create({
         fontFamily: generalTitleFont,
         fontWeight: '700',
         textAlign: 'center',
-        color: MainBrownSecondaryColor,
+        color: '#66101F',
         marginBottom: 12,
         letterSpacing: 0.3,
     },
@@ -1823,14 +2012,14 @@ const styles = StyleSheet.create({
     },
     quotaActions: {
         flexDirection: 'column',
-        gap: 12,
+        gap: 10,
         marginBottom: 8,
     },
     quotaButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
+        paddingVertical: 14,
         borderRadius: 12,
         gap: 8,
         ...Platform.select({
@@ -1846,12 +2035,12 @@ const styles = StyleSheet.create({
         }),
     },
     quotaPrimary: {
-        backgroundColor: MainBrownSecondaryColor,
+        backgroundColor: '#419D78',
     },
     quotaSecondary: {
         backgroundColor: '#FFFFFF',
-        borderWidth: 2,
-        borderColor: MainBrownSecondaryColor,
+        borderWidth: 1,
+        borderColor: '#419D78',
     },
     quotaButtonText: {
         fontSize: generalTextSize,
@@ -1861,6 +2050,9 @@ const styles = StyleSheet.create({
     },
     quotaPrimaryText: {
         color: '#FFFFFF',
+    },
+    quotaSecondaryText: {
+        color: MainBrownSecondaryColor,
     },
     quotaRemaining: {
         fontSize: generalSmallTextSize,

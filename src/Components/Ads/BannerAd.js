@@ -24,8 +24,8 @@ const BannerAd = ({
     const userRole = state?.role;
     const [adUnit, setAdUnit] = useState(null);
 
-    // Don't show ads for journalist, contributor, or admin
-    const adFreeRoles = ['journalist', 'contributor', 'admin'];
+    // Don't show ads for journalist, contributor, thought leaders, or admin
+    const adFreeRoles = ['journalist', 'contributor', 'thoughtleader', 'admin'];
     if (adFreeRoles.includes(userRole)) {
         return null;
     }
